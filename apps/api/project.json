@@ -1,0 +1,27 @@
+{
+  "name": "api",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/api",
+  "tags": ["type:app", "lang:go"],
+  "targets": {
+    "dev": {
+      "executor": "nx:run-commands",
+      "continuous": true,
+      "options": { "command": "mise run dev", "cwd": "apps/api" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "outputs": ["{workspaceRoot}/dist/apps/api"],
+      "options": { "command": "mise run build", "cwd": "apps/api" }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "options": { "command": "mise run test", "cwd": "apps/api" }
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "command": "go vet ./...", "cwd": "apps/api" }
+    }
+  }
+}

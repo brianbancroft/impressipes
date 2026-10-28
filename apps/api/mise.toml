@@ -1,0 +1,17 @@
+[tools]
+go = "1.24"
+
+[env]
+PORT = "8080"
+
+[tasks.dev]
+description = "Run the API"
+run = "go run ./cmd/api"
+
+[tasks.build]
+description = "Build the API binary into dist/"
+run = "go build -o ../../dist/apps/api/api ./cmd/api"
+
+[tasks.test]
+description = "Run Go tests"
+run = "go test ./..."

@@ -1,0 +1,27 @@
+[tools]
+node = "24"
+pnpm = "10"
+go = "1.24"
+
+[env]
+_.path = ["{{config_root}}/node_modules/.bin"]
+
+[tasks.install]
+description = "Install JS dependencies"
+run = "pnpm install"
+
+[tasks.dev]
+description = "Run the SPA and the API together"
+run = "pnpm nx run-many -t dev"
+
+[tasks.build]
+description = "Build every project"
+run = "pnpm nx run-many -t build"
+
+[tasks.test]
+description = "Test every project"
+run = "pnpm nx run-many -t test"
+
+[tasks.lint]
+description = "Lint and typecheck every project"
+run = "pnpm nx run-many -t lint typecheck"
