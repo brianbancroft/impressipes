@@ -1,0 +1,921 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Impressipies illustrations and empty states (IMP-19)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap');
+@page { size: 1760px 1080px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #e9e4de; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* tokens (IMP-14) */
+.light {
+  --bg:#FFF8F0; --surface:#FFFFFF; --surface-2:#FBEFE2; --line:#EADBCB; --ink:#2B2118; --ink-muted:#6B5D50;
+  --accent:#C62F55; --on-accent:#FFFFFF; --accent-soft:#FCE4EA; --success:#1F6B45; --warning:#8A5A00; --danger:#B3261E; --info:#2455B0;
+  --tomato:#B83A2B; --sky:#3C8DE0; --leaf:#5E9626; --violet:#8E4CC0; --tangerine:#E0701A; --teal:#0E7C86;
+  --berry:#C42A7B; --mustard:#8A6A00; --indigo:#3D3FA8; --cocoa:#7A4A2E; --forest:#1F6B45; --slate:#7E8896;
+  --shadow: 0 1px 2px rgba(43,33,24,.08), 0 6px 16px rgba(43,33,24,.06);
+  --scrim: rgba(43,33,24,.42);
+}
+.dark {
+  --bg:#1A1512; --surface:#2A221D; --surface-2:#342B24; --line:#43372E; --ink:#F7EEE4; --ink-muted:#BDAE9F;
+  --accent:#FF8DA5; --on-accent:#2B0A12; --accent-soft:#4A2230; --success:#5BD39A; --warning:#E5B93C; --danger:#FF8A80; --info:#8FB4FF;
+  --tomato:#FF7A66; --sky:#7DB8FF; --leaf:#9BD65F; --violet:#C79BF2; --tangerine:#FFA24F; --teal:#4FD0D6;
+  --berry:#FF7DB8; --mustard:#CFA52E; --indigo:#8F94F5; --cocoa:#B58059; --forest:#5BD39A; --slate:#A5B0BD;
+  --shadow: none; --scrim: rgba(0,0,0,.6);
+}
+:root { --display: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+
+
+/* presentation pages */
+.page { width:1760px; height:1080px; padding:40px 56px; page-break-after:always; break-after:page; background:#e9e4de; position:relative; overflow:hidden; }
+.page > h1 { font:800 28px var(--display); margin:0 0 4px; color:#2B2118; }
+.page > .sub { font:500 15px system-ui; color:#6B5D50; margin:0 0 18px; max-width:1500px; line-height:1.4; }
+.frames { display:flex; gap:40px; align-items:flex-start; }
+.cap { font:600 13px ui-monospace, Menlo, monospace; color:#6B5D50; margin-top:8px; }
+.cap b { color:#2B2118; }
+.spec { display:grid; grid-template-columns:1fr 1fr 1fr; gap:28px; margin-top:8px; }
+.spec section { background:#fff8f0; border:1px solid #eadbcb; border-radius:20px; padding:22px 24px; }
+.spec h3 { font:800 18px var(--display); margin:0 0 10px; color:#2B2118; }
+.spec ul { margin:0; padding-left:18px; font:400 14px/1.5 system-ui; color:#2B2118; }
+.spec li { margin-bottom:6px; }
+.spec code { font:600 12.5px ui-monospace, Menlo, monospace; background:#fbefe2; padding:1px 5px; border-radius:5px; }
+.sw { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+.sw span { width:26px; height:26px; border-radius:50%; display:block; }
+
+
+/* iOS screen shells, from designs/imp-16 (scoped to .ios) */
+.ios {
+/* device */
+.phone { width:393px; height:852px; border-radius:48px; overflow:hidden; position:relative; background:var(--bg); color:var(--ink); border:1px solid rgba(0,0,0,.18); box-shadow:0 12px 30px rgba(43,33,24,.18); font-size:calc(17px * var(--dt,1)); line-height:1.25; }
+.dark.phone { border-color:#000; }
+.status { height:54px; padding:18px 30px 0; display:flex; justify-content:space-between; font:600 16px system-ui; position:relative; z-index:5; }
+.status .r { display:flex; gap:6px; align-items:center; }
+.island { position:absolute; left:50%; top:11px; width:122px; height:35px; background:#000; border-radius:20px; transform:translateX(-50%); }
+.home { position:absolute; bottom:8px; left:50%; width:136px; height:5px; border-radius:3px; background:var(--ink); transform:translateX(-50%); opacity:.9; z-index:9; }
+.screen { position:absolute; inset:54px 0 0 0; overflow:hidden; }
+.scroll { padding:0 16px; }
+
+/* typography (Dynamic Type) */
+.t-large { font:800 calc(34px*var(--dt,1))/1.1 var(--display); letter-spacing:.2px; }
+.t-title { font:800 calc(28px*var(--dt,1))/1.15 var(--display); }
+.t-head  { font:600 calc(17px*var(--dt,1))/1.25 system-ui; }
+.t-body  { font:400 calc(17px*var(--dt,1))/1.25 system-ui; }
+.t-cap   { font:500 calc(12px*var(--dt,1))/1.25 system-ui; color:var(--ink-muted); }
+.muted { color:var(--ink-muted); }
+
+/* nav */
+.nav { height:44px; padding:0 8px; display:flex; align-items:center; justify-content:space-between; color:var(--accent); font:400 17px system-ui; }
+.nav .mid { color:var(--ink); font:800 17px var(--display); display:flex; gap:6px; align-items:center; }
+.nav .nb { display:flex; align-items:center; gap:2px; min-width:70px; height:44px; }
+.nav .nb.r { justify-content:flex-end; }
+.titlebar { padding:4px 16px 12px; display:flex; justify-content:space-between; align-items:center; }
+.plus-btn { width:44px; height:44px; border-radius:22px; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; margin-right:-4px; }
+
+/* tab bar */
+.tabbar { position:absolute; left:0; right:0; bottom:0; height:84px; background:var(--surface); border-top:1px solid var(--line); display:flex; padding:8px 12px 0; z-index:6; }
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; font:600 10.5px system-ui; color:var(--ink-muted); }
+.tab.on { color:var(--accent); }
+.tab svg { width:26px; height:26px; }
+
+/* list home row */
+.lrow { background:var(--surface); border:1px solid var(--line); border-radius:12px; min-height:calc(52px); margin-bottom:6px; padding:10px 12px 10px 0; display:flex; align-items:center; gap:12px; box-shadow:var(--shadow); overflow:hidden; }
+.lrow .dot { width:5px; align-self:stretch; border-radius:0 3px 3px 0; margin:-10px 0; }
+.lrow .em { width:40px; height:40px; border-radius:12px; display:grid; place-items:center; font-size:22px; flex:none; }
+.lrow .txt { flex:1; min-width:0; }
+.lrow .name { font:800 calc(17px*var(--dt,1))/1.2 var(--display); }
+.lrow .act { display:flex; align-items:center; gap:6px; margin-top:3px; }
+.count { font:700 calc(13px*var(--dt,1)) var(--display); padding:3px 10px; border-radius:999px; background:var(--accent-soft); color:var(--ink); white-space:nowrap; }
+.count.done { background:transparent; color:var(--success); display:flex; align-items:center; gap:4px; padding:3px 0; }
+.chev { color:var(--ink-muted); opacity:.7; }
+
+/* avatars */
+.av { border-radius:50%; display:grid; place-items:center; font:800 12px var(--display); color:var(--surface); flex:none; }
+.av.s24 { width:24px; height:24px; font-size:12px; } .av.s32 { width:32px; height:32px; font-size:14px; } .av.s44 { width:44px; height:44px; font-size:18px; }
+.stack { display:flex; } .stack .av { box-shadow:0 0 0 2px var(--surface); margin-left:-8px; } .stack .av:first-child { margin-left:0; }
+
+/* add bar */
+.addbar { margin:0 16px 14px; height:48px; border-radius:12px; background:var(--surface-2); display:flex; align-items:center; padding:0 14px; gap:10px; color:var(--ink-muted); font:400 calc(17px*var(--dt,1)) system-ui; }
+.addbar .pl { color:var(--accent); }
+
+/* category header */
+.cat { height:36px; border-radius:8px; margin:16px 16px 6px; position:relative; display:flex; align-items:center; padding:0 12px 0 14px; gap:8px; background:color-mix(in srgb, var(--c) 16%, var(--surface)); overflow:hidden; }
+.cat:first-of-type { margin-top:0; }
+.cat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--c); }
+.cat .chip { width:22px; height:22px; border-radius:50%; background:var(--c); display:grid; place-items:center; font-size:12px; flex:none; }
+.cat .lab { font:800 calc(13px*var(--dt,1))/1 var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink); flex:1; }
+.cat .n { font:700 calc(13px*var(--dt,1)) var(--display); color:var(--ink-muted); }
+.sub .cat { margin-left:0; margin-right:0; }
+
+/* item row */
+.row { margin:0 16px 6px; background:var(--surface); border:1px solid var(--line); border-radius:12px; min-height:52px; display:flex; align-items:center; padding:4px 12px 4px 0; gap:0; box-shadow:var(--shadow); }
+.ring { width:44px; height:44px; display:grid; place-items:center; flex:none; }
+.ring i { width:26px; height:26px; border-radius:50%; border:2.5px solid var(--c); display:grid; place-items:center; }
+.ring.on i { background:var(--c); }
+.ring.on svg { display:block; } .ring svg { display:none; }
+.row .body { flex:1; min-width:0; padding:6px 8px 6px 2px; }
+.row .nm { font:400 calc(17px*var(--dt,1))/1.25 system-ui; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; }
+.row.checked .nm { color:var(--ink-muted); text-decoration:line-through; text-decoration-thickness:1.5px; }
+.row .meta { margin-top:2px; font:500 calc(12px*var(--dt,1)) system-ui; color:var(--ink-muted); display:flex; align-items:center; gap:6px; }
+.qty { font:700 calc(13px*var(--dt,1)) system-ui; padding:3px 10px; border-radius:999px; background:var(--accent-soft); color:var(--accent); white-space:nowrap; flex:none; margin-right:8px; }
+.dark .qty { color:var(--ink); }
+.sync { display:flex; align-items:center; color:var(--warning); flex:none; margin-left:2px; }
+
+/* got it */
+.gotit { margin:12px 16px 0; display:flex; align-items:center; justify-content:space-between; min-height:44px; font:600 calc(15px*var(--dt,1)) system-ui; color:var(--ink-muted); }
+.gotit .l { display:flex; align-items:center; gap:6px; }
+.btn { height:44px; border-radius:22px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; font:700 calc(15px*var(--dt,1)) var(--display); background:var(--surface); color:var(--ink); border:1px solid var(--line); }
+.btn.sm { height:36px; padding:0 14px; font-size:14px; }
+.btn.primary { background:var(--accent); color:var(--on-accent); border-color:var(--accent); height:50px; font-size:17px; }
+.btn.danger { color:var(--danger); }
+
+/* toast */
+.toast { position:absolute; left:16px; right:16px; bottom:98px; border-radius:12px; padding:12px 14px; display:flex; align-items:center; gap:10px; background:color-mix(in srgb, var(--success) 12%, var(--surface)); border:1px solid color-mix(in srgb, var(--success) 35%, var(--line)); font:600 calc(15px*var(--dt,1)) system-ui; z-index:7; }
+.toast .u { margin-left:auto; color:var(--accent); font:800 15px var(--display); }
+.toast.warn { background:color-mix(in srgb, var(--warning) 12%, var(--surface)); border-color:color-mix(in srgb, var(--warning) 35%, var(--line)); }
+.banner { margin:0 16px 12px; border-radius:12px; padding:10px 12px; display:flex; align-items:center; gap:10px; background:color-mix(in srgb, var(--warning) 12%, var(--surface)); border:1px solid color-mix(in srgb, var(--warning) 30%, var(--line)); font:500 calc(14px*var(--dt,1)) system-ui; }
+
+/* empty */
+.empty { text-align:center; padding:56px 40px 0; }
+.empty .art { width:120px; height:120px; margin:0 auto 20px; border-radius:50%; background:var(--accent-soft); display:grid; place-items:center; font-size:56px; }
+.empty h2 { font:800 calc(22px*var(--dt,1))/1.2 var(--display); margin:0 0 6px; }
+.empty p { margin:0 0 22px; color:var(--ink-muted); font:400 calc(16px*var(--dt,1))/1.35 system-ui; }
+.hint { margin:0 16px; padding:2px 4px; color:var(--ink-muted); font:400 calc(15px*var(--dt,1))/1.4 system-ui; }
+.alldone { margin:8px 16px 0; padding:28px 16px; text-align:center; border-radius:20px; background:var(--surface); border:1px solid var(--line); }
+.alldone .ck { width:56px; height:56px; border-radius:50%; background:color-mix(in srgb, var(--success) 14%, var(--surface)); display:grid; place-items:center; margin:0 auto 10px; color:var(--success); }
+.alldone h2 { font:800 calc(20px*var(--dt,1)) var(--display); margin:0 0 4px; }
+.alldone p { margin:0; color:var(--ink-muted); font:400 calc(15px*var(--dt,1)) system-ui; }
+
+/* sheet */
+.scrim { position:absolute; inset:0; background:var(--scrim); z-index:20; }
+.sheet { position:absolute; left:0; right:0; top:92px; bottom:0; background:var(--surface); border-radius:20px 20px 0 0; z-index:21; padding:8px 16px 0; }
+.dark .sheet { background:var(--surface-2); }
+.grab { width:36px; height:5px; border-radius:3px; background:var(--line); margin:0 auto 12px; }
+.dark .grab { background:#6a5c50; }
+.fieldrow { display:flex; align-items:center; gap:12px; }
+.field { flex:1; height:52px; border-radius:12px; background:var(--surface-2); border:2px solid var(--accent); display:flex; align-items:center; padding:0 14px; font:400 calc(18px*var(--dt,1)) system-ui; }
+.dark .field { background:var(--surface); }
+.field.idle { border-color:transparent; color:var(--ink-muted); }
+.caret { width:2px; height:22px; background:var(--accent); margin-left:1px; }
+.done { color:var(--accent); font:800 17px var(--display); }
+.guess { margin-top:12px; display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+.guess .lbl { font:600 12px system-ui; color:var(--ink-muted); }
+.pill { height:44px; border-radius:22px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; border:1px solid var(--line); background:var(--surface); font:700 14px var(--display); color:var(--ink); }
+.dark .pill { background:var(--surface-2); }
+.pill .d { width:10px; height:10px; border-radius:50%; background:var(--c); }
+.pill.sel { background:color-mix(in srgb, var(--c) 16%, var(--surface)); border-color:var(--c); border-width:2px; }
+.pill.q { background:var(--accent-soft); border-color:transparent; color:var(--accent); }
+.dark .pill.q { color:var(--ink); }
+.pills { display:flex; gap:8px; margin-top:10px; overflow:hidden; }
+.sec { font:800 12px var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); margin:16px 2px 6px; }
+.sug { height:52px; display:flex; align-items:center; gap:12px; border-bottom:1px solid var(--line); font:400 calc(17px*var(--dt,1)) system-ui; }
+.sug:last-child { border-bottom:0; }
+.sug .em { font-size:20px; width:28px; text-align:center; }
+.sug .sg { margin-left:auto; color:var(--ink-muted); font:500 13px system-ui; margin-right:4px; padding:0; max-width:none; }
+.sug .pp { width:32px; height:32px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; }
+.dark .sug .pp { color:var(--ink); }
+.keyboard { position:absolute; left:0; right:0; bottom:0; height:300px; background:var(--kb); padding:8px 3px 0; z-index:22; }
+.krow { display:flex; gap:6px; justify-content:center; margin-bottom:11px; }
+.k { height:42px; flex:1; max-width:34px; border-radius:5px; background:var(--key); color:var(--keytext); display:grid; place-items:center; font:400 22px system-ui; box-shadow:0 1px 0 rgba(0,0,0,.3); }
+.k.d { background:var(--keydark); } .k.w { max-width:none; flex:none; width:44px; } .k.sp { max-width:none; flex:1; font-size:16px; } .k.ret { max-width:none; flex:none; width:92px; font-size:16px; background:var(--accent); color:var(--on-accent); }
+
+/* settings */
+.grp { margin:0 16px 20px; background:var(--surface); border:1px solid var(--line); border-radius:12px; overflow:hidden; box-shadow:var(--shadow); }
+.si { min-height:52px; display:flex; align-items:center; gap:12px; padding:8px 14px; border-top:1px solid var(--line); font:400 calc(17px*var(--dt,1)) system-ui; }
+.si:first-child { border-top:0; }
+.si .v { margin-left:auto; color:var(--ink-muted); display:flex; align-items:center; gap:6px; font-size:calc(16px*var(--dt,1)); text-align:right; }
+.si .ic { width:30px; height:30px; border-radius:8px; display:grid; place-items:center; background:var(--accent-soft); color:var(--accent); flex:none; }
+.dark .si .ic { color:var(--ink); }
+.prof { padding:16px 14px; display:flex; gap:14px; align-items:center; }
+.foot { text-align:center; color:var(--ink-muted); font:400 12px system-ui; margin-top:6px; }
+.shead { font:800 12px var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); margin:0 32px 6px; }
+
+}
+
+/* web screen shells, from designs/imp-17 (scoped to .web) */
+.web {
+/* window (browser viewport) */
+.win { position:relative; overflow:hidden; background:var(--bg); color:var(--ink); font-size:16px; line-height:1.4; border:1px solid rgba(0,0,0,.16); border-radius:14px; box-shadow:0 12px 30px rgba(43,33,24,.16); }
+.dark.win { border-color:#000; }
+.phone { border-radius:28px; }
+.sc { transform-origin:0 0; }
+
+/* shared */
+.disp { font-family:var(--display); }
+.muted { color:var(--ink-muted); }
+.btn { height:44px; border-radius:22px; padding:0 20px; display:inline-flex; align-items:center; justify-content:center; gap:8px; font:800 15px var(--display); background:var(--surface); color:var(--ink); border:1px solid var(--line); white-space:nowrap; cursor:pointer; }
+.btn.primary { background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
+.btn.danger { color:var(--danger); }
+.btn.ghost { background:transparent; border-color:transparent; color:var(--accent); padding:0 12px; }
+.btn.sm { height:36px; padding:0 14px; font-size:14px; }
+.btn.icon { width:44px; padding:0; }
+.btn.focus, .focus { outline:2px solid var(--accent); outline-offset:2px; }
+.btn.disabled { opacity:.5; }
+.card { background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); }
+.input { height:44px; border-radius:12px; background:var(--surface-2); border:1px solid transparent; display:flex; align-items:center; gap:10px; padding:0 14px; font-size:16px; color:var(--ink); }
+.input.ph { color:var(--ink-muted); }
+.input.focus { outline:2px solid var(--accent); outline-offset:2px; }
+.input.err { border:2px solid var(--danger); }
+.help { font-size:13px; color:var(--ink-muted); margin-top:6px; }
+.help.err { color:var(--danger); display:flex; gap:6px; align-items:center; }
+.label { font:800 12px var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); margin-bottom:8px; }
+.chip { height:36px; border-radius:18px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; font:700 14px var(--display); background:var(--surface); border:1px solid var(--line); color:var(--ink); white-space:nowrap; }
+.chip.on { background:var(--accent-soft); border-color:var(--accent); color:var(--ink); }
+.chip .n { color:var(--ink-muted); font-weight:700; }
+.pill { height:26px; border-radius:13px; padding:0 10px; display:inline-flex; align-items:center; gap:5px; font:700 13px var(--display); white-space:nowrap; }
+.pill.success { background:color-mix(in srgb, var(--success) 14%, var(--surface)); color:var(--ink); }
+.pill.success svg { color:var(--success); }
+.pill.warning { background:color-mix(in srgb, var(--warning) 14%, var(--surface)); color:var(--ink); }
+.pill.warning svg { color:var(--warning); }
+.pill.muted { background:var(--surface-2); color:var(--ink-muted); }
+.pill.info { background:color-mix(in srgb, var(--info) 12%, var(--surface)); color:var(--ink); }
+.pill.info svg { color:var(--info); }
+.pill.acc { background:var(--accent-soft); color:var(--ink); }
+.tag { height:24px; border-radius:12px; padding:0 10px; display:inline-flex; align-items:center; gap:5px; font:600 12px system-ui; background:color-mix(in srgb, var(--c) 16%, var(--surface)); color:var(--ink); }
+.tag i { width:8px; height:8px; border-radius:50%; background:var(--c); }
+.av { border-radius:50%; display:grid; place-items:center; font:800 12px var(--display); color:var(--surface); flex:none; }
+.av.s24 { width:24px; height:24px; } .av.s32 { width:32px; height:32px; font-size:14px; } .av.s44 { width:44px; height:44px; font-size:18px; }
+.stepper { display:inline-flex; align-items:center; gap:6px; background:var(--surface-2); border-radius:22px; padding:3px; }
+.stepper b { min-width:32px; text-align:center; font:800 17px var(--display); }
+.stepper .s { width:38px; height:38px; border-radius:50%; background:var(--surface); display:grid; place-items:center; border:1px solid var(--line); }
+.check { width:24px; height:24px; border-radius:7px; border:2px solid var(--ink-muted); display:grid; place-items:center; flex:none; }
+.check.on { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.toast { border-radius:12px; padding:12px 16px; display:flex; align-items:center; gap:10px; background:color-mix(in srgb, var(--success) 12%, var(--surface)); border:1px solid color-mix(in srgb, var(--success) 35%, var(--line)); font:600 15px system-ui; }
+.toast .u { margin-left:auto; color:var(--accent); font:800 15px var(--display); padding-left:16px; }
+.toast.info { background:color-mix(in srgb, var(--info) 12%, var(--surface)); border-color:color-mix(in srgb, var(--info) 35%, var(--line)); }
+.scrim { position:absolute; inset:0; background:var(--scrim); z-index:20; }
+.modal { position:absolute; z-index:21; left:50%; top:50%; transform:translate(-50%,-50%); background:var(--surface); border:1px solid var(--line); border-radius:20px; padding:28px; box-shadow:0 20px 50px rgba(0,0,0,.25); }
+.dark .modal { background:var(--surface-2); }
+.modal h2 { font:800 24px/1.2 var(--display); margin:0 0 6px; }
+
+/* top nav */
+.nav { height:64px; background:var(--surface); border-bottom:1px solid var(--line); display:flex; align-items:center; padding:0 32px; gap:32px; position:relative; z-index:2; }
+.logo { display:flex; align-items:center; gap:10px; font:800 20px var(--display); }
+.logo i { width:32px; height:32px; border-radius:10px; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font:800 18px var(--display); font-style:normal; }
+.nav .links { display:flex; gap:4px; flex:1; }
+.nav .lk { height:44px; padding:0 16px; display:flex; align-items:center; border-radius:22px; font:700 15px var(--display); color:var(--ink-muted); }
+.nav .lk.on { background:var(--accent-soft); color:var(--ink); }
+.tabbar { position:absolute; left:0; right:0; bottom:0; height:64px; background:var(--surface); border-top:1px solid var(--line); display:flex; z-index:6; }
+.tabbar .tb { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; font:700 11px var(--display); color:var(--ink-muted); }
+.tabbar .tb.on { color:var(--accent); }
+.tabbar svg { width:24px; height:24px; }
+.body { max-width:1120px; margin:0 auto; padding:24px 0; }
+.h1 { font:800 40px/46px var(--display); margin:0; letter-spacing:-.005em; }
+.h2 { font:800 22px/28px var(--display); margin:0; }
+
+/* recipe card */
+.grid { display:grid; grid-template-columns:repeat(4,1fr); gap:24px; }
+.rc { background:var(--surface); border:1px solid var(--line); border-radius:20px; box-shadow:var(--shadow); overflow:hidden; display:flex; flex-direction:column; }
+.rc .img { height:150px; position:relative; display:grid; place-items:center; font-size:64px; }
+.rc .img.photo { background:radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--c) 40%, #fff) 0%, color-mix(in srgb, var(--c) 78%, #3a2a1c) 100%); }
+.rc .img.photo::after { content:""; position:absolute; inset:0; background:repeating-linear-gradient(135deg, transparent 0 14px, rgba(255,255,255,.07) 14px 28px); }
+.rc .img.photo span { position:relative; z-index:1; filter:drop-shadow(0 4px 6px rgba(0,0,0,.25)); }
+.rc .img.none { background:color-mix(in srgb, var(--c) 16%, var(--surface)); }
+.rc .acts { position:absolute; right:10px; bottom:10px; display:flex; gap:6px; z-index:2; }
+.rc .rb { width:36px; height:36px; border-radius:50%; background:var(--surface); border:1px solid var(--line); display:grid; place-items:center; color:var(--ink-muted); }
+.rc .rb.fav { color:var(--accent); } .rc .rb.want { color:var(--info); }
+.rc .meta { padding:14px 16px 16px; display:flex; flex-direction:column; gap:8px; }
+.rc .tt { font:800 18px/24px var(--display); }
+.rc .sm { font-size:13px; color:var(--ink-muted); display:flex; flex-wrap:wrap; gap:2px 12px; }
+.rc .sm span { white-space:nowrap; }
+.rc .sm span { display:flex; align-items:center; gap:4px; }
+
+/* detail */
+.irow { min-height:48px; display:flex; align-items:center; gap:12px; padding:6px 0; border-top:1px solid var(--line); }
+.irow:first-child { border-top:0; }
+.irow .q { width:84px; font:800 16px var(--display); flex:none; }
+.irow .q.sc { color:var(--accent); }
+.dark .irow .q.sc { color:var(--ink); }
+.irow .nm { flex:1; } .irow .nt { font-size:13px; color:var(--ink-muted); }
+.addc { width:36px; height:36px; border-radius:50%; background:var(--accent-soft); color:var(--accent); display:grid; place-items:center; flex:none; }
+.dark .addc { color:var(--ink); }
+.onlist { font:700 12px var(--display); display:flex; align-items:center; gap:4px; color:var(--success); white-space:nowrap; }
+.srow { display:flex; gap:16px; padding:14px 0; border-top:1px solid var(--line); }
+.srow:first-child { border-top:0; }
+.badge { width:36px; height:36px; border-radius:50%; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font:800 16px var(--display); flex:none; }
+.srow p { margin:0; font-size:17px; line-height:26px; max-width:65ch; }
+.timer { display:inline-flex; align-items:center; gap:6px; height:30px; padding:0 12px; border-radius:15px; background:var(--surface-2); font:700 13px var(--display); margin-top:8px; }
+
+/* settings layout */
+.side { width:240px; flex:none; display:flex; flex-direction:column; gap:4px; }
+.side .si { height:44px; padding:0 14px; border-radius:12px; display:flex; align-items:center; gap:10px; font:700 15px var(--display); color:var(--ink-muted); }
+.side .si.on { background:var(--accent-soft); color:var(--ink); }
+.trow { display:flex; align-items:center; gap:14px; padding:14px 20px; border-top:1px solid var(--line); min-height:64px; }
+.trow:first-child { border-top:0; }
+.trow .grow { flex:1; min-width:0; }
+.trow .who { font:800 16px var(--display); display:flex; align-items:center; gap:8px; }
+.mono { font:600 13px ui-monospace, Menlo, monospace; }
+.copyrow { display:flex; gap:10px; align-items:center; }
+.copyrow .input { flex:1; font:600 14px ui-monospace, Menlo, monospace; }
+.step { display:flex; gap:14px; padding:16px 0; border-top:1px solid var(--line); }
+.step:first-child { border-top:0; }
+.code { background:var(--surface-2); border-radius:12px; padding:10px 14px; font:600 14px ui-monospace, Menlo, monospace; display:flex; justify-content:space-between; align-items:center; gap:12px; margin-top:8px; }
+.actrow { display:flex; gap:14px; padding:14px 20px; border-top:1px solid var(--line); align-items:center; min-height:64px; }
+.actrow:first-child { border-top:0; }
+.via { height:22px; border-radius:11px; padding:0 8px; display:inline-flex; align-items:center; gap:4px; font:700 12px var(--display); background:var(--accent-soft); color:var(--ink); }
+.dayh { font:800 12px var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink-muted); padding:18px 20px 8px; }
+
+/* cook mode */
+.ck-top { height:72px; display:flex; align-items:center; gap:20px; padding:0 28px; border-bottom:1px solid var(--line); }
+.prog { display:flex; gap:6px; flex:1; max-width:420px; }
+.prog i { flex:1; height:8px; border-radius:4px; background:var(--line); }
+.prog i.d { background:var(--success); } .prog i.c { background:var(--accent); }
+.bigstep { font:600 28px/38px system-ui; max-width:24em; }
+.bignum { width:72px; height:72px; border-radius:50%; background:var(--accent); color:var(--on-accent); display:grid; place-items:center; font:800 36px var(--display); flex:none; }
+.ing-panel { background:var(--surface); border-left:1px solid var(--line); padding:28px; }
+.ing-panel .ir { font-size:18px; line-height:26px; padding:10px 0; border-top:1px solid var(--line); display:flex; gap:12px; align-items:flex-start; }
+.ing-panel .ir:first-of-type { border-top:0; }
+.ing-panel .ir.used { color:var(--ink-muted); text-decoration:line-through; }
+.ing-panel .ir b { font-family:var(--display); min-width:70px; }
+.stpill { height:44px; min-width:44px; border-radius:22px; padding:0 14px; display:inline-flex; align-items:center; gap:6px; background:var(--surface); border:1px solid var(--line); font:800 16px var(--display); color:var(--ink-muted); }
+.stpill.d { color:var(--ink); } .stpill.d svg { color:var(--success); }
+.stpill.c { background:var(--accent); border-color:var(--accent); color:var(--on-accent); }
+.bigbtn { height:64px; border-radius:32px; padding:0 32px; font-size:20px; }
+}
+
+/* ---- IMP-19 additions ---- */
+.sc { transform-origin:0 0; }
+.illo { display:block; }
+.tbl { width:100%; border-collapse:collapse; font:400 12.5px/1.4 system-ui; color:#2B2118; }
+.tbl th { text-align:left; font:800 11px var(--display); letter-spacing:.06em; text-transform:uppercase; color:#6B5D50; padding:8px 10px; border-bottom:2px solid #eadbcb; }
+.tbl td { padding:9px 10px; border-bottom:1px solid #eadbcb; vertical-align:top; }
+.tbl td:first-child { font:800 14px var(--display); white-space:nowrap; }
+.tbl code { font:600 11.5px ui-monospace, Menlo, monospace; background:#fbefe2; padding:1px 5px; border-radius:5px; }
+.panel { background:#fff8f0; border:1px solid #eadbcb; border-radius:20px; padding:22px 24px; }
+.panel h3 { font:800 18px var(--display); margin:0 0 10px; color:#2B2118; }
+.panel ul { margin:0; padding-left:18px; font:400 14px/1.5 system-ui; color:#2B2118; }
+.panel li { margin-bottom:6px; }
+.panel code { font:600 12.5px ui-monospace, Menlo, monospace; background:#fbefe2; padding:1px 5px; border-radius:5px; }
+.stage { border-radius:20px; display:grid; place-items:center; background:var(--bg); color:var(--ink); border:1px solid rgba(0,0,0,.12); }
+.stage.dark { border-color:#000; }
+.stage .nm { font:800 15px var(--display); margin-top:6px; }
+.stage .sm { font:500 12px system-ui; color:var(--ink-muted); }
+.grid5 { display:grid; grid-template-columns:repeat(5,1fr); gap:18px; }
+.tile { padding:18px 8px 14px; text-align:center; }
+.lay { display:grid; grid-template-columns:22px 1fr; gap:8px 10px; align-items:center; font:500 13px system-ui; color:#2B2118; }
+.lay i { width:22px; height:22px; border-radius:50%; display:block; }
+.lay b { font:700 12.5px ui-monospace, Menlo, monospace; }
+.do { border-left:4px solid #5E9626; padding-left:12px; margin-bottom:10px; font:400 13.5px/1.45 system-ui; }
+.dont { border-left:4px solid #B83A2B; padding-left:12px; margin-bottom:10px; font:400 13.5px/1.45 system-ui; }
+.half { display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+
+/* shared empty state, iOS */
+.ios .es { text-align:center; padding:0 28px; }
+.ios .es .art { display:grid; place-items:center; margin:0 auto 12px; }
+.ios .es h2 { font:800 calc(22px*var(--dt,1))/1.2 var(--display); margin:0 0 6px; }
+.ios .es p { margin:0 0 20px; color:var(--ink-muted); font:400 calc(16px*var(--dt,1))/1.35 system-ui; }
+.ios .es .btn.primary { padding:0 28px; }
+.ios .es .note { margin-top:14px; font:500 calc(12px*var(--dt,1)) ui-monospace, Menlo, monospace; color:var(--ink-muted); }
+.ios .card20 { margin:8px 16px 0; padding:28px 12px 24px; border-radius:20px; background:var(--surface); border:1px solid var(--line); box-shadow:var(--shadow); }
+.ios .btn.ghost { background:transparent; border-color:transparent; color:var(--accent); }
+.ios .gotrow { margin:12px 16px 0; display:flex; align-items:center; min-height:44px; gap:6px; font:600 calc(15px*var(--dt,1)) system-ui; color:var(--ink-muted); }
+.ios .ghostbar { margin:0 16px 10px; height:14px; border-radius:7px; background:var(--surface-2); }
+.ios .ghostcard { margin:0 16px 12px; border-radius:20px; background:var(--surface); border:1px solid var(--line); }
+
+/* shared empty state, web */
+.web .es { text-align:center; margin:0 auto; }
+.web .es .art { display:grid; place-items:center; margin:0 auto 16px; }
+.web .es h2 { font:800 24px/30px var(--display); margin:0 0 8px; }
+.web .es p { margin:0 auto 24px; max-width:38ch; color:var(--ink-muted); font:400 17px/26px system-ui; }
+.web .es .acts { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+.web .es .note { margin-top:16px; font:500 12px ui-monospace, Menlo, monospace; color:var(--ink-muted); }
+.web .lrw { background:var(--surface); border:1px solid var(--line); border-radius:12px; min-height:56px; padding:8px 12px 8px 0; display:flex; align-items:center; gap:10px; margin-bottom:8px; overflow:hidden; box-shadow:var(--shadow); }
+.web .lrw .bar { width:5px; align-self:stretch; margin:-8px 0; }
+.web .lrw .e { width:36px; height:36px; border-radius:12px; display:grid; place-items:center; font-size:20px; margin-left:4px; }
+.web .lrw .n { flex:1; font:800 16px var(--display); min-width:0; }
+.web .lrw.sel { border-color:var(--accent); border-width:2px; padding-left:0; }
+.web .gh { background:var(--surface-2); border-radius:8px; height:14px; }
+
+/* watch (always dark) */
+.wch { position:relative; overflow:hidden; background:var(--bg); color:var(--ink); font-family:system-ui, -apple-system, sans-serif; box-shadow:0 0 0 6px #000, 0 0 0 7px #3a3a3c; }
+.wch .wh { display:flex; justify-content:space-between; align-items:baseline; padding:10px 12px 0 14px; }
+.wch .wt { font:800 15px/18px var(--display); }
+.wch .wtm { font:600 12px system-ui; color:var(--ink-muted); }
+.wch .wadd { margin:8px 8px 0; height:44px; border-radius:12px; background:var(--surface-2); display:flex; align-items:center; gap:8px; padding:0 12px; font:600 15px/18px system-ui; color:var(--accent); }
+.wch .wes { text-align:center; padding:0 10px; }
+.wch .wes .art { display:grid; place-items:center; margin:0 auto 4px; }
+.wch .wes h2 { font:800 15px/18px var(--display); margin:0 0 2px; }
+.wch .wes p { font:400 12px/15px system-ui; color:var(--ink-muted); margin:0 0 8px; }
+.wch .wbtn { height:44px; border-radius:22px; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--on-accent); font:800 15px var(--display); margin:0 4px; }
+.wch .wgot { margin:6px 8px 0; height:44px; display:flex; align-items:center; gap:6px; padding:0 8px; font:600 15px/18px system-ui; color:var(--ink-muted); }
+
+</style>
+</head>
+<body>
+<script>
+const ios = (() => {
+const $ = (s) => s;
+const ico = {
+  check: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>',
+  checkS: (c='currentColor', w=22) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="${c}" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`,
+  chev: '<svg class="chev" width="10" height="16" viewBox="0 0 10 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M2 2l6 6-6 6"/></svg>',
+  back: '<svg width="12" height="20" viewBox="0 0 12 20" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2L2 10l8 8"/></svg>',
+  plus: (w=22, sw=2.8) => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg>`,
+  gear: '<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/></svg>',
+  clock: '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
+  cloudoff: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 18H7a4.5 4.5 0 01-.6-8.96A6 6 0 0117.7 8.3 4.9 4.9 0 0117.5 18z"/><path d="M3 3l18 18"/></svg>',
+  chevd: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>',
+  chevr: '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg>',
+  undo: '',
+  tabLists: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6.5l1.6 1.6L8.5 5M4 12.5l1.6 1.6 2.9-3.1M4 18.5l1.6 1.6 2.9-3.1M12 7h8M12 13h8M12 19h8"/></svg>',
+  tabRecipes: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 14a4 4 0 11.8-7.9A4 4 0 0114.5 4.6 4.5 4.5 0 0118 13v7H6z"/><path d="M6 17h12"/></svg>',
+  tabSettings: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 00.3 1.8l.1.1a2 2 0 11-2.8 2.8l-.1-.1a1.7 1.7 0 00-1.8-.3 1.7 1.7 0 00-1 1.5V21a2 2 0 11-4 0v-.1a1.7 1.7 0 00-1.1-1.5 1.7 1.7 0 00-1.8.3l-.1.1a2 2 0 11-2.8-2.8l.1-.1a1.7 1.7 0 00.3-1.8 1.7 1.7 0 00-1.5-1H3a2 2 0 110-4h.1a1.7 1.7 0 001.5-1.1 1.7 1.7 0 00-.3-1.8l-.1-.1a2 2 0 112.8-2.8l.1.1a1.7 1.7 0 001.8.3H9a1.7 1.7 0 001-1.5V3a2 2 0 114 0v.1a1.7 1.7 0 001 1.5 1.7 1.7 0 001.8-.3l.1-.1a2 2 0 112.8 2.8l-.1.1a1.7 1.7 0 00-.3 1.8V9a1.7 1.7 0 001.5 1H21a2 2 0 110 4h-.1a1.7 1.7 0 00-1.5 1z"/></svg>',
+  wifi: '<svg width="18" height="13" viewBox="0 0 18 13" fill="currentColor"><path d="M9 2.4c2.5 0 4.8 1 6.5 2.6l1-1.1A10.4 10.4 0 009 .9C6.2.9 3.7 2 1.9 3.9l1 1.1A9 9 0 019 2.4zm0 3.8c1.5 0 2.8.6 3.8 1.5l1-1.1A7 7 0 009 4.7a7 7 0 00-4.8 1.9l1 1.1c1-.9 2.3-1.5 3.8-1.5zm0 3.7c-.8 0-1.5.3-2 .8L9 12.6l2-1.9c-.5-.5-1.2-.8-2-.8z"/></svg>',
+  batt: '<svg width="27" height="13" viewBox="0 0 27 13" fill="none"><rect x=".5" y=".5" width="23" height="12" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="20" height="9" rx="2.2" fill="currentColor"/><path d="M25 4.5v4c.8-.3 1.5-1.1 1.5-2s-.7-1.7-1.5-2z" fill="currentColor" opacity=".45"/></svg>',
+};
+const CATS = { // name -> emoji
+  produce:['leaf','🥬','Produce'], dairy:['sky','🥛','Dairy'], pantry:['tangerine','🥫','Pantry'], bakery:['mustard','🍞','Bakery'], other:['slate','📦','Other'],
+  meat:['tomato','🥩','Meat'],
+};
+const PEOPLE = { sam:['Sam','berry'], alex:['Alex','sky'], jordan:['Jordan','leaf'] };
+const av = (p, s=24) => `<div class="av s${s}" style="background:var(--${PEOPLE[p][1]})">${PEOPLE[p][0][0]}</div>`;
+
+const status = () => `<div class="status"><span>9:41</span><div class="island"></div><span class="r">${ico.wifi}${ico.batt}</span></div>`;
+const tabs = (on) => `<div class="tabbar">
+  <div class="tab ${on==='lists'?'on':''}">${ico.tabLists}<span>Lists</span></div>
+  <div class="tab ${on==='recipes'?'on':''}">${ico.tabRecipes}<span>Recipes</span></div>
+  <div class="tab ${on==='settings'?'on':''}">${ico.tabSettings}<span>Settings</span></div></div>`;
+
+function phone({theme, dt=1, body, extra='', tab='lists', nohome=false}) {
+  return `<div class="phone ${theme}" style="--dt:${dt}">${status()}<div class="screen">${body}</div>${extra}${nohome?'':'<div class="home"></div>'}</div>`;
+}
+const cap = (id, name, state, theme, dt) => `<div class="cap"><b>${id}</b> ${name} / ${state} · ${theme[0].toUpperCase()+theme.slice(1)}${dt&&dt!==1?' · '+dt.label:''}</div>`;
+const frame = (html, id, name, state, theme, dt) => `<div>${html}${cap(id,name,state,theme,dt)}</div>`;
+
+const row = (nm, {c='leaf', q, checked, sync, who, note}={}) => `<div class="row ${checked?'checked':''}" style="--c:var(--${c})">
+  <div class="ring ${checked?'on':''}"><i>${ico.check}</i></div>
+  <div class="body"><div class="nm">${nm}</div>${note?`<div class="meta">${note}</div>`:''}</div>
+  ${q?`<span class="qty">${q}</span>`:''}${who?av(who):''}${sync?`<span class="sync">${ico.clock}</span>`:''}</div>`;
+const cat = (k, n) => `<div class="cat" style="--c:var(--${CATS[k][0]})"><div class="chip">${CATS[k][1]}</div><div class="lab">${CATS[k][2]}</div><div class="n">${n}</div></div>`;
+const nav = (title, emoji) => `<div class="nav"><div class="nb">${ico.back}<span style="margin-left:4px">Lists</span></div><div class="mid">${emoji||''} ${title}</div><div class="nb r">${ico.gear}</div></div>`;
+const addbar = (txt='Add an item…') => `<div class="addbar"><span class="pl">${ico.plus(22)}</span>${txt}</div>`;
+const gotit = (n, open) => `<div class="gotit"><div class="l">${open?ico.chevd:ico.chevr}<span>Got it (${n})</span></div>${n?'<div class="btn sm">Clear checked</div>':''}</div>`;
+
+return { ico, CATS, PEOPLE, av, status, tabs, phone, row, cat, nav, addbar, gotit };
+})();
+const web = (() => {
+const I = (p, w=20, sw=2.2, extra='') => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" ${extra}>${p}</svg>`;
+const ic = {
+  search: I('<circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/>'),
+  plus: (w=20)=>I('<path d="M12 5v14M5 12h14"/>',w,2.6),
+  minus: I('<path d="M5 12h14"/>',18,2.6),
+  check: (w=18)=>I('<path d="M5 12.5l4.5 4.5L19 7"/>',w,2.8),
+  chevd: I('<path d="M6 9l6 6 6-6"/>',16,2.6),
+  chevr: I('<path d="M9 6l6 6-6 6"/>',16,2.6),
+  back: I('<path d="M15 6l-6 6 6 6"/>',20,2.6),
+  heart: (on)=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M12 20.5s-8-4.9-8-11A4.6 4.6 0 0112 6.8 4.6 4.6 0 0120 9.5c0 6.1-8 11-8 11z"/></svg>`,
+  mark: (on)=>`<svg width="20" height="20" viewBox="0 0 24 24" fill="${on?'currentColor':'none'}" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"><path d="M6 3.5h12v17l-6-4.5-6 4.5z"/></svg>`,
+  clock: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',16,2.4),
+  x: I('<path d="M6 6l12 12M18 6L6 18"/>',18,2.6),
+  copy: I('<rect x="9" y="9" width="11" height="11" rx="2.5"/><path d="M5 15V6a2 2 0 012-2h9"/>',18,2.2),
+  edit: I('<path d="M4 20h4L19 9l-4-4L4 16z"/>',18,2.2),
+  drag: I('<circle cx="9" cy="6" r="1.2"/><circle cx="15" cy="6" r="1.2"/><circle cx="9" cy="12" r="1.2"/><circle cx="15" cy="12" r="1.2"/><circle cx="9" cy="18" r="1.2"/><circle cx="15" cy="18" r="1.2"/>',18,2),
+  warn: I('<path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18v.5"/>',16,2.4),
+  undo: I('<path d="M9 14l-5-5 5-5"/><path d="M4 9h10a6 6 0 010 12h-3"/>',16,2.4),
+  link: I('<path d="M10 14a4 4 0 005.7 0l3-3a4 4 0 00-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 00-5.7 0l-3 3A4 4 0 0011 18.7l1-1"/>',18,2.2),
+  sparkle: I('<path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8z"/>',16,2.2),
+  lock: I('<rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',18,2.2),
+  up: I('<path d="M5 10l7-7 7 7"/><path d="M12 3v13"/><path d="M4 20h16"/>',20,2.2),
+  play: I('<path d="M7 4.5v15l12-7.5z"/>',18,2.4),
+  expand: I('<path d="M9 5H5v4M15 5h4v4M9 19H5v-4M15 19h4v-4"/>',18,2.2),
+  tR: I('<path d="M6 14a4 4 0 11.8-7.9A4 4 0 0114.5 4.6 4.5 4.5 0 0118 13v7H6z"/><path d="M6 17h12"/>',24,2),
+  tL: I('<path d="M4 6.5l1.6 1.6L8.5 5M4 12.5l1.6 1.6 2.9-3.1M4 18.5l1.6 1.6 2.9-3.1M12 7h8M12 13h8M12 19h8"/>',24,2),
+  tS: I('<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M18.7 5.3l-2.1 2.1M7.4 16.6l-2.1 2.1"/>',24,2),
+  user: I('<circle cx="12" cy="8" r="4"/><path d="M4 21c0-4.4 3.6-7 8-7s8 2.6 8 7"/>',18,2.2),
+  fam: I('<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6"/><circle cx="17" cy="9" r="2.6"/><path d="M17 14c2.8 0 4.5 1.9 4.5 5"/>',18,2.2),
+  key: I('<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M16 7l3 3"/>',18,2.2),
+};
+const CAT = {tomato:'Dinner',tangerine:'Dinner',mustard:'Breakfast',teal:'Quick',leaf:'Breakfast',forest:'Vegetarian',cocoa:'Breakfast'};
+const PEOPLE = { sam:['Sam','berry'], alex:['Alex','sky'], jordan:['Jordan','leaf'] };
+const av = (p, s=24) => `<div class="av s${s}" style="background:var(--${PEOPLE[p][1]})">${PEOPLE[p][0][0]}</div>`;
+
+const RECIPES = [
+  {n:'Beef tacos', e:'🌮', c:'tangerine', t:'35 min', s:4, tag:'Dinner', photo:true, fav:true},
+  {n:'Lasagna', e:'🍝', c:'tomato', t:'1 h 20', s:6, tag:'Dinner', photo:true, want:true},
+  {n:'Chana dal', e:'🍲', c:'mustard', t:'45 min', s:4, tag:'Vegetarian'},
+  {n:'Pad Thai', e:'🍜', c:'teal', t:'30 min', s:2, tag:'Quick', photo:true},
+  {n:'Banana pancakes', e:'🥞', c:'cocoa', t:'20 min', s:4, tag:'Breakfast', fav:true},
+  {n:'Roast chicken', e:'🍗', c:'tangerine', t:'1 h 30', s:5, tag:'Dinner', photo:true},
+  {n:'Overnight oats', e:'🥣', c:'leaf', t:'10 min', s:1, tag:'Breakfast'},
+  {n:'Chickpea curry', e:'🍛', c:'forest', t:'40 min', s:4, tag:'Vegetarian', want:true},
+];
+const rcard = (r) => `<div class="rc"><div class="img ${r.photo?'photo':'none'}" style="--c:var(--${r.c})"><span>${r.e}</span>
+  <div class="acts"><div class="rb want" style="${r.want?'':'color:var(--ink-muted)'}">${ic.mark(r.want)}</div><div class="rb fav" style="${r.fav?'':'color:var(--ink-muted)'}">${ic.heart(r.fav)}</div></div></div>
+  <div class="meta"><div class="tt">${r.n}</div><div class="sm"><span>${ic.clock} ${r.t}</span><span>Serves ${r.s}</span></div>
+  <div><span class="tag" style="--c:var(--${r.c})"><i></i>${r.tag}</span></div></div></div>`;
+
+const nav = (on) => `<div class="nav"><div class="logo"><i>i</i>Impressipies</div>
+  <div class="links"><div class="lk ${on==='r'?'on':''}">Recipes</div><div class="lk ${on==='l'?'on':''}">Lists</div><div class="lk ${on==='s'?'on':''}">Settings</div></div>
+  ${av('sam',32)}</div>`;
+const tabbar = (on) => `<div class="tabbar"><div class="tb ${on==='l'?'on':''}">${ic.tL}Lists</div><div class="tb ${on==='r'?'on':''}">${ic.tR}Recipes</div><div class="tb ${on==='s'?'on':''}">${ic.tS}Settings</div></div>`;
+
+function win(theme, w, h, inner, cls='') { return `<div class="win ${theme} ${cls}" style="width:${w}px;height:${h}px">${inner}</div>`; }
+function scaled(html, w, h, s) { return `<div style="width:${w*s}px;height:${h*s}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(${s})">${html}</div></div>`; }
+const cap = (id, name, state, theme) => `<div class="cap"><b>${id}</b> ${name} / ${state} · ${theme[0].toUpperCase()+theme.slice(1)}</div>`;
+const fr = (html, ...c) => `<div>${html}${cap(...c)}</div>`;
+const page = (title, sub, frames) => `<div class="page"><h1>${title}</h1><p class="sub">${sub}</p><div class="frames">${frames.join('')}</div></div>`;
+
+return { ic, nav, tabbar, win, scaled, av, PEOPLE };
+})();
+/* =====================================================================
+   IMP-19 illustrations & empty states.
+   Every colour in the SVGs is a token (var(--name)), so the same markup
+   recolours in light and dark. One source: pie() + SCENES below.
+   ===================================================================== */
+const V = (n) => `var(--${n})`;
+const star = (x, y, s, c) => `<path transform="translate(${x} ${y}) scale(${s/10})" d="M0 -10 Q1.6 -1.6 10 0 Q1.6 1.6 0 10 Q-1.6 1.6 -10 0 Q-1.6 -1.6 0 -10z" fill="${V(c)}"/>`;
+const FS = 'fill="none" stroke="var(--on-accent)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"';
+const eye = (x, y, r = 4) => `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--on-accent)"/>`;
+const cheeks = `<circle cx="-25" cy="8" r="5.5" fill="var(--accent-soft)" fill-opacity=".9"/><circle cx="25" cy="8" r="5.5" fill="var(--accent-soft)" fill-opacity=".9"/>`;
+const FACES = {
+  hello:   (c) => `${c}${eye(-13,-5)}${eye(13,-5)}<path d="M-7 6 Q0 13 7 6" ${FS}/>`,
+  happy:   (c) => `${c}<path d="M-19 -3 Q-13 -11 -7 -3 M7 -3 Q13 -11 19 -3" ${FS}/><path d="M-10 5 Q0 21 10 5Z" fill="var(--on-accent)" stroke="var(--on-accent)" stroke-width="2.4" stroke-linejoin="round"/>`,
+  sleepy:  (c) => `${c}<path d="M-19 -7 Q-13 -1 -7 -7 M7 -7 Q13 -1 19 -7" ${FS}/><ellipse cx="0" cy="9" rx="3.2" ry="2.7" fill="var(--on-accent)"/>`,
+  dizzy:   (c) => `${c}<path d="M-18 -9 L-8 1 M-8 -9 L-18 1 M8 -9 L18 1 M18 -9 L8 1" ${FS} stroke-width="3"/><path d="M-10 10 q3.3 -4.5 6.6 0 t6.7 0 t6.7 0" ${FS} stroke-width="3"/>`,
+  curious: (c) => `${c}${eye(-9,-4,4.2)}${eye(17,-4,4.2)}<path d="M9 -14 Q16 -19 23 -14" ${FS} stroke-width="2.6"/><path d="M-3 8 Q3 12 9 7" ${FS}/>`,
+};
+/* The mascot. Drawn about the origin, radius 59.5 incl. scalloped crust. */
+function pie({ cx = 100, cy = 84, kind = 'hello', tilt = 0, detail = true, scale = 1 } = {}) {
+  const n = detail ? 22 : 16; let sc = '';
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; sc += `<circle cx="${(Math.cos(a)*51.5).toFixed(1)}" cy="${(Math.sin(a)*51.5).toFixed(1)}" r="${detail ? 7.2 : 9}"/>`; }
+  const leaf = detail ? `<g transform="translate(23 -42) rotate(-30)"><path d="M0 0 C4 -13 19 -15 24 -6 C13 -3 6 3 0 0Z" fill="var(--leaf)"/></g>` : '';
+  return `<g id="pie" transform="translate(${cx} ${cy}) rotate(${tilt}) scale(${scale})">
+    <g id="crust" fill="var(--mustard)">${sc}<circle r="51"/></g>
+    <circle r="42.5" fill="var(--ink)" fill-opacity=".14"/>
+    <circle id="filling" r="40" fill="var(--accent)"/>
+    <g id="face">${FACES[kind](detail ? cheeks : '')}</g>${leaf}</g>`;
+}
+const shadow = (cy = 152, rx = 56) => `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="6" fill="var(--ink)" fill-opacity=".08"/>`;
+const SCENES = {
+  emptyList: () => `${shadow(161, 62)}${pie({ cy: 78, kind: 'hello' })}
+    <g id="prop"><path d="M38 112 H162 L150 152 Q148 158 141 158 H59 Q52 158 50 152 Z" fill="var(--cocoa)"/>
+    <path d="M62 124 V152 M86 124 V156 M114 124 V156 M138 124 V152 M44 136 H156 M49 148 H151" stroke="var(--surface)" stroke-opacity=".3" stroke-width="3" stroke-linecap="round" fill="none"/>
+    <rect x="32" y="104" width="136" height="16" rx="8" fill="var(--cocoa)"/><rect x="32" y="104" width="136" height="16" rx="8" fill="var(--surface)" fill-opacity=".18"/></g>`,
+  allDone: () => `${shadow(152)}${pie({ cy: 88, kind: 'happy' })}
+    <g id="prop"><g transform="translate(152 42)"><circle r="18" fill="var(--leaf)"/><path d="M-8 1 L-2.5 6.5 L8.5 -5.5" fill="none" stroke="var(--surface)" stroke-width="4.4" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+    <g id="sparkle">${star(30, 52, 10, 'mustard')}${star(172, 102, 8, 'sky')}${star(34, 122, 7, 'berry')}<circle cx="52" cy="30" r="3" fill="var(--sky)"/><circle cx="176" cy="68" r="2.6" fill="var(--mustard)"/></g>`,
+  noRecipes: () => `${shadow(152)}<g id="prop"><g transform="rotate(7 150 92)"><rect x="116" y="44" width="66" height="86" rx="12" fill="var(--surface-2)" stroke="var(--ink-muted)" stroke-opacity=".5" stroke-width="2"/>
+    <rect x="128" y="58" width="32" height="7" rx="3.5" fill="var(--ink-muted)" fill-opacity=".55"/>
+    <path d="M128 80 H170 M128 94 H170 M128 108 H156" stroke="var(--ink-muted)" stroke-opacity=".4" stroke-width="3" stroke-linecap="round" stroke-dasharray="1 7"/></g>
+    <g transform="translate(176 48)"><circle r="14" fill="var(--accent)"/><path d="M0 -6 V6 M-6 0 H6" stroke="var(--on-accent)" stroke-width="3.4" stroke-linecap="round"/></g></g>
+    ${pie({ cx: 76, cy: 90, kind: 'curious' })}`,
+  offline: () => `${shadow(158, 58)}${pie({ cx: 108, cy: 94, kind: 'sleepy' })}
+    <g id="prop"><g transform="translate(14 16) scale(1.25)"><path d="M10 30 a10 10 0 0 1 1 -19.9 a14 14 0 0 1 26.5 3.2 a8.5 8.5 0 0 1 -1.5 16.7 z" fill="var(--sky)"/>
+    <path d="M4 2 L36 32" stroke="var(--ink)" stroke-width="4.4" stroke-linecap="round"/></g></g>
+    <g id="sparkle" fill="none" stroke="var(--ink-muted)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"><path d="M150 54 h10 l-10 12 h10"/><path d="M165 30 h14 l-14 17 h14"/></g>`,
+  error: () => `${shadow(158, 58)}${pie({ cx: 98, cy: 92, kind: 'dizzy', tilt: -10 })}
+    <g id="prop"><g transform="translate(160 38)"><circle r="18" fill="var(--tomato)"/><rect x="-2" y="-11" width="4.4" height="13" rx="2.2" fill="var(--surface)"/><circle cx="0.2" cy="8" r="2.6" fill="var(--surface)"/></g></g>
+    <g id="sparkle">${star(34, 52, 9, 'mustard')}${star(54, 28, 6, 'sky')}<circle cx="34" cy="142" r="4" fill="var(--mustard)"/><circle cx="48" cy="154" r="2.6" fill="var(--mustard)"/><circle cx="168" cy="146" r="3.4" fill="var(--mustard)"/></g>`,
+};
+const ALT = {
+  emptyList: 'Pie peeking out of an empty basket',
+  allDone: 'Happy pie with a green check mark',
+  noRecipes: 'Pie looking at a blank recipe card',
+  offline: 'Sleeping pie beside a crossed-out cloud',
+  error: 'Dizzy pie with an alert badge',
+};
+/* scene illustration, 200 x 170 */
+const illo = (scene, w = 160) => `<svg class="illo" viewBox="0 0 200 170" width="${w}" height="${(w*0.85).toFixed(1)}" role="img" aria-label="${ALT[scene]}"><title>${ALT[scene]}</title>${SCENES[scene]()}</svg>`;
+/* mascot only, 128 x 140 */
+const mascot = (kind, w = 140, detail = true) => `<svg class="illo" viewBox="36 18 128 140" width="${w}" height="${(w*140/128).toFixed(1)}" role="img" aria-label="Pie mascot, ${kind}"><title>Pie mascot, ${kind}</title>${shadow(148, 46)}${pie({ cy: 88, kind, detail })}</svg>`;
+/* glyph size, no props, for inline and watch use */
+const mini = (kind, w = 48) => `<svg class="illo" viewBox="38 28 124 124" width="${w}" height="${w}" role="img" aria-label="Pie mascot, ${kind}">${pie({ cy: 92, kind, detail: false })}</svg>`;
+
+/* ----- copy and accessibility labels, one record per state ----- */
+const COPY = {
+  emptyList: { name: 'Empty list', scene: 'emptyList',
+    ios: { h: 'This list is empty', p: 'Type “milk 2L”. Use return or commas for several.', a: 'Add an item' },
+    web: { h: 'This list is empty', p: 'Type “milk 2L” in the box above. Use return or commas for several.', a: 'Add an item' },
+    watch: { h: 'Nothing to get', p: '', a: 'Add item' } },
+  noLists: { name: 'No lists yet', scene: 'emptyList',
+    ios: { h: 'No lists yet', p: 'Make one for each shop.', a: 'New list' },
+    web: { h: 'No lists yet', p: 'Make one for each shop.', a: 'New list' },
+    watch: { h: 'No lists yet', p: 'Open Impressipies on your iPhone to load your lists.', a: 'Refresh' } },
+  allDone: { name: 'All done', scene: 'allDone',
+    ios: { h: 'Everything is in the cart', p: 'Nice work, team.', a: 'Clear checked (9)' },
+    web: { h: 'Everything is in the cart', p: 'Nice work, team.', a: 'Clear checked (9)' },
+    watch: { h: 'All done', p: '', a: 'Add item' } },
+  noRecipes: { name: 'No recipes yet', scene: 'noRecipes',
+    ios: { h: 'No recipes yet', p: 'Recipes you add on the web or through your AI show up here.', a: 'Open on the web' },
+    web: { h: 'No recipes yet', p: 'Ask your AI to add one, or add one yourself.', a: 'New recipe', a2: 'Connect your AI' } },
+  offline: { name: 'Offline, nothing cached', scene: 'offline',
+    ios: { h: 'You’re offline', p: 'Connect to the internet to load your lists for the first time.', a: 'Try again' },
+    web: { h: 'You’re offline', p: 'Recipes need a connection. Your lists still work offline.', a: 'Try again', a2: 'Go to Lists' },
+    watch: { h: 'Offline', p: 'Waiting for your iPhone.', a: 'Try again' } },
+  error: { name: 'Error loading', scene: 'error',
+    ios: { h: 'Couldn’t load Costco', p: 'That’s on us, not you. Your list is safe.', a: 'Try again', note: 'Error 500 · ref 7F3A' },
+    web: { h: 'Couldn’t load Costco', p: 'That’s on us, not you. Your list is safe.', a: 'Try again', note: 'Error 500 · ref 7F3A' },
+    watch: { h: 'Couldn’t load', p: 'Your list is safe.', a: 'Try again' } },
+};
+
+/* ----- helpers pulled out of the IMP-16 and IMP-17 files ----- */
+const T = ['light', 'dark'];
+const cap2 = (id, name, state, theme, extra) => `<div class="cap"><b>${id}</b> ${name} / ${state} · ${theme[0].toUpperCase()+theme.slice(1)}${extra?' · '+extra:''}</div>`;
+const fr2 = (html, ...c) => `<div>${html}${cap2(...c)}</div>`;
+const pg = (title, sub, frames, style = '') => `<div class="page"><h1>${title}</h1><p class="sub">${sub}</p><div class="frames" style="${style}">${frames.join('')}</div></div>`;
+const wrapIos = (h) => `<div class="ios">${h}</div>`;
+const wrapWeb = (h) => `<div class="web">${h}</div>`;
+
+/* =============================== iOS =============================== */
+const artFor = (dt) => dt >= 1.5 ? 72 : dt >= 1.2 ? 120 : 148;
+function esIos(id, { dt = 1, art, card = false, ghost = false } = {}) {
+  const c = COPY[id], t = c.ios, a = art || artFor(dt);
+  const inner = `<div class="es"><div class="art">${illo(c.scene, a)}</div><h2>${t.h}</h2><p>${t.p}</p>
+    <div class="btn primary">${t.a}</div>${t.note ? `<div class="note">${t.note}</div>` : ''}</div>`;
+  return card ? `<div class="card20">${inner}</div>` : inner;
+}
+const iosTitle = (t, plus) => `<div class="titlebar"><div class="t-large">${t}</div>${plus ? `<div class="plus-btn">${ios.ico.plus()}</div>` : ''}</div>`;
+function iosNoLists(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: iosTitle('Lists', true) + `<div style="padding-top:36px">${esIos('noLists', { dt })}</div>`, extra: ios.tabs('lists') }));
+}
+function iosEmptyList(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: ios.nav('Costco', '🏬') + `<div style="padding-top:6px">${ios.addbar()}<div style="padding-top:${dt >= 1.5 ? 8 : 28}px">${esIos('emptyList', { dt })}</div></div>`, extra: ios.tabs('lists') }));
+}
+function iosAllDone(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: ios.nav('Costco', '🏬') + `<div style="padding-top:6px">${ios.addbar()}${esIos('allDone', { dt, card: true, art: dt >= 1.5 ? 72 : 128 })}
+    <div class="gotrow">${ios.ico.chevr}<span>Got it (9)</span></div></div>`, extra: ios.tabs('lists') }));
+}
+function iosNoRecipes(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: iosTitle('Recipes') + `<div style="padding-top:36px">${esIos('noRecipes', { dt })}</div>`, extra: ios.tabs('recipes') }));
+}
+function iosOffline(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: iosTitle('Lists', true) + `<div style="padding-top:8px">${esIos('offline', { dt, card: true, art: 132 })}</div>`, extra: ios.tabs('lists') }));
+}
+function iosError(theme, dt = 1) {
+  return wrapIos(ios.phone({ theme, dt, body: ios.nav('Costco', '🏬') + `<div style="padding-top:14px">${esIos('error', { dt, card: true, art: dt >= 1.5 ? 72 : 132 })}</div>`, extra: ios.tabs('lists') }));
+}
+function iosSheetNoLists(theme) {
+  const behind = `<div class="nav"><div class="nb">${ios.ico.back}<span style="margin-left:4px">Recipes</span></div><div class="mid">Beef tacos</div><div class="nb r"></div></div>
+    <div style="padding-top:8px"><div class="ghostcard" style="height:180px"></div><div class="ghostbar" style="width:60%"></div><div class="ghostbar"></div><div class="ghostbar" style="width:80%"></div></div>`;
+  const sheet = `<div class="scrim"></div><div class="sheet" style="top:330px;text-align:center"><div class="grab"></div>
+    <div style="text-align:left;font:800 20px var(--display);margin:4px 2px 2px">Add ingredients to…</div><div style="text-align:left;color:var(--ink-muted);margin:0 2px 8px;font:400 15px system-ui">Beef tacos</div>
+    <div style="padding-top:12px">${esIos('noLists', { art: 108 }).replace('Make one for each shop.', 'Make a list first, then add this recipe’s ingredients.')}</div></div>`;
+  return wrapIos(ios.phone({ theme, body: behind, extra: sheet }));
+}
+
+/* =============================== web =============================== */
+function esWeb(id, { art = 168, card = false } = {}) {
+  const c = COPY[id], t = c.web;
+  const inner = `<div class="es"><div class="art">${illo(c.scene, art)}</div><h2>${t.h}</h2><p>${t.p}</p>
+    <div class="acts"><div class="btn primary">${t.a}</div>${t.a2 ? `<div class="btn">${t.a2}</div>` : ''}</div>${t.note ? `<div class="note">${t.note}</div>` : ''}</div>`;
+  return card ? `<div class="card" style="padding:${art > 120 ? 56 : 36}px 40px">${inner}</div>` : inner;
+}
+const SIZES = { desktop: [1440, 860], tablet: [1180, 820], phone: [360, 760] };
+const LISTS_W = [['🛒', 'Main', 'berry', '12 to get'], ['🏬', 'Costco', 'sky', null], ['🔧', 'Home Hardware', 'tangerine', 'All done'], ['🧵', 'PLA filament', 'violet', '3 to get']];
+function listsCol(costcoPill) {
+  return LISTS_W.map((l) => `<div class="lrw ${l[1] === 'Costco' ? 'sel' : ''}"><div class="bar" style="background:var(--${l[2]})"></div><div class="e" style="background:color-mix(in srgb, var(--${l[2]}) 16%, var(--surface))">${l[0]}</div><div class="n">${l[1]}</div>
+    ${(() => { const tx = l[1] === 'Costco' ? costcoPill : l[3]; return `<span class="pill ${tx === 'All done' ? 'success' : (tx === '—' || tx === 'Empty') ? 'muted' : 'acc'}">${tx === 'All done' ? web.ic.check(14) + ' ' : ''}${tx}</span>`; })()}</div>`).join('');
+}
+const webAdd = () => `<div class="input ph" style="height:48px"><span style="color:var(--accent);display:flex">${web.ic.plus(20)}</span>Add an item…</div>`;
+function webListsWin(theme, size, id) {
+  const [w, h] = SIZES[size], ph = size === 'phone';
+  const costco = id === 'emptyList' ? 'Empty' : id === 'allDone' ? 'All done' : '—';
+  const head = `<div style="display:flex;align-items:center;gap:12px;margin-bottom:16px"><span style="width:44px;height:44px;border-radius:12px;background:color-mix(in srgb, var(--sky) 16%, var(--surface));display:grid;place-items:center;font-size:24px">🏬</span>
+    <h1 class="h1" style="font-size:${ph ? 26 : 34}px;line-height:1.15">Costco</h1><span style="margin-left:auto;display:flex">${['sam', 'alex', 'jordan'].map((p, i) => `<span style="margin-left:${i ? -8 : 0}px;box-shadow:0 0 0 2px var(--bg);border-radius:50%;display:flex">${web.av(p, 32)}</span>`).join('')}</span></div>`;
+  let pane = head;
+  if (id === 'emptyList') pane += webAdd() + `<div style="padding-top:${ph ? 28 : 56}px">${esWeb('emptyList', { art: ph ? 140 : 176 })}</div>`;
+  if (id === 'allDone') pane += webAdd() + `<div style="margin-top:20px">${esWeb('allDone', { art: ph ? 120 : 160, card: true })}</div><div style="display:flex;align-items:center;gap:6px;margin-top:14px;color:var(--ink-muted);font:700 15px var(--display);min-height:44px">${web.ic.chevr} Got it (9)</div>`;
+  if (id === 'error') pane += `<div style="margin-top:8px">${esWeb('error', { art: ph ? 120 : 160, card: true })}</div>`;
+  if (ph) return web.win(theme, w, h, `<div style="padding:16px;height:${h - 64}px;overflow:hidden"><div class="muted" style="display:flex;align-items:center;gap:4px;font:700 14px var(--display);margin-bottom:12px">${web.ic.back} Lists</div>${pane}</div>${web.tabbar('l')}`, 'phone');
+  const left = size === 'tablet' ? 240 : 280;
+  return web.win(theme, w, h, web.nav('l') + `<div class="body" style="display:flex;gap:32px;padding:28px ${size === 'tablet' ? 28 : 0}px 0"><div style="width:${left}px;flex:none"><div class="label">Lists</div>${listsCol(costco)}</div><div style="flex:1;min-width:0">${pane}</div></div>`);
+}
+function webRecipesWin(theme, size, id) {
+  const [w, h] = SIZES[size], ph = size === 'phone';
+  const head = `<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:${ph ? 14 : 20}px"><h1 class="h1" style="font-size:${ph ? 28 : 40}px;line-height:1.15">Recipes</h1>${id === 'noRecipes' ? `<div class="btn primary" style="${ph ? 'height:40px;padding:0 14px' : ''}">${web.ic.plus()} New recipe</div>` : ''}</div>`;
+  const art = ph ? 128 : 176;
+  const body = head + esWeb(id, { art, card: true });
+  if (ph) return web.win(theme, w, h, `<div style="padding:20px 16px 0;height:${h - 64}px;overflow:hidden">${body}</div>${web.tabbar('r')}`, 'phone');
+  return web.win(theme, w, h, web.nav('r') + `<div class="body" style="padding:${size === 'tablet' ? '24px 28px' : '24px 0'}">${body}</div>`);
+}
+const webWin = (theme, size, id) => wrapWeb((id === 'noRecipes' || id === 'offline') ? webRecipesWin(theme, size, id) : webListsWin(theme, size, id));
+function webDialog(theme, size) { return wrapWeb(webDialogInner(theme, size)); }
+function webDialogInner(theme, size) {
+  const [w, h] = SIZES[size], ph = size === 'phone';
+  const ghost = `<div style="padding:${ph ? 16 : 32}px ${ph ? 16 : 0}px;max-width:${ph ? 'none' : '1120px'};margin:0 auto"><div class="gh" style="width:30%;height:28px;margin-bottom:16px"></div><div style="display:flex;gap:24px"><div class="card" style="height:${ph ? 150 : 240}px;width:${ph ? '100%' : '420px'}"></div>${ph ? '' : '<div style="flex:1"><div class="gh" style="margin-bottom:12px"></div><div class="gh" style="width:70%;margin-bottom:12px"></div><div class="gh" style="width:50%"></div></div>'}</div></div>`;
+  const dlg = `<h2>Add ingredients to…</h2><div class="muted" style="margin-bottom:6px">Beef tacos</div>${esWeb('noLists', { art: ph ? 104 : 132 }).replace('Make one for each shop.', 'Make a list first, then add this recipe’s ingredients.')}`;
+  if (ph) return web.win(theme, w, h, (ph ? '' : web.nav('r')) + ghost + `<div class="scrim"></div><div style="position:absolute;left:0;right:0;bottom:0;z-index:21;background:var(--surface);border-radius:20px 20px 0 0;padding:12px 20px 28px;text-align:left"><div style="width:36px;height:5px;border-radius:3px;background:var(--line);margin:0 auto 14px"></div>${dlg.replace('<h2>', '<h2 style="font-size:20px;margin-bottom:2px">')}</div>`, 'phone');
+  return web.win(theme, w, h, web.nav('r') + ghost + `<div class="scrim"></div><div class="modal" style="width:520px">${dlg}</div>`);
+}
+
+/* ============================== watch ============================== */
+const WS = { 41: [176, 215], 45: [198, 242], 49: [205, 251] };
+const MINI = { 41: 40, 45: 46, 49: 50 };
+const plusG = `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M12 4v16M4 12h16"/></svg>`;
+function watchFrame(mm, title, inner, s = 1.35) {
+  const [w, h] = WS[mm], r = Math.round(w * 0.24);
+  const f = `<div class="wch dark" style="width:${w}px;height:${h}px;border-radius:${r}px"><div class="wh"><span class="wt">${title}</span><span class="wtm">9:41</span></div>${inner}</div>`;
+  return `<div style="padding:10px"><div style="width:${w * s}px;height:${h * s}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(${s});transform-origin:0 0">${f}</div></div></div>`;
+}
+function esWatch(id, mm, { btn = true, got = false, add = false } = {}) {
+  const c = COPY[id], t = c.watch, kind = { emptyList: 'hello', noLists: 'hello', allDone: 'happy', offline: 'sleepy', error: 'dizzy' }[id];
+  return `${add ? `<div class="wadd">${plusG} Add item</div>` : ''}<div class="wes" style="padding-top:${add ? 8 : 6}px"><div class="art">${mini(kind, MINI[mm])}</div><h2>${t.h}</h2>${t.p ? `<p>${t.p}</p>` : ''}${btn ? `<div class="wbtn">${t.a}</div>` : ''}</div>${got ? `<div class="wgot">${web.ic.chevr} Got it (9)</div>` : ''}`;
+}
+
+/* ============================ assembly ============================ */
+const out = [];
+const swatches = ['tomato', 'sky', 'leaf', 'violet', 'tangerine', 'teal', 'berry', 'mustard', 'indigo', 'cocoa', 'forest', 'slate'];
+
+// 1 cover
+out.push(`<div class="page"><h1>Impressipies · Illustrations &amp; empty states (IMP-19)</h1>
+<p class="sub">One pie mascot, five faces, five scenes: empty list, all done, no recipes yet, offline and error. Drawn from IMP-14 tokens as inline SVG so they recolour in light and dark. Shown inside the IMP-15 list, card and sheet shells on iPhone, web (phone, tablet, desktop) and Apple Watch, at the IMP-16 and IMP-17 sizes. Designed in Claude Code (HTML, rendered to PDF).</p>
+<div class="spec">
+<section><h3>Pages</h3><ul>
+<li>2 · States at a glance: copy, action, accessibility label</li>
+<li>3 · Mascot sheet: five faces, light and dark</li>
+<li>4 · Scenes: five illustrations, light and dark</li>
+<li>5 · Construction, sizes, rules</li>
+<li>6 to 9 · iPhone: empty list, all done and no recipes, offline and error, sheet and Dynamic Type</li>
+<li>10 to 14 · Web: one page per state, desktop, tablet and phone</li>
+<li>15 · Web: add-to-list dialog and sheet</li>
+<li>16 · Apple Watch (41, 45, 49 mm, dark only)</li>
+<li>17 · Open questions</li>
+<li>18 · Handoff: how to export the SVGs</li></ul></section>
+<section><h3>Decisions made here</h3><ul>
+<li><b>The pie is the only character.</b> Scalloped mustard crust, rhubarb filling, one leaf at 1 o’clock. Five faces carry the mood. Never a pattern, texture or repeat.</li>
+<li><b>Five scenes</b> = pie + one prop: basket (empty list), check badge (all done), blank recipe card (no recipes), crossed-out cloud and zz (offline), alert badge (error).</li>
+<li><b>Only IMP-14 colours.</b> Category colours, neutrals, accent. No success, warning, danger or info in artwork: done is leaf, offline is sky, error is tomato.</li>
+<li><b>Copy leads, art supports.</b> Headline, one line of body, one pill button. Errors never blame the person.</li>
+<li><b>Offline is only a full state when nothing is cached.</b> With a cache it stays the IMP-16 banner and clock glyph.</li>
+<li>Add bar stays where the library shows it (empty list, all done); it is absent on offline and error because no list is loaded.</li></ul></section>
+<section><h3>Palette used</h3><ul>
+<li>Crust <code>cat-mustard</code>, filling <code>accent</code>, face <code>on-accent</code>, cheeks <code>accent-soft</code>, leaf <code>cat-leaf</code>.</li>
+<li>Props: <code>cat-cocoa</code>, <code>cat-leaf</code>, <code>cat-sky</code>, <code>cat-tomato</code>, <code>cat-berry</code>, <code>surface-2</code>, <code>ink-muted</code>.</li>
+<li>Every coloured shape is at least 3:1 against <code>bg</code>, <code>surface</code> and <code>surface-2</code> in both modes (lowest: sky 3.1 and leaf 3.2 in light).</li>
+<li>Radius language 8 / 12 / 20 / pill; 4 pt grid; Nunito display, system-ui body.</li></ul>
+<div class="sw">${swatches.map((c) => `<span class="light" style="background:var(--${c})"></span>`).join('')}<span class="light" style="background:var(--accent)"></span></div>
+<div class="sw">${swatches.map((c) => `<span class="dark" style="background:var(--${c})"></span>`).join('')}<span class="dark" style="background:var(--accent)"></span></div></section>
+</div></div>`);
+
+// 2 state table
+const rowT = (id, where, plat) => { const t = COPY[id][plat]; return `<tr><td>${COPY[id].name}<div style="font:500 11px system-ui;color:#6B5D50">${where}</div></td><td>${t.h}</td><td>${t.p || '—'}</td><td>${t.a}${t.a2 ? `<br><span style="color:#6B5D50">then “${t.a2}”</span>` : ''}</td><td>${ALT[COPY[id].scene]}</td></tr>`; };
+out.push(`<div class="page"><h1>States at a glance</h1><p class="sub">Copy, primary action and the accessibility label for each state. iOS and web copy match unless a row says otherwise. Watch copy is shorter (page 16).</p>
+<div class="panel" style="padding:10px 18px 14px"><table class="tbl"><tr><th style="width:190px">State · where</th><th>Headline</th><th>Body</th><th style="width:170px">Primary action</th><th style="width:300px">Illustration label</th></tr>
+${rowT('emptyList', 'list shell, under the add bar', 'ios')}
+${rowT('noLists', 'Lists home, sheet shell', 'ios')}
+${rowT('allDone', 'card shell, under the add bar', 'ios')}
+${rowT('noRecipes', 'iOS Recipes tab (read only)', 'ios')}
+${rowT('noRecipes', 'web recipe grid', 'web').replace('No recipes yet<div', 'No recipes yet (web)<div')}
+${rowT('offline', 'iOS Lists, first launch', 'ios')}
+${rowT('offline', 'web Recipes, no cache', 'web').replace('Offline, nothing cached<div', 'Offline (web)<div')}
+${rowT('error', 'card shell, list detail', 'ios')}
+</table></div>
+<div class="spec" style="margin-top:20px;grid-template-columns:1fr 1fr 1fr">
+<section><h3>What each action does</h3><ul>
+<li><b>Add an item:</b> focuses the add bar and raises the keyboard; the button hides once the keyboard is up.</li>
+<li><b>Clear checked:</b> the IMP-16 confirm, then toast with Undo.</li>
+<li><b>New recipe / New list:</b> the existing editor or sheet.</li>
+<li><b>Try again:</b> retries the request; the button shows an ellipsis while loading.</li></ul></section>
+<section><h3>Accessibility</h3><ul>
+<li>Each SVG is <code>role="img"</code> with the label above, 8 words or fewer, naming what is drawn, never the colour.</li>
+<li>Reading order: illustration, headline, body, button. The headline is a heading (level 2 on web).</li>
+<li>The label carries no information the headline lacks, so it can be hidden without loss (see open questions).</li>
+<li>Reduce Motion: artwork is static. Nothing here animates (IMP-18 decides idle motion).</li></ul></section>
+<section><h3>Tone</h3><ul>
+<li>Plain and warm, no puns, no exclamation marks.</li>
+<li>Error and offline say what happened and that the data is safe. “That’s on us, not you.”</li>
+<li>Reference ids are small and mono so support can ask for them.</li>
+<li>Copy new to this ticket: “This list is empty”, “That’s on us, not you.”, “Error 500 · ref 7F3A”, “Nothing to get”.</li></ul></section>
+</div></div>`);
+
+// 3 mascot sheet
+const KINDS = [['hello', 'Hello', 'default; empty list, first run'], ['happy', 'Happy', 'success; all done'], ['sleepy', 'Sleepy', 'offline, waiting'], ['dizzy', 'Dizzy', 'something broke'], ['curious', 'Curious', 'looking for something; no recipes']];
+const tiles = (theme) => KINDS.map((k) => `<div class="stage tile ${theme}">${mascot(k[0], 150)}<div class="nm">${k[1]}</div><div class="sm">${k[2]}</div></div>`).join('');
+out.push(`<div class="page"><h1>Mascot sheet: the pie, five faces</h1><p class="sub">Same body in every pose; only the face changes. Light on cream, dark on warm brown-black. The leaf sits at 1 o’clock and never moves. The ground shadow is <code>ink</code> at 8%.</p>
+<div class="grid5">${tiles('light')}</div><div style="height:20px"></div><div class="grid5">${tiles('dark')}</div>
+<div style="display:flex;gap:40px;align-items:flex-end;margin-top:22px">
+<div><div class="cap" style="margin:0 0 6px"><b>Glyph sizes</b> no props, no cheeks, no leaf under 56</div><div style="display:flex;gap:18px;align-items:flex-end">
+${[96, 64, 48, 40, 32].map((s) => `<div class="stage light" style="padding:10px">${mini('hello', s)}</div>`).join('')}${[96, 64, 48, 40, 32].map((s) => `<div class="stage dark" style="padding:10px">${mini('hello', s)}</div>`).join('')}</div></div></div></div>`);
+
+// 4 scenes
+const SC = ['emptyList', 'allDone', 'noRecipes', 'offline', 'error'];
+const sceneTiles = (theme) => SC.map((s) => `<div class="stage tile ${theme}">${illo(s, 230)}<div class="nm">${COPY[s].name}</div><div class="sm">${ALT[s]}</div></div>`).join('');
+out.push(`<div class="page"><h1>Scenes: five illustrations</h1><p class="sub">The pie plus one prop, drawn on a 200 × 170 board. Props are category colours, so they recolour with the theme. Light on top, dark below.</p>
+<div class="grid5" style="gap:14px">${sceneTiles('light')}</div><div style="height:16px"></div><div class="grid5" style="gap:14px">${sceneTiles('dark')}</div></div>`);
+
+// 5 construction
+const lay = (c, tok, what) => `<i style="background:var(--${c});box-shadow:inset 0 0 0 1px rgba(0,0,0,.18)"></i><div><b>${tok}</b> · ${what}</div>`;
+out.push(`<div class="page"><h1>Construction, sizes and rules</h1><p class="sub">Layers map to tokens one-to-one, so web can recolour with CSS variables and Apple targets get two exported appearances from the same file.</p>
+<div class="spec">
+<section><h3>Layers to tokens</h3><div class="lay light" style="grid-template-columns:22px 1fr">
+${lay('mustard', 'cat-mustard', 'crust: 22 scallops r 7.2 on a r 51 disc')}
+${lay('accent', 'accent', 'filling r 40, inner ring is ink at 14%')}
+${lay('on-accent', 'on-accent', 'eyes and mouth, 3.4 stroke, round caps')}
+${lay('accent-soft', 'accent-soft', 'cheeks r 5.5')}
+${lay('leaf', 'cat-leaf', 'leaf; also the done badge')}
+${lay('cocoa', 'cat-cocoa', 'basket (empty list)')}
+${lay('sky', 'cat-sky', 'cloud (offline), sparkle')}
+${lay('tomato', 'cat-tomato', 'alert badge (error)')}
+${lay('berry', 'cat-berry', 'sparkle accent')}
+${lay('surface-2', 'surface-2 + ink-muted', 'recipe card, z marks, slash is ink')}
+</div></section>
+<section><h3>Sizes</h3><ul>
+<li><b>Hero</b> 148 to 176 wide on a bare list shell; 128 to 168 inside a card.</li>
+<li><b>Compact</b> 96 to 120 in sheets and on small screens.</li>
+<li><b>Accessibility sizes</b> (Dynamic Type from xxxLarge up): 72 wide, still above the headline.</li>
+<li><b>Glyph</b> 48 (inline), 40 to 50 (watch), 32 minimum. Below 56 drop leaf and cheeks; below 40 never use the scene props.</li>
+<li>Illustration sits 12 to 16 above the headline; the headline sits on the 4 pt grid; the button is 50 pt on iOS, 44 px on web and watch.</li>
+<li>The art never exceeds one third of the screen height, and never pushes the add bar down.</li>
+<li>One mascot per screen. Not in toasts, banners, rows or tabs.</li></ul></section>
+<section><h3>Do and don’t</h3>
+<div class="do"><b>Do</b> use a face that matches the state, and the prop for that state.</div>
+<div class="do"><b>Do</b> keep shapes rounded: 8 / 12 / 20 / pill, round caps and joins.</div>
+<div class="do"><b>Do</b> keep the illustration beside real copy and a real button.</div>
+<div class="dont"><b>Don’t</b> tile, crop or fade the pie into a background. It is a character, not a texture.</div>
+<div class="dont"><b>Don’t</b> recolour the crust or filling per list or category.</div>
+<div class="dont"><b>Don’t</b> use the mascot for validation errors, destructive confirms or loading.</div>
+<div class="dont"><b>Don’t</b> add new hues, gradients, outlines or drop shadows. Dark has no shadows.</div>
+</section></div></div>`);
+
+// iOS pages
+out.push(pg('iPhone · Empty list and no lists yet', 'Empty list keeps the add bar at the top; the pie sits below it with the old hint as body. “No lists yet” replaces the emoji disc on Lists home. Both are bare in the shell, no card, so the screen stays quiet.', [
+  fr2(iosEmptyList('light'), 'I4', 'List detail', 'empty', 'light'), fr2(iosEmptyList('dark'), 'I4', 'List detail', 'empty', 'dark'),
+  fr2(iosNoLists('light'), 'I1', 'Lists home', 'no lists yet', 'light'), fr2(iosNoLists('dark'), 'I1', 'Lists home', 'no lists yet', 'dark')], 'gap:20px'));
+out.push(pg('iPhone · All done and no recipes yet', 'All done lives in a 20 pt card under the add bar, with the one useful action (Clear checked) as the button and Got it collapsed below. Recipes on iPhone is read and cook, so the action points to the web.', [
+  fr2(iosAllDone('light'), 'I4', 'List detail', 'all done', 'light'), fr2(iosAllDone('dark'), 'I4', 'List detail', 'all done', 'dark'),
+  fr2(iosNoRecipes('light'), 'I9', 'Recipes', 'no recipes yet', 'light'), fr2(iosNoRecipes('dark'), 'I9', 'Recipes', 'no recipes yet', 'dark')], 'gap:20px'));
+out.push(pg('iPhone · Offline and error', 'Offline full-screen only when nothing is cached (first launch). With data it is the IMP-16 banner. Error is a card with Try again and a small reference id; the add bar is absent because no list is loaded.', [
+  fr2(iosOffline('light'), 'I1', 'Lists home', 'offline, nothing cached', 'light'), fr2(iosOffline('dark'), 'I1', 'Lists home', 'offline, nothing cached', 'dark'),
+  fr2(iosError('light'), 'I4', 'List detail', 'load error', 'light'), fr2(iosError('dark'), 'I4', 'List detail', 'load error', 'dark')], 'gap:20px'));
+out.push(pg('iPhone · Sheet shell and Dynamic Type', 'Sheet: add-to-list from a recipe when the family has no lists yet, compact pie (108). Right: at AX2 the pie drops to 72 wide, the headline wraps, and the button stays 50 pt high and reachable.', [
+  fr2(iosSheetNoLists('light'), 'I10', 'Add to list sheet', 'no lists', 'light'), fr2(iosSheetNoLists('dark'), 'I10', 'Add to list sheet', 'no lists', 'dark'),
+  fr2(iosEmptyList('light', 1.94), 'I4', 'List detail', 'empty', 'light', 'AX2 (33)'), fr2(iosError('dark', 1.94), 'I4', 'List detail', 'load error', 'dark', 'AX2 (33)')], 'gap:20px'));
+
+// web pages
+const WEBP = [
+  ['emptyList', 'W6', 'Lists and list detail', 'Web · Empty list', 'Selected list shows the add box and the pie below it. The list column keeps its counts; Costco reads “Empty”. Same layout at tablet; the phone is the iPhone layout in a 360 viewport.'],
+  ['allDone', 'W6', 'Lists and list detail', 'Web · All done', 'Card shell with a happy pie and Clear checked as the action. Got it stays collapsed beneath. The list column shows “All done” in the success pill, as on the iPhone.'],
+  ['noRecipes', 'W1', 'Recipe grid', 'Web · No recipes yet', 'Matches the IMP-17 empty grid: New recipe stays top right and also lives in the card, with Connect your AI as the second route. Search and filters are hidden until a recipe exists.'],
+  ['offline', 'W1', 'Recipe grid', 'Web · Offline, nothing cached', 'Recipes load on demand, so with no connection and no cache the grid becomes this card. Lists still work offline, so the secondary action goes there.'],
+  ['error', 'W6', 'List detail', 'Web · Load error', 'The list column still renders (it is cached); only the selected list failed. Try again retries just that request. The add box is absent.'],
+];
+WEBP.forEach(([id, wid, wname, title, sub]) => {
+  const st = COPY[id].name.toLowerCase();
+  const f = (theme, size, sc, label) => fr2(web.scaled(webWin(theme, size, id), SIZES[size][0], SIZES[size][1], sc), wid, wname, label, theme);
+  out.push(`<div class="page"><h1>${title}</h1><p class="sub">${sub}</p>
+    <div class="frames" style="gap:40px">${f('light', 'desktop', .5, st + ', desktop 1440')}${f('dark', 'desktop', .5, st + ', desktop 1440')}</div>
+    <div class="frames" style="gap:28px;margin-top:18px">${f('light', 'tablet', .46, st + ', tablet 1180')}${f('dark', 'tablet', .46, st + ', tablet 1180')}${f('light', 'phone', .5, '360')}${f('dark', 'phone', .5, '360')}</div></div>`);
+});
+out.push(`<div class="page"><h1>Web · Sheet shell: add ingredients with no lists</h1><p class="sub">The IMP-17 add-to-list dialog (modal at desktop and tablet, bottom sheet on a phone) when the family has no lists. One action, New list, then back to the dialog with the ingredients still ticked.</p>
+  <div class="frames" style="gap:40px">${fr2(web.scaled(webDialog('light', 'desktop'), 1440, 860, .5), 'W3', 'Add-to-list dialog', 'no lists, desktop 1440', 'light')}${fr2(web.scaled(webDialog('dark', 'desktop'), 1440, 860, .5), 'W3', 'Add-to-list dialog', 'no lists, desktop 1440', 'dark')}</div>
+  <div class="frames" style="gap:28px;margin-top:18px">${fr2(web.scaled(webDialog('light', 'tablet'), 1180, 820, .46), 'W3', 'Add-to-list dialog', 'no lists, tablet 1180', 'light')}${fr2(web.scaled(webDialog('dark', 'tablet'), 1180, 820, .46), 'W3', 'Add-to-list dialog', 'no lists, tablet 1180', 'dark')}${fr2(web.scaled(webDialog('light', 'phone'), 360, 760, .5), 'W3', 'Add-to-list sheet', '360', 'light')}${fr2(web.scaled(webDialog('dark', 'phone'), 360, 760, .5), 'W3', 'Add-to-list sheet', '360', 'dark')}</div></div>`);
+
+// watch
+const wf = (mm, id, title, opts, k, name, state) => fr2(watchFrame(mm, title, esWatch(id, mm, opts)), k, name, state, 'dark', mm + ' mm');
+out.push(`<div class="page"><h1>Apple Watch · Empty states</h1><p class="sub">Always dark. 41, 45 and 49 mm. System fonts and the dark token values only; the pie is a 40 to 50 pt glyph with no props. Rows and buttons keep a 44 pt target. No recipes on the watch, so “No recipes yet” does not apply; the Add item row stays on top wherever a list is loaded.</p>
+<div class="frames" style="gap:18px">${wf(45, 'noLists', 'Lists', {}, 'K1', 'List picker', 'no lists yet (first launch)')}${wf(45, 'emptyList', 'Costco', { add: true, btn: false }, 'K2', 'List detail', 'empty')}${wf(45, 'allDone', 'Costco', { add: true, btn: false, got: true }, 'K2', 'List detail', 'all done')}${wf(45, 'offline', 'Lists', {}, 'K4', 'List picker', 'offline, nothing cached')}${wf(45, 'error', 'Costco', {}, 'K2', 'List detail', 'load error')}</div>
+<div class="frames" style="gap:18px;margin-top:6px">${wf(41, 'noLists', 'Lists', {}, 'K1', 'List picker', 'no lists yet')}${wf(41, 'error', 'Costco', {}, 'K2', 'List detail', 'load error')}${wf(41, 'offline', 'Lists', {}, 'K4', 'List picker', 'offline')}${wf(49, 'noLists', 'Lists', {}, 'K1', 'List picker', 'no lists yet')}${wf(49, 'allDone', 'Costco', { add: true, btn: false, got: true }, 'K2', 'List detail', 'all done')}</div></div>`);
+
+// open questions
+out.push(`<div class="page"><h1>Open questions</h1><p class="sub">Nothing here changes the IMP-14 tokens or IMP-15 components. These are the calls this ticket made that someone else may want to overrule.</p>
+<div class="spec">
+<section><h3>Decide</h3><ul>
+<li><b>Empty list has a pie after all.</b> IMP-16 chose no illustration on the empty list so the add field stays prominent. Here the pie sits below the add bar. Watch it in IMP-12: do people still find the add bar unaided? Dropping the art is one flag.</li>
+<li><b>Decorative or labelled?</b> Labels are specified. If VoiceOver users find “pie peeking out of an empty basket” noisy, mark the art decorative on empty list and all done and keep it on offline and error.</li>
+<li><b>No semantic colours in artwork.</b> Error uses tomato, offline sky, done leaf, because the brief limits art to category colours. Tomato (<code>#B83A2B</code>) and danger (<code>#B3261E</code>) are close; confirm that is fine.</li>
+<li><b>iPhone no-recipes action.</b> “Open on the web” assumes iPhone is read and cook only (IMP-11, I9). Needs a link target, or the action becomes “Connect your AI” if that ships on iPhone.</li>
+<li><b>Web offline.</b> Assumes recipes are not cached for offline. If they are, the offline card only shows before the first load.</li></ul></section>
+<section><h3>Check on devices</h3><ul>
+<li>Glyph legibility at 40 pt on a 41 mm watch (simulated here only).</li>
+<li>Light-mode sky (3.1:1) and leaf (3.2:1) shapes on <code>surface-2</code> in sunlight; they carry no meaning alone, so this is a polish check.</li>
+<li>AX2 layout on a real iPhone SE size class; the card must scroll, not clip.</li>
+<li>The pink filling in dark mode (<code>#FF8DA5</code>) is bright. If it glows too much next to the dark card, drop the filling to 90% opacity.</li>
+<li><b>Pie legibility.</b> The scalloped crust can read as a flower at 32 to 40 pt. If testing says so, add the lattice strip option (two crust-coloured bars across the filling) to the small sizes.</li>
+<li>PDF fonts: Nunito loaded from Google Fonts; the app uses SF Pro Rounded on Apple.</li></ul></section>
+<section><h3>Copy and scope added</h3><ul>
+<li>New copy not in the briefs: “This list is empty”, “Nothing to get”, “That’s on us, not you. Your list is safe.”, “Error 500 · ref 7F3A”, “Make a list first, then add this recipe’s ingredients.”, “Recipes need a connection. Your lists still work offline.”</li>
+<li>Added the add-to-list sheet and dialog with no lists, which is a sheet-shell use of the same scene. Cheap to drop.</li>
+<li>Reference id and a “copy details” action for errors are not designed; the id is shown as text only.</li>
+<li>Not covered: validation errors, search with no results (IMP-17 has a text card), delete-category confirm, loading skeletons, Smart Stack and complications (IMP-20).</li>
+<li>Idle motion (blink, steam) is left to IMP-18. Groups carry ids so it can target them.</li>
+<li>Mascot name: none chosen.</li></ul></section>
+</div></div>`);
+
+// handoff
+out.push(`<div class="page"><h1>Handoff: exporting the SVGs for the apps</h1><p class="sub">The single source is <code>designs/imp-19/index.html</code>: <code>pie()</code>, <code>SCENES</code> and <code>COPY</code>. Do not redraw in another tool; generate from it.</p>
+<div class="spec">
+<section><h3>Files to produce</h3><ul>
+<li>5 scenes × 2 appearances: <code>illo-empty-list-light.svg</code>, <code>-dark.svg</code>, then <code>all-done</code>, <code>no-recipes</code>, <code>offline</code>, <code>error</code>. “No lists yet” reuses empty-list.</li>
+<li>5 mascot faces × 2: <code>pie-hello</code>, <code>happy</code>, <code>sleepy</code>, <code>dizzy</code>, <code>curious</code>, and the 124-wide glyph set <code>pie-mini-*</code> for watch.</li>
+<li>Scenes: <code>viewBox="0 0 200 170"</code>. Mascot: <code>36 18 128 140</code>. Glyph: <code>38 28 124 124</code>. No width or height attribute.</li>
+<li>Each file is flat: paths, circles, rects, ellipses and groups with stable ids <code>pie crust filling face prop sparkle</code>. No text, filters, gradients, masks, clip-paths or CSS.</li>
+<li>Opacity only through <code>fill-opacity</code> / <code>stroke-opacity</code>. Strokes use round caps and joins.</li></ul></section>
+<section><h3>Per platform</h3><ul>
+<li><b>Web:</b> inline SVG in a component (<code>&lt;Illustration name="error" /&gt;</code>), not <code>&lt;img&gt;</code>, with colours as <code>var(--color-cat-mustard)</code> etc. The IMP-14 theme attribute recolours it; no dark file. <code>role="img"</code> and <code>aria-label</code> from <code>COPY</code>; <code>aria-hidden</code> if the open question lands on decorative.</li>
+<li><b>iOS:</b> one Image Set per illustration in <code>Illustrations.xcassets</code>, appearances Any and Dark, Preserve Vector Data on, Render As Original, Scales Single. Names <code>Illustration/EmptyList</code> and so on. Hex values are resolved from the IMP-14 Color Sets at export time, not hand-picked. Label via <code>.accessibilityLabel</code>.</li>
+<li><b>watchOS:</b> dark files only, in the watch asset catalog, and only the glyph set (<code>pie-mini-*</code>); the scenes are not used on the watch.</li>
+<li><b>Android or email:</b> not in scope.</li></ul></section>
+<section><h3>How to generate</h3><ul>
+<li>Add a small Node script in the build tickets that evaluates the generators, substitutes each <code>var(--name)</code> with the light or dark hex from the IMP-14 table, and writes the files above. Run it in CI so exports never drift from tokens.</li>
+<li>For web, the same script outputs the unresolved <code>var(--color-*)</code> version, renaming <code>--mustard</code> to <code>--color-cat-mustard</code>, <code>--accent</code> to <code>--color-accent</code> and so on.</li>
+<li>Check after export: opens in Preview and Chrome, SwiftUI <code>Image("…")</code> renders in light and dark previews, file size under 4 KB each, contrast of every shape at least 3:1 against <code>bg</code>.</li>
+<li>Text version of these decisions is on the Notion Designs page beside the PDF.</li>
+<li>Dependent: IMP-18 (idle motion), IMP-20 (watch, Smart Stack), build tickets for list, recipe and sync states.</li></ul></section>
+</div></div>`);
+
+document.body.innerHTML = out.join('');
+
+</script>
+</body>
+</html>
