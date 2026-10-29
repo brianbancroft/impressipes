@@ -5,6 +5,11 @@
 	<key>com.apple.developer.associated-domains</key>
 	<array>
 		<string>applinks:impressipes.bancroft.io</string>
+		<string>webcredentials:impressipes.bancroft.io</string>
+	</array>
+	<key>com.apple.developer.applesignin</key>
+	<array>
+		<string>Default</string>
 	</array>
 </dict>
 </plist>

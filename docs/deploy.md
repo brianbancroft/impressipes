@@ -52,7 +52,10 @@ Members sign in with an email and password, or with a link and six-digit code th
 | `RESEND_API_KEY` | Sends the mail through Resend (production). Locally `SMTP_ADDR` points at Mailpit instead. |
 | `MAIL_FROM` | Sender, e.g. `Impressipes <noreply@your-domain>`. Required with `RESEND_API_KEY`; the domain must be verified in Resend. |
 | `APP_URL` | Public origin the emailed links point at: `https://impressipes.bancroft.io`. |
-| `APPLE_TEAM_ID` | Optional. Serves `/.well-known/apple-app-site-association` so tapping the emailed link opens the iOS app (the app declares `applinks:impressipes.bancroft.io`). Without it the link opens the web app and the code still works in the app. |
+| `APPLE_TEAM_ID` | Serves `/.well-known/apple-app-site-association`, which lets the iOS app open the emailed link **and use the site's passkeys** (`webcredentials`). Required for passkeys and Sign in with Apple in the iOS app; without it the app can't use passkeys. |
+| `APPLE_WEB_CLIENT_ID` | Optional. The Services ID (such as `ca.brianbancroft.impressipies.web`) that turns on the "Sign in with Apple" button on the web. The iOS app doesn't need it. |
+| `WEBAUTHN_RP_ID` | Optional. Passkeys are bound to a domain; this defaults to the host of `APP_URL` (`impressipes.bancroft.io`). Changing it orphans every passkey already saved. |
+| `WEBAUTHN_ORIGINS` | Optional, comma-separated extra origins allowed to sign in with a passkey. `APP_URL` is always allowed. |
 
 Without a mail sender the API logs each link and code instead of sending it, which is for local development only. Links and codes work once, expire after 15 minutes, and a code locks after five wrong tries. Requests are rate limited per address and per client IP.
 
@@ -63,3 +66,13 @@ Passwords are stored as argon2id hashes and need at least 10 characters. A membe
 Uploads are resized to a 360px thumbnail and a 1280px large variant, encoded as lossless WebP, and written under `IMAGE_DIR` (`/data/images` in the image, `data/images` when unset). Files are only on that disk, so **mount a persistent volume at `/data`** in Coolify (Storages → Add → destination path `/data`), or photos vanish on every deploy. Back it up with the database.
 
 Photos are served by `GET /api/images/{id}/{thumb|large}` to signed-in members only, with `Cache-Control: private, max-age=31536000, immutable` and an ETag.
+
+## Passkeys and Sign in with Apple
+
+Both are optional extras on top of email and password, and neither lets a stranger join: joining still needs an invite.
+
+- **Passkeys** are WebAuthn credentials. Members add them from Account (web) or Settings → Sign-in & security (iOS). Saved to iCloud Keychain they follow the member to every Apple device. They are bound to the domain in `APP_URL`, so `APP_URL` must be the real public origin.
+- **Sign in with Apple** needs the member's Apple ID linked first (Account → Connect Apple), or an Apple ID whose verified email matches the member's confirmed email, which links on first use. Apple's private-relay addresses can't match, so those members link from Account.
+- A member can't remove their last way to sign in. Re-inviting a member (lost device) removes their passkeys, but not a linked Apple ID.
+
+One-time Apple Developer setup (see the PR notes): enable the **Sign in with Apple** and **Associated Domains** capabilities on the `ca.brianbancroft.impressipies` App ID, and for the web button create a **Services ID**, register `impressipes.bancroft.io` and the return URL `https://impressipes.bancroft.io` on it, and set `APPLE_WEB_CLIENT_ID` to it.

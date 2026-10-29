@@ -72,6 +72,51 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `PUT /me/password`.
     /// - Remark: Generated from `#/paths//me/password/put(setPassword)`.
     func setPassword(_ input: Operations.setPassword.Input) async throws -> Operations.setPassword.Output
+    /// What the sign-in screen needs to know about this server before anyone is signed in.
+    ///
+    /// - Remark: HTTP `GET /auth/config`.
+    /// - Remark: Generated from `#/paths//auth/config/get(getAuthConfig)`.
+    func getAuthConfig(_ input: Operations.getAuthConfig.Input) async throws -> Operations.getAuthConfig.Output
+    /// Start signing in with a passkey. Pass `options` to navigator.credentials.get (or ASAuthorizationPlatformPublicKeyCredentialProvider) with no allow list, so the device offers whichever passkey it holds.
+    ///
+    /// - Remark: HTTP `POST /auth/passkey/begin`.
+    /// - Remark: Generated from `#/paths//auth/passkey/begin/post(beginPasskeyLogin)`.
+    func beginPasskeyLogin(_ input: Operations.beginPasskeyLogin.Input) async throws -> Operations.beginPasskeyLogin.Output
+    /// - Remark: HTTP `POST /auth/passkey/finish`.
+    /// - Remark: Generated from `#/paths//auth/passkey/finish/post(finishPasskeyLogin)`.
+    func finishPasskeyLogin(_ input: Operations.finishPasskeyLogin.Input) async throws -> Operations.finishPasskeyLogin.Output
+    /// Sign in with an Apple identity token. The Apple ID must already be linked to a
+    /// member, or carry a verified email that matches a member's confirmed email (in
+    /// which case it is linked). Nobody can join this way: joining needs an invite.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/apple`.
+    /// - Remark: Generated from `#/paths//auth/apple/post(signInWithApple)`.
+    func signInWithApple(_ input: Operations.signInWithApple.Input) async throws -> Operations.signInWithApple.Output
+    /// The passkeys and Apple ID the signed-in member has set up.
+    ///
+    /// - Remark: HTTP `GET /me/sign-in`.
+    /// - Remark: Generated from `#/paths//me/sign-in/get(getSignInMethods)`.
+    func getSignInMethods(_ input: Operations.getSignInMethods.Input) async throws -> Operations.getSignInMethods.Output
+    /// Start adding a passkey. Pass `options` to navigator.credentials.create (or ASAuthorizationPlatformPublicKeyCredentialProvider).
+    ///
+    /// - Remark: HTTP `POST /me/passkeys/begin`.
+    /// - Remark: Generated from `#/paths//me/passkeys/begin/post(beginPasskeyRegistration)`.
+    func beginPasskeyRegistration(_ input: Operations.beginPasskeyRegistration.Input) async throws -> Operations.beginPasskeyRegistration.Output
+    /// - Remark: HTTP `POST /me/passkeys/finish`.
+    /// - Remark: Generated from `#/paths//me/passkeys/finish/post(finishPasskeyRegistration)`.
+    func finishPasskeyRegistration(_ input: Operations.finishPasskeyRegistration.Input) async throws -> Operations.finishPasskeyRegistration.Output
+    /// - Remark: HTTP `DELETE /me/passkeys/{passkeyId}`.
+    /// - Remark: Generated from `#/paths//me/passkeys/{passkeyId}/delete(deletePasskey)`.
+    func deletePasskey(_ input: Operations.deletePasskey.Input) async throws -> Operations.deletePasskey.Output
+    /// Link an Apple ID to the signed-in member, replacing any earlier one.
+    ///
+    /// - Remark: HTTP `PUT /me/apple`.
+    /// - Remark: Generated from `#/paths//me/apple/put(linkApple)`.
+    func linkApple(_ input: Operations.linkApple.Input) async throws -> Operations.linkApple.Output
+    /// - Remark: HTTP `DELETE /me/apple`.
+    /// - Remark: Generated from `#/paths//me/apple/delete(unlinkApple)`.
+    func unlinkApple(_ input: Operations.unlinkApple.Input) async throws -> Operations.unlinkApple.Output
     /// - Remark: HTTP `GET /lists`.
     /// - Remark: Generated from `#/paths//lists/get(listLists)`.
     func listLists(_ input: Operations.listLists.Input) async throws -> Operations.listLists.Output
@@ -345,6 +390,101 @@ extension APIProtocol {
             headers: headers,
             body: body
         ))
+    }
+    /// What the sign-in screen needs to know about this server before anyone is signed in.
+    ///
+    /// - Remark: HTTP `GET /auth/config`.
+    /// - Remark: Generated from `#/paths//auth/config/get(getAuthConfig)`.
+    public func getAuthConfig(headers: Operations.getAuthConfig.Input.Headers = .init()) async throws -> Operations.getAuthConfig.Output {
+        try await getAuthConfig(Operations.getAuthConfig.Input(headers: headers))
+    }
+    /// Start signing in with a passkey. Pass `options` to navigator.credentials.get (or ASAuthorizationPlatformPublicKeyCredentialProvider) with no allow list, so the device offers whichever passkey it holds.
+    ///
+    /// - Remark: HTTP `POST /auth/passkey/begin`.
+    /// - Remark: Generated from `#/paths//auth/passkey/begin/post(beginPasskeyLogin)`.
+    public func beginPasskeyLogin(headers: Operations.beginPasskeyLogin.Input.Headers = .init()) async throws -> Operations.beginPasskeyLogin.Output {
+        try await beginPasskeyLogin(Operations.beginPasskeyLogin.Input(headers: headers))
+    }
+    /// - Remark: HTTP `POST /auth/passkey/finish`.
+    /// - Remark: Generated from `#/paths//auth/passkey/finish/post(finishPasskeyLogin)`.
+    public func finishPasskeyLogin(
+        headers: Operations.finishPasskeyLogin.Input.Headers = .init(),
+        body: Operations.finishPasskeyLogin.Input.Body
+    ) async throws -> Operations.finishPasskeyLogin.Output {
+        try await finishPasskeyLogin(Operations.finishPasskeyLogin.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Sign in with an Apple identity token. The Apple ID must already be linked to a
+    /// member, or carry a verified email that matches a member's confirmed email (in
+    /// which case it is linked). Nobody can join this way: joining needs an invite.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/apple`.
+    /// - Remark: Generated from `#/paths//auth/apple/post(signInWithApple)`.
+    public func signInWithApple(
+        headers: Operations.signInWithApple.Input.Headers = .init(),
+        body: Operations.signInWithApple.Input.Body
+    ) async throws -> Operations.signInWithApple.Output {
+        try await signInWithApple(Operations.signInWithApple.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// The passkeys and Apple ID the signed-in member has set up.
+    ///
+    /// - Remark: HTTP `GET /me/sign-in`.
+    /// - Remark: Generated from `#/paths//me/sign-in/get(getSignInMethods)`.
+    public func getSignInMethods(headers: Operations.getSignInMethods.Input.Headers = .init()) async throws -> Operations.getSignInMethods.Output {
+        try await getSignInMethods(Operations.getSignInMethods.Input(headers: headers))
+    }
+    /// Start adding a passkey. Pass `options` to navigator.credentials.create (or ASAuthorizationPlatformPublicKeyCredentialProvider).
+    ///
+    /// - Remark: HTTP `POST /me/passkeys/begin`.
+    /// - Remark: Generated from `#/paths//me/passkeys/begin/post(beginPasskeyRegistration)`.
+    public func beginPasskeyRegistration(headers: Operations.beginPasskeyRegistration.Input.Headers = .init()) async throws -> Operations.beginPasskeyRegistration.Output {
+        try await beginPasskeyRegistration(Operations.beginPasskeyRegistration.Input(headers: headers))
+    }
+    /// - Remark: HTTP `POST /me/passkeys/finish`.
+    /// - Remark: Generated from `#/paths//me/passkeys/finish/post(finishPasskeyRegistration)`.
+    public func finishPasskeyRegistration(
+        headers: Operations.finishPasskeyRegistration.Input.Headers = .init(),
+        body: Operations.finishPasskeyRegistration.Input.Body
+    ) async throws -> Operations.finishPasskeyRegistration.Output {
+        try await finishPasskeyRegistration(Operations.finishPasskeyRegistration.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /me/passkeys/{passkeyId}`.
+    /// - Remark: Generated from `#/paths//me/passkeys/{passkeyId}/delete(deletePasskey)`.
+    public func deletePasskey(
+        path: Operations.deletePasskey.Input.Path,
+        headers: Operations.deletePasskey.Input.Headers = .init()
+    ) async throws -> Operations.deletePasskey.Output {
+        try await deletePasskey(Operations.deletePasskey.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Link an Apple ID to the signed-in member, replacing any earlier one.
+    ///
+    /// - Remark: HTTP `PUT /me/apple`.
+    /// - Remark: Generated from `#/paths//me/apple/put(linkApple)`.
+    public func linkApple(
+        headers: Operations.linkApple.Input.Headers = .init(),
+        body: Operations.linkApple.Input.Body
+    ) async throws -> Operations.linkApple.Output {
+        try await linkApple(Operations.linkApple.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /me/apple`.
+    /// - Remark: Generated from `#/paths//me/apple/delete(unlinkApple)`.
+    public func unlinkApple(headers: Operations.unlinkApple.Input.Headers = .init()) async throws -> Operations.unlinkApple.Output {
+        try await unlinkApple(Operations.unlinkApple.Input(headers: headers))
     }
     /// - Remark: HTTP `GET /lists`.
     /// - Remark: Generated from `#/paths//lists/get(listLists)`.

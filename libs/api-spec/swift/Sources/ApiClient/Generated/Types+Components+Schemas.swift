@@ -125,6 +125,245 @@ extension Components {
                 case setup
             }
         }
+        /// - Remark: Generated from `#/components/schemas/AuthConfig`.
+        public struct AuthConfig: Codable, Hashable, Sendable {
+            /// Passkey sign-in is available.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthConfig/passkeys`.
+            public var passkeys: Swift.Bool
+            /// The Services ID for Sign in with Apple on the web. Absent when the web button is off.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AuthConfig/appleClientId`.
+            public var appleClientId: Swift.String?
+            /// Creates a new `AuthConfig`.
+            ///
+            /// - Parameters:
+            ///   - passkeys: Passkey sign-in is available.
+            ///   - appleClientId: The Services ID for Sign in with Apple on the web. Absent when the web button is off.
+            public init(
+                passkeys: Swift.Bool,
+                appleClientId: Swift.String? = nil
+            ) {
+                self.passkeys = passkeys
+                self.appleClientId = appleClientId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case passkeys
+                case appleClientId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PasskeyCeremony`.
+        public struct PasskeyCeremony: Codable, Hashable, Sendable {
+            /// Send back with the finished credential. Single use, valid for five minutes.
+            ///
+            /// - Remark: Generated from `#/components/schemas/PasskeyCeremony/ceremonyId`.
+            public var ceremonyId: Swift.String
+            /// The WebAuthn PublicKeyCredentialCreationOptions or RequestOptions, wrapped
+            /// as `{ "publicKey": ... }` in the JSON form browsers accept: base64url
+            /// strings for every binary field.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/PasskeyCeremony/options`.
+            public struct optionsPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `optionsPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// The WebAuthn PublicKeyCredentialCreationOptions or RequestOptions, wrapped
+            /// as `{ "publicKey": ... }` in the JSON form browsers accept: base64url
+            /// strings for every binary field.
+            ///
+            ///
+            /// - Remark: Generated from `#/components/schemas/PasskeyCeremony/options`.
+            public var options: Components.Schemas.PasskeyCeremony.optionsPayload
+            /// Creates a new `PasskeyCeremony`.
+            ///
+            /// - Parameters:
+            ///   - ceremonyId: Send back with the finished credential. Single use, valid for five minutes.
+            ///   - options: The WebAuthn PublicKeyCredentialCreationOptions or RequestOptions, wrapped
+            public init(
+                ceremonyId: Swift.String,
+                options: Components.Schemas.PasskeyCeremony.optionsPayload
+            ) {
+                self.ceremonyId = ceremonyId
+                self.options = options
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ceremonyId
+                case options
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/PasskeyFinish`.
+        public struct PasskeyFinish: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/PasskeyFinish/ceremonyId`.
+            public var ceremonyId: Swift.String
+            /// The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+            ///
+            /// - Remark: Generated from `#/components/schemas/PasskeyFinish/credential`.
+            public struct credentialPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `credentialPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+            ///
+            /// - Remark: Generated from `#/components/schemas/PasskeyFinish/credential`.
+            public var credential: Components.Schemas.PasskeyFinish.credentialPayload
+            /// Creates a new `PasskeyFinish`.
+            ///
+            /// - Parameters:
+            ///   - ceremonyId:
+            ///   - credential: The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+            public init(
+                ceremonyId: Swift.String,
+                credential: Components.Schemas.PasskeyFinish.credentialPayload
+            ) {
+                self.ceremonyId = ceremonyId
+                self.credential = credential
+            }
+            public enum CodingKeys: String, CodingKey {
+                case ceremonyId
+                case credential
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Passkey`.
+        public struct Passkey: Codable, Hashable, Sendable {
+            /// The base64url credential id.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Passkey/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Passkey/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Passkey/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Passkey/lastUsedAt`.
+            public var lastUsedAt: Foundation.Date?
+            /// The passkey is backed up and available on the member's other devices, such as through iCloud Keychain.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Passkey/synced`.
+            public var synced: Swift.Bool
+            /// Creates a new `Passkey`.
+            ///
+            /// - Parameters:
+            ///   - id: The base64url credential id.
+            ///   - name:
+            ///   - createdAt:
+            ///   - lastUsedAt:
+            ///   - synced: The passkey is backed up and available on the member's other devices, such as through iCloud Keychain.
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                createdAt: Foundation.Date,
+                lastUsedAt: Foundation.Date? = nil,
+                synced: Swift.Bool
+            ) {
+                self.id = id
+                self.name = name
+                self.createdAt = createdAt
+                self.lastUsedAt = lastUsedAt
+                self.synced = synced
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case createdAt
+                case lastUsedAt
+                case synced
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AppleToken`.
+        public struct AppleToken: Codable, Hashable, Sendable {
+            /// The JWT Apple returned.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AppleToken/identityToken`.
+            public var identityToken: Swift.String
+            /// The random value the client generated. Its SHA-256 (hex) must have been sent to Apple as the request nonce.
+            ///
+            /// - Remark: Generated from `#/components/schemas/AppleToken/nonce`.
+            public var nonce: Swift.String
+            /// Creates a new `AppleToken`.
+            ///
+            /// - Parameters:
+            ///   - identityToken: The JWT Apple returned.
+            ///   - nonce: The random value the client generated. Its SHA-256 (hex) must have been sent to Apple as the request nonce.
+            public init(
+                identityToken: Swift.String,
+                nonce: Swift.String
+            ) {
+                self.identityToken = identityToken
+                self.nonce = nonce
+            }
+            public enum CodingKeys: String, CodingKey {
+                case identityToken
+                case nonce
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AppleLink`.
+        public struct AppleLink: Codable, Hashable, Sendable {
+            /// The address on the Apple ID
+            ///
+            /// - Remark: Generated from `#/components/schemas/AppleLink/email`.
+            public var email: Swift.String?
+            /// Creates a new `AppleLink`.
+            ///
+            /// - Parameters:
+            ///   - email: The address on the Apple ID
+            public init(email: Swift.String? = nil) {
+                self.email = email
+            }
+            public enum CodingKeys: String, CodingKey {
+                case email
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SignInMethods`.
+        public struct SignInMethods: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SignInMethods/passkeys`.
+            public var passkeys: [Components.Schemas.Passkey]
+            /// Present when an Apple ID is linked.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SignInMethods/apple`.
+            public var apple: Components.Schemas.AppleLink?
+            /// Creates a new `SignInMethods`.
+            ///
+            /// - Parameters:
+            ///   - passkeys:
+            ///   - apple: Present when an Apple ID is linked.
+            public init(
+                passkeys: [Components.Schemas.Passkey],
+                apple: Components.Schemas.AppleLink? = nil
+            ) {
+                self.passkeys = passkeys
+                self.apple = apple
+            }
+            public enum CodingKeys: String, CodingKey {
+                case passkeys
+                case apple
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/SetupStatus`.
         public struct SetupStatus: Codable, Hashable, Sendable {
             /// An address waiting for its confirmation code, if any.

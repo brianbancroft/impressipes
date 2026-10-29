@@ -256,6 +256,169 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
+  /auth/config:
+    get:
+      operationId: getAuthConfig
+      description: What the sign-in screen needs to know about this server before anyone is signed in.
+      security: []
+      responses:
+        "200":
+          description: Sign-in options
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AuthConfig" }
+  /auth/passkey/begin:
+    post:
+      operationId: beginPasskeyLogin
+      description: Start signing in with a passkey. Pass `options` to navigator.credentials.get (or ASAuthorizationPlatformPublicKeyCredentialProvider) with no allow list, so the device offers whichever passkey it holds.
+      security: []
+      responses:
+        "200":
+          description: A challenge to sign
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PasskeyCeremony" }
+        "400": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /auth/passkey/finish:
+    post:
+      operationId: finishPasskeyLogin
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PasskeyFinish" }
+      responses:
+        "200":
+          description: Signed in; a session cookie is set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /auth/apple:
+    post:
+      operationId: signInWithApple
+      description: |
+        Sign in with an Apple identity token. The Apple ID must already be linked to a
+        member, or carry a verified email that matches a member's confirmed email (in
+        which case it is linked). Nobody can join this way: joining needs an invite.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AppleToken" }
+      responses:
+        "200":
+          description: Signed in; a session cookie is set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /me/sign-in:
+    get:
+      operationId: getSignInMethods
+      description: The passkeys and Apple ID the signed-in member has set up.
+      responses:
+        "200":
+          description: Sign-in methods
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SignInMethods" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /me/passkeys/begin:
+    post:
+      operationId: beginPasskeyRegistration
+      description: Start adding a passkey. Pass `options` to navigator.credentials.create (or ASAuthorizationPlatformPublicKeyCredentialProvider).
+      responses:
+        "200":
+          description: A challenge to sign
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PasskeyCeremony" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /me/passkeys/finish:
+    post:
+      operationId: finishPasskeyRegistration
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              allOf:
+                - $ref: "#/components/schemas/PasskeyFinish"
+                - type: object
+                  properties:
+                    name:
+                      type: string
+                      description: A label for the list, such as "iPhone". Defaults to a generic name.
+      responses:
+        "201":
+          description: Passkey saved
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Passkey" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /me/passkeys/{passkeyId}:
+    delete:
+      operationId: deletePasskey
+      parameters:
+        - name: passkeyId
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "204": { description: Passkey removed }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /me/apple:
+    put:
+      operationId: linkApple
+      description: Link an Apple ID to the signed-in member, replacing any earlier one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AppleToken" }
+      responses:
+        "200":
+          description: Linked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppleLink" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: unlinkApple
+      responses:
+        "204": { description: Apple ID unlinked }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
   /lists:
     get:
       operationId: listLists
@@ -858,6 +1021,70 @@ components:
         setup:
           $ref: "#/components/schemas/SetupStatus"
           description: Only on /me. What is left on the getting-started checklist.
+    AuthConfig:
+      type: object
+      required: [passkeys]
+      properties:
+        passkeys: { type: boolean, description: Passkey sign-in is available. }
+        appleClientId:
+          type: string
+          description: The Services ID for Sign in with Apple on the web. Absent when the web button is off.
+    PasskeyCeremony:
+      type: object
+      required: [ceremonyId, options]
+      properties:
+        ceremonyId:
+          type: string
+          description: Send back with the finished credential. Single use, valid for five minutes.
+        options:
+          type: object
+          additionalProperties: true
+          description: |
+            The WebAuthn PublicKeyCredentialCreationOptions or RequestOptions, wrapped
+            as `{ "publicKey": ... }` in the JSON form browsers accept: base64url
+            strings for every binary field.
+    PasskeyFinish:
+      type: object
+      required: [ceremonyId, credential]
+      properties:
+        ceremonyId: { type: string }
+        credential:
+          type: object
+          additionalProperties: true
+          description: The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+    Passkey:
+      type: object
+      required: [id, name, createdAt, synced]
+      properties:
+        id: { type: string, description: The base64url credential id. }
+        name: { type: string }
+        createdAt: { type: string, format: date-time }
+        lastUsedAt: { type: string, format: date-time }
+        synced:
+          type: boolean
+          description: The passkey is backed up and available on the member's other devices, such as through iCloud Keychain.
+    AppleToken:
+      type: object
+      required: [identityToken, nonce]
+      properties:
+        identityToken: { type: string, description: The JWT Apple returned. }
+        nonce:
+          type: string
+          description: The random value the client generated. Its SHA-256 (hex) must have been sent to Apple as the request nonce.
+    AppleLink:
+      type: object
+      properties:
+        email: { type: string, description: The address on the Apple ID, which may be a private relay. }
+    SignInMethods:
+      type: object
+      required: [passkeys]
+      properties:
+        passkeys:
+          type: array
+          items: { $ref: "#/components/schemas/Passkey" }
+        apple:
+          $ref: "#/components/schemas/AppleLink"
+          description: Present when an Apple ID is linked.
     SetupStatus:
       type: object
       required: [appConnected, aiConnected]

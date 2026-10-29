@@ -114,6 +114,30 @@ type AddRecipeResult struct {
 	Merged []Item `json:"merged"`
 }
 
+// AppleLink defines model for AppleLink.
+type AppleLink struct {
+	// Email The address on the Apple ID
+	Email *string `json:"email,omitempty"`
+}
+
+// AppleToken defines model for AppleToken.
+type AppleToken struct {
+	// IdentityToken The JWT Apple returned.
+	IdentityToken string `json:"identityToken"`
+
+	// Nonce The random value the client generated. Its SHA-256 (hex) must have been sent to Apple as the request nonce.
+	Nonce string `json:"nonce"`
+}
+
+// AuthConfig defines model for AuthConfig.
+type AuthConfig struct {
+	// AppleClientId The Services ID for Sign in with Apple on the web. Absent when the web button is off.
+	AppleClientId *string `json:"appleClientId,omitempty"`
+
+	// Passkeys Passkey sign-in is available.
+	Passkeys bool `json:"passkeys"`
+}
+
 // Category defines model for Category.
 type Category struct {
 	Colour    string `json:"colour"`
@@ -278,6 +302,38 @@ type MemberRole string
 // MemberStatus defines model for Member.Status.
 type MemberStatus string
 
+// Passkey defines model for Passkey.
+type Passkey struct {
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Id The base64url credential id.
+	Id         string     `json:"id"`
+	LastUsedAt *time.Time `json:"lastUsedAt,omitempty"`
+	Name       string     `json:"name"`
+
+	// Synced The passkey is backed up and available on the member's other devices, such as through iCloud Keychain.
+	Synced bool `json:"synced"`
+}
+
+// PasskeyCeremony defines model for PasskeyCeremony.
+type PasskeyCeremony struct {
+	// CeremonyId Send back with the finished credential. Single use, valid for five minutes.
+	CeremonyId string `json:"ceremonyId"`
+
+	// Options The WebAuthn PublicKeyCredentialCreationOptions or RequestOptions, wrapped
+	// as `{ "publicKey": ... }` in the JSON form browsers accept: base64url
+	// strings for every binary field.
+	Options map[string]interface{} `json:"options"`
+}
+
+// PasskeyFinish defines model for PasskeyFinish.
+type PasskeyFinish struct {
+	CeremonyId string `json:"ceremonyId"`
+
+	// Credential The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+	Credential map[string]interface{} `json:"credential"`
+}
+
 // Recipe defines model for Recipe.
 type Recipe struct {
 	CookMinutes *int `json:"cookMinutes,omitempty"`
@@ -354,6 +410,12 @@ type SetupStatus struct {
 
 	// PendingEmail An address waiting for its confirmation code, if any.
 	PendingEmail *string `json:"pendingEmail,omitempty"`
+}
+
+// SignInMethods defines model for SignInMethods.
+type SignInMethods struct {
+	Apple    *AppleLink `json:"apple,omitempty"`
+	Passkeys []Passkey  `json:"passkeys"`
 }
 
 // Step defines model for Step.
@@ -494,6 +556,17 @@ type SetEmailJSONBody struct {
 	Email string `json:"email"`
 }
 
+// FinishPasskeyRegistrationJSONBody defines parameters for FinishPasskeyRegistration.
+type FinishPasskeyRegistrationJSONBody struct {
+	CeremonyId string `json:"ceremonyId"`
+
+	// Credential The PublicKeyCredential the authenticator produced, in WebAuthn JSON form (base64url binary fields).
+	Credential map[string]interface{} `json:"credential"`
+
+	// Name A label for the list, such as "iPhone". Defaults to a generic name.
+	Name *string `json:"name,omitempty"`
+}
+
 // SetPasswordJSONBody defines parameters for SetPassword.
 type SetPasswordJSONBody struct {
 	Password string `json:"password"`
@@ -530,11 +603,17 @@ type UndoActivityBatchJSONRequestBody = UndoInput
 // UndoActivityJSONRequestBody defines body for UndoActivity for application/json ContentType.
 type UndoActivityJSONRequestBody = UndoInput
 
+// SignInWithAppleJSONRequestBody defines body for SignInWithApple for application/json ContentType.
+type SignInWithAppleJSONRequestBody = AppleToken
+
 // LoginJSONRequestBody defines body for Login for application/json ContentType.
 type LoginJSONRequestBody LoginJSONBody
 
 // RequestMagicLinkJSONRequestBody defines body for RequestMagicLink for application/json ContentType.
 type RequestMagicLinkJSONRequestBody RequestMagicLinkJSONBody
+
+// FinishPasskeyLoginJSONRequestBody defines body for FinishPasskeyLogin for application/json ContentType.
+type FinishPasskeyLoginJSONRequestBody = PasskeyFinish
 
 // VerifyMagicLinkJSONRequestBody defines body for VerifyMagicLink for application/json ContentType.
 type VerifyMagicLinkJSONRequestBody VerifyMagicLinkJSONBody
@@ -566,8 +645,14 @@ type UpdateCategoryJSONRequestBody = CategoryPatch
 // CreateItemJSONRequestBody defines body for CreateItem for application/json ContentType.
 type CreateItemJSONRequestBody = ItemInput
 
+// LinkAppleJSONRequestBody defines body for LinkApple for application/json ContentType.
+type LinkAppleJSONRequestBody = AppleToken
+
 // SetEmailJSONRequestBody defines body for SetEmail for application/json ContentType.
 type SetEmailJSONRequestBody SetEmailJSONBody
+
+// FinishPasskeyRegistrationJSONRequestBody defines body for FinishPasskeyRegistration for application/json ContentType.
+type FinishPasskeyRegistrationJSONRequestBody FinishPasskeyRegistrationJSONBody
 
 // SetPasswordJSONRequestBody defines body for SetPassword for application/json ContentType.
 type SetPasswordJSONRequestBody SetPasswordJSONBody
@@ -596,11 +681,23 @@ type ServerInterface interface {
 	// (POST /activity/{activityId}/undo)
 	UndoActivity(w http.ResponseWriter, r *http.Request, activityId ActivityId)
 
+	// (POST /auth/apple)
+	SignInWithApple(w http.ResponseWriter, r *http.Request)
+
+	// (GET /auth/config)
+	GetAuthConfig(w http.ResponseWriter, r *http.Request)
+
 	// (POST /auth/login)
 	Login(w http.ResponseWriter, r *http.Request)
 
 	// (POST /auth/magic)
 	RequestMagicLink(w http.ResponseWriter, r *http.Request)
+
+	// (POST /auth/passkey/begin)
+	BeginPasskeyLogin(w http.ResponseWriter, r *http.Request)
+
+	// (POST /auth/passkey/finish)
+	FinishPasskeyLogin(w http.ResponseWriter, r *http.Request)
 
 	// (POST /auth/verify)
 	VerifyMagicLink(w http.ResponseWriter, r *http.Request)
@@ -662,11 +759,29 @@ type ServerInterface interface {
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
 
+	// (DELETE /me/apple)
+	UnlinkApple(w http.ResponseWriter, r *http.Request)
+
+	// (PUT /me/apple)
+	LinkApple(w http.ResponseWriter, r *http.Request)
+
 	// (POST /me/email)
 	SetEmail(w http.ResponseWriter, r *http.Request)
 
+	// (POST /me/passkeys/begin)
+	BeginPasskeyRegistration(w http.ResponseWriter, r *http.Request)
+
+	// (POST /me/passkeys/finish)
+	FinishPasskeyRegistration(w http.ResponseWriter, r *http.Request)
+
+	// (DELETE /me/passkeys/{passkeyId})
+	DeletePasskey(w http.ResponseWriter, r *http.Request, passkeyId string)
+
 	// (PUT /me/password)
 	SetPassword(w http.ResponseWriter, r *http.Request)
+
+	// (GET /me/sign-in)
+	GetSignInMethods(w http.ResponseWriter, r *http.Request)
 
 	// (GET /members)
 	ListMembers(w http.ResponseWriter, r *http.Request)
@@ -858,6 +973,34 @@ func (siw *ServerInterfaceWrapper) UndoActivity(w http.ResponseWriter, r *http.R
 	handler.ServeHTTP(w, r)
 }
 
+// SignInWithApple operation middleware
+func (siw *ServerInterfaceWrapper) SignInWithApple(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SignInWithApple(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetAuthConfig operation middleware
+func (siw *ServerInterfaceWrapper) GetAuthConfig(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetAuthConfig(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // Login operation middleware
 func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
 
@@ -877,6 +1020,34 @@ func (siw *ServerInterfaceWrapper) RequestMagicLink(w http.ResponseWriter, r *ht
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.RequestMagicLink(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// BeginPasskeyLogin operation middleware
+func (siw *ServerInterfaceWrapper) BeginPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginPasskeyLogin(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FinishPasskeyLogin operation middleware
+func (siw *ServerInterfaceWrapper) FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FinishPasskeyLogin(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1463,6 +1634,46 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 	handler.ServeHTTP(w, r)
 }
 
+// UnlinkApple operation middleware
+func (siw *ServerInterfaceWrapper) UnlinkApple(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UnlinkApple(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// LinkApple operation middleware
+func (siw *ServerInterfaceWrapper) LinkApple(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.LinkApple(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SetEmail operation middleware
 func (siw *ServerInterfaceWrapper) SetEmail(w http.ResponseWriter, r *http.Request) {
 
@@ -1483,6 +1694,77 @@ func (siw *ServerInterfaceWrapper) SetEmail(w http.ResponseWriter, r *http.Reque
 	handler.ServeHTTP(w, r)
 }
 
+// BeginPasskeyRegistration operation middleware
+func (siw *ServerInterfaceWrapper) BeginPasskeyRegistration(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.BeginPasskeyRegistration(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// FinishPasskeyRegistration operation middleware
+func (siw *ServerInterfaceWrapper) FinishPasskeyRegistration(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.FinishPasskeyRegistration(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeletePasskey operation middleware
+func (siw *ServerInterfaceWrapper) DeletePasskey(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "passkeyId" -------------
+	var passkeyId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "passkeyId", r.PathValue("passkeyId"), &passkeyId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "passkeyId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeletePasskey(w, r, passkeyId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // SetPassword operation middleware
 func (siw *ServerInterfaceWrapper) SetPassword(w http.ResponseWriter, r *http.Request) {
 
@@ -1494,6 +1776,26 @@ func (siw *ServerInterfaceWrapper) SetPassword(w http.ResponseWriter, r *http.Re
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.SetPassword(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// GetSignInMethods operation middleware
+func (siw *ServerInterfaceWrapper) GetSignInMethods(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetSignInMethods(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2101,8 +2403,12 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/activity", wrapper.ListAllActivity)
 	m.HandleFunc("POST "+options.BaseURL+"/activity/batches/{batchId}/undo", wrapper.UndoActivityBatch)
 	m.HandleFunc("POST "+options.BaseURL+"/activity/{activityId}/undo", wrapper.UndoActivity)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/apple", wrapper.SignInWithApple)
+	m.HandleFunc("GET "+options.BaseURL+"/auth/config", wrapper.GetAuthConfig)
 	m.HandleFunc("POST "+options.BaseURL+"/auth/login", wrapper.Login)
 	m.HandleFunc("POST "+options.BaseURL+"/auth/magic", wrapper.RequestMagicLink)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/passkey/begin", wrapper.BeginPasskeyLogin)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/passkey/finish", wrapper.FinishPasskeyLogin)
 	m.HandleFunc("POST "+options.BaseURL+"/auth/verify", wrapper.VerifyMagicLink)
 	m.HandleFunc("GET "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc("POST "+options.BaseURL+"/invites", wrapper.CreateInvite)
@@ -2123,8 +2429,14 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/lists/{listId}/items", wrapper.CreateItem)
 	m.HandleFunc("GET "+options.BaseURL+"/lists/{listId}/suggestions", wrapper.SuggestItems)
 	m.HandleFunc("GET "+options.BaseURL+"/me", wrapper.GetMe)
+	m.HandleFunc("DELETE "+options.BaseURL+"/me/apple", wrapper.UnlinkApple)
+	m.HandleFunc("PUT "+options.BaseURL+"/me/apple", wrapper.LinkApple)
 	m.HandleFunc("POST "+options.BaseURL+"/me/email", wrapper.SetEmail)
+	m.HandleFunc("POST "+options.BaseURL+"/me/passkeys/begin", wrapper.BeginPasskeyRegistration)
+	m.HandleFunc("POST "+options.BaseURL+"/me/passkeys/finish", wrapper.FinishPasskeyRegistration)
+	m.HandleFunc("DELETE "+options.BaseURL+"/me/passkeys/{passkeyId}", wrapper.DeletePasskey)
 	m.HandleFunc("PUT "+options.BaseURL+"/me/password", wrapper.SetPassword)
+	m.HandleFunc("GET "+options.BaseURL+"/me/sign-in", wrapper.GetSignInMethods)
 	m.HandleFunc("GET "+options.BaseURL+"/members", wrapper.ListMembers)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/disable", wrapper.DisableMember)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/enable", wrapper.EnableMember)
@@ -2307,6 +2619,83 @@ func (response UndoActivity422JSONResponse) VisitUndoActivityResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type SignInWithAppleRequestObject struct {
+	Body *SignInWithAppleJSONRequestBody
+}
+
+type SignInWithAppleResponseObject interface {
+	VisitSignInWithAppleResponse(w http.ResponseWriter) error
+}
+
+type SignInWithApple200ResponseHeaders struct {
+	SetCookie string
+}
+
+type SignInWithApple200JSONResponse struct {
+	Body    Member
+	Headers SignInWithApple200ResponseHeaders
+}
+
+func (response SignInWithApple200JSONResponse) VisitSignInWithAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", fmt.Sprint(response.Headers.SetCookie))
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type SignInWithApple400JSONResponse struct{ ErrorJSONResponse }
+
+func (response SignInWithApple400JSONResponse) VisitSignInWithAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SignInWithApple401JSONResponse Error
+
+func (response SignInWithApple401JSONResponse) VisitSignInWithAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SignInWithApple403JSONResponse Error
+
+func (response SignInWithApple403JSONResponse) VisitSignInWithAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SignInWithApple429JSONResponse Error
+
+func (response SignInWithApple429JSONResponse) VisitSignInWithAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetAuthConfigRequestObject struct {
+}
+
+type GetAuthConfigResponseObject interface {
+	VisitGetAuthConfigResponse(w http.ResponseWriter) error
+}
+
+type GetAuthConfig200JSONResponse AuthConfig
+
+func (response GetAuthConfig200JSONResponse) VisitGetAuthConfigResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type LoginRequestObject struct {
 	Body *LoginJSONRequestBody
 }
@@ -2378,6 +2767,101 @@ func (response RequestMagicLink202Response) VisitRequestMagicLinkResponse(w http
 type RequestMagicLink429JSONResponse struct{ ErrorJSONResponse }
 
 func (response RequestMagicLink429JSONResponse) VisitRequestMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyLoginRequestObject struct {
+}
+
+type BeginPasskeyLoginResponseObject interface {
+	VisitBeginPasskeyLoginResponse(w http.ResponseWriter) error
+}
+
+type BeginPasskeyLogin200JSONResponse PasskeyCeremony
+
+func (response BeginPasskeyLogin200JSONResponse) VisitBeginPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyLogin400JSONResponse struct{ ErrorJSONResponse }
+
+func (response BeginPasskeyLogin400JSONResponse) VisitBeginPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyLogin429JSONResponse Error
+
+func (response BeginPasskeyLogin429JSONResponse) VisitBeginPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyLoginRequestObject struct {
+	Body *FinishPasskeyLoginJSONRequestBody
+}
+
+type FinishPasskeyLoginResponseObject interface {
+	VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error
+}
+
+type FinishPasskeyLogin200ResponseHeaders struct {
+	SetCookie string
+}
+
+type FinishPasskeyLogin200JSONResponse struct {
+	Body    Member
+	Headers FinishPasskeyLogin200ResponseHeaders
+}
+
+func (response FinishPasskeyLogin200JSONResponse) VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", fmt.Sprint(response.Headers.SetCookie))
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type FinishPasskeyLogin400JSONResponse struct{ ErrorJSONResponse }
+
+func (response FinishPasskeyLogin400JSONResponse) VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyLogin401JSONResponse Error
+
+func (response FinishPasskeyLogin401JSONResponse) VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyLogin403JSONResponse Error
+
+func (response FinishPasskeyLogin403JSONResponse) VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyLogin429JSONResponse Error
+
+func (response FinishPasskeyLogin429JSONResponse) VisitFinishPasskeyLoginResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(429)
 
@@ -3324,6 +3808,110 @@ func (response GetMe403JSONResponse) VisitGetMeResponse(w http.ResponseWriter) e
 	return json.NewEncoder(w).Encode(response)
 }
 
+type UnlinkAppleRequestObject struct {
+}
+
+type UnlinkAppleResponseObject interface {
+	VisitUnlinkAppleResponse(w http.ResponseWriter) error
+}
+
+type UnlinkApple204Response struct {
+}
+
+func (response UnlinkApple204Response) VisitUnlinkAppleResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type UnlinkApple401JSONResponse struct{ ErrorJSONResponse }
+
+func (response UnlinkApple401JSONResponse) VisitUnlinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnlinkApple403JSONResponse Error
+
+func (response UnlinkApple403JSONResponse) VisitUnlinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnlinkApple404JSONResponse Error
+
+func (response UnlinkApple404JSONResponse) VisitUnlinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UnlinkApple409JSONResponse Error
+
+func (response UnlinkApple409JSONResponse) VisitUnlinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LinkAppleRequestObject struct {
+	Body *LinkAppleJSONRequestBody
+}
+
+type LinkAppleResponseObject interface {
+	VisitLinkAppleResponse(w http.ResponseWriter) error
+}
+
+type LinkApple200JSONResponse AppleLink
+
+func (response LinkApple200JSONResponse) VisitLinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LinkApple400JSONResponse struct{ ErrorJSONResponse }
+
+func (response LinkApple400JSONResponse) VisitLinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LinkApple401JSONResponse Error
+
+func (response LinkApple401JSONResponse) VisitLinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LinkApple403JSONResponse Error
+
+func (response LinkApple403JSONResponse) VisitLinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type LinkApple409JSONResponse Error
+
+func (response LinkApple409JSONResponse) VisitLinkAppleResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type SetEmailRequestObject struct {
 	Body *SetEmailJSONRequestBody
 }
@@ -3385,6 +3973,154 @@ func (response SetEmail429JSONResponse) VisitSetEmailResponse(w http.ResponseWri
 	return json.NewEncoder(w).Encode(response)
 }
 
+type BeginPasskeyRegistrationRequestObject struct {
+}
+
+type BeginPasskeyRegistrationResponseObject interface {
+	VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error
+}
+
+type BeginPasskeyRegistration200JSONResponse PasskeyCeremony
+
+func (response BeginPasskeyRegistration200JSONResponse) VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyRegistration400JSONResponse struct{ ErrorJSONResponse }
+
+func (response BeginPasskeyRegistration400JSONResponse) VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyRegistration401JSONResponse Error
+
+func (response BeginPasskeyRegistration401JSONResponse) VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyRegistration403JSONResponse Error
+
+func (response BeginPasskeyRegistration403JSONResponse) VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type BeginPasskeyRegistration429JSONResponse Error
+
+func (response BeginPasskeyRegistration429JSONResponse) VisitBeginPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyRegistrationRequestObject struct {
+	Body *FinishPasskeyRegistrationJSONRequestBody
+}
+
+type FinishPasskeyRegistrationResponseObject interface {
+	VisitFinishPasskeyRegistrationResponse(w http.ResponseWriter) error
+}
+
+type FinishPasskeyRegistration201JSONResponse Passkey
+
+func (response FinishPasskeyRegistration201JSONResponse) VisitFinishPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyRegistration400JSONResponse struct{ ErrorJSONResponse }
+
+func (response FinishPasskeyRegistration400JSONResponse) VisitFinishPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyRegistration401JSONResponse Error
+
+func (response FinishPasskeyRegistration401JSONResponse) VisitFinishPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type FinishPasskeyRegistration403JSONResponse Error
+
+func (response FinishPasskeyRegistration403JSONResponse) VisitFinishPasskeyRegistrationResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePasskeyRequestObject struct {
+	PasskeyId string `json:"passkeyId"`
+}
+
+type DeletePasskeyResponseObject interface {
+	VisitDeletePasskeyResponse(w http.ResponseWriter) error
+}
+
+type DeletePasskey204Response struct {
+}
+
+func (response DeletePasskey204Response) VisitDeletePasskeyResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeletePasskey401JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeletePasskey401JSONResponse) VisitDeletePasskeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePasskey403JSONResponse Error
+
+func (response DeletePasskey403JSONResponse) VisitDeletePasskeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePasskey404JSONResponse Error
+
+func (response DeletePasskey404JSONResponse) VisitDeletePasskeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeletePasskey409JSONResponse Error
+
+func (response DeletePasskey409JSONResponse) VisitDeletePasskeyResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type SetPasswordRequestObject struct {
 	Body *SetPasswordJSONRequestBody
 }
@@ -3422,6 +4158,40 @@ func (response SetPassword401JSONResponse) VisitSetPasswordResponse(w http.Respo
 type SetPassword403JSONResponse Error
 
 func (response SetPassword403JSONResponse) VisitSetPasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSignInMethodsRequestObject struct {
+}
+
+type GetSignInMethodsResponseObject interface {
+	VisitGetSignInMethodsResponse(w http.ResponseWriter) error
+}
+
+type GetSignInMethods200JSONResponse SignInMethods
+
+func (response GetSignInMethods200JSONResponse) VisitGetSignInMethodsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSignInMethods401JSONResponse struct{ ErrorJSONResponse }
+
+func (response GetSignInMethods401JSONResponse) VisitGetSignInMethodsResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type GetSignInMethods403JSONResponse Error
+
+func (response GetSignInMethods403JSONResponse) VisitGetSignInMethodsResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(403)
 
@@ -4115,11 +4885,23 @@ type StrictServerInterface interface {
 	// (POST /activity/{activityId}/undo)
 	UndoActivity(ctx context.Context, request UndoActivityRequestObject) (UndoActivityResponseObject, error)
 
+	// (POST /auth/apple)
+	SignInWithApple(ctx context.Context, request SignInWithAppleRequestObject) (SignInWithAppleResponseObject, error)
+
+	// (GET /auth/config)
+	GetAuthConfig(ctx context.Context, request GetAuthConfigRequestObject) (GetAuthConfigResponseObject, error)
+
 	// (POST /auth/login)
 	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
 
 	// (POST /auth/magic)
 	RequestMagicLink(ctx context.Context, request RequestMagicLinkRequestObject) (RequestMagicLinkResponseObject, error)
+
+	// (POST /auth/passkey/begin)
+	BeginPasskeyLogin(ctx context.Context, request BeginPasskeyLoginRequestObject) (BeginPasskeyLoginResponseObject, error)
+
+	// (POST /auth/passkey/finish)
+	FinishPasskeyLogin(ctx context.Context, request FinishPasskeyLoginRequestObject) (FinishPasskeyLoginResponseObject, error)
 
 	// (POST /auth/verify)
 	VerifyMagicLink(ctx context.Context, request VerifyMagicLinkRequestObject) (VerifyMagicLinkResponseObject, error)
@@ -4181,11 +4963,29 @@ type StrictServerInterface interface {
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
 
+	// (DELETE /me/apple)
+	UnlinkApple(ctx context.Context, request UnlinkAppleRequestObject) (UnlinkAppleResponseObject, error)
+
+	// (PUT /me/apple)
+	LinkApple(ctx context.Context, request LinkAppleRequestObject) (LinkAppleResponseObject, error)
+
 	// (POST /me/email)
 	SetEmail(ctx context.Context, request SetEmailRequestObject) (SetEmailResponseObject, error)
 
+	// (POST /me/passkeys/begin)
+	BeginPasskeyRegistration(ctx context.Context, request BeginPasskeyRegistrationRequestObject) (BeginPasskeyRegistrationResponseObject, error)
+
+	// (POST /me/passkeys/finish)
+	FinishPasskeyRegistration(ctx context.Context, request FinishPasskeyRegistrationRequestObject) (FinishPasskeyRegistrationResponseObject, error)
+
+	// (DELETE /me/passkeys/{passkeyId})
+	DeletePasskey(ctx context.Context, request DeletePasskeyRequestObject) (DeletePasskeyResponseObject, error)
+
 	// (PUT /me/password)
 	SetPassword(ctx context.Context, request SetPasswordRequestObject) (SetPasswordResponseObject, error)
+
+	// (GET /me/sign-in)
+	GetSignInMethods(ctx context.Context, request GetSignInMethodsRequestObject) (GetSignInMethodsResponseObject, error)
 
 	// (GET /members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -4354,6 +5154,61 @@ func (sh *strictHandler) UndoActivity(w http.ResponseWriter, r *http.Request, ac
 	}
 }
 
+// SignInWithApple operation middleware
+func (sh *strictHandler) SignInWithApple(w http.ResponseWriter, r *http.Request) {
+	var request SignInWithAppleRequestObject
+
+	var body SignInWithAppleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SignInWithApple(ctx, request.(SignInWithAppleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SignInWithApple")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SignInWithAppleResponseObject); ok {
+		if err := validResponse.VisitSignInWithAppleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetAuthConfig operation middleware
+func (sh *strictHandler) GetAuthConfig(w http.ResponseWriter, r *http.Request) {
+	var request GetAuthConfigRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetAuthConfig(ctx, request.(GetAuthConfigRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetAuthConfig")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetAuthConfigResponseObject); ok {
+		if err := validResponse.VisitGetAuthConfigResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // Login operation middleware
 func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var request LoginRequestObject
@@ -4409,6 +5264,61 @@ func (sh *strictHandler) RequestMagicLink(w http.ResponseWriter, r *http.Request
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(RequestMagicLinkResponseObject); ok {
 		if err := validResponse.VisitRequestMagicLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// BeginPasskeyLogin operation middleware
+func (sh *strictHandler) BeginPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+	var request BeginPasskeyLoginRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginPasskeyLogin(ctx, request.(BeginPasskeyLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginPasskeyLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginPasskeyLoginResponseObject); ok {
+		if err := validResponse.VisitBeginPasskeyLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FinishPasskeyLogin operation middleware
+func (sh *strictHandler) FinishPasskeyLogin(w http.ResponseWriter, r *http.Request) {
+	var request FinishPasskeyLoginRequestObject
+
+	var body FinishPasskeyLoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FinishPasskeyLogin(ctx, request.(FinishPasskeyLoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FinishPasskeyLogin")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FinishPasskeyLoginResponseObject); ok {
+		if err := validResponse.VisitFinishPasskeyLoginResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4998,6 +5908,61 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// UnlinkApple operation middleware
+func (sh *strictHandler) UnlinkApple(w http.ResponseWriter, r *http.Request) {
+	var request UnlinkAppleRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UnlinkApple(ctx, request.(UnlinkAppleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UnlinkApple")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UnlinkAppleResponseObject); ok {
+		if err := validResponse.VisitUnlinkAppleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// LinkApple operation middleware
+func (sh *strictHandler) LinkApple(w http.ResponseWriter, r *http.Request) {
+	var request LinkAppleRequestObject
+
+	var body LinkAppleJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.LinkApple(ctx, request.(LinkAppleRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "LinkApple")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LinkAppleResponseObject); ok {
+		if err := validResponse.VisitLinkAppleResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetEmail operation middleware
 func (sh *strictHandler) SetEmail(w http.ResponseWriter, r *http.Request) {
 	var request SetEmailRequestObject
@@ -5029,6 +5994,87 @@ func (sh *strictHandler) SetEmail(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// BeginPasskeyRegistration operation middleware
+func (sh *strictHandler) BeginPasskeyRegistration(w http.ResponseWriter, r *http.Request) {
+	var request BeginPasskeyRegistrationRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.BeginPasskeyRegistration(ctx, request.(BeginPasskeyRegistrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "BeginPasskeyRegistration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(BeginPasskeyRegistrationResponseObject); ok {
+		if err := validResponse.VisitBeginPasskeyRegistrationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// FinishPasskeyRegistration operation middleware
+func (sh *strictHandler) FinishPasskeyRegistration(w http.ResponseWriter, r *http.Request) {
+	var request FinishPasskeyRegistrationRequestObject
+
+	var body FinishPasskeyRegistrationJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.FinishPasskeyRegistration(ctx, request.(FinishPasskeyRegistrationRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "FinishPasskeyRegistration")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(FinishPasskeyRegistrationResponseObject); ok {
+		if err := validResponse.VisitFinishPasskeyRegistrationResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeletePasskey operation middleware
+func (sh *strictHandler) DeletePasskey(w http.ResponseWriter, r *http.Request, passkeyId string) {
+	var request DeletePasskeyRequestObject
+
+	request.PasskeyId = passkeyId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeletePasskey(ctx, request.(DeletePasskeyRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeletePasskey")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeletePasskeyResponseObject); ok {
+		if err := validResponse.VisitDeletePasskeyResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // SetPassword operation middleware
 func (sh *strictHandler) SetPassword(w http.ResponseWriter, r *http.Request) {
 	var request SetPasswordRequestObject
@@ -5053,6 +6099,30 @@ func (sh *strictHandler) SetPassword(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(SetPasswordResponseObject); ok {
 		if err := validResponse.VisitSetPasswordResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// GetSignInMethods operation middleware
+func (sh *strictHandler) GetSignInMethods(w http.ResponseWriter, r *http.Request) {
+	var request GetSignInMethodsRequestObject
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.GetSignInMethods(ctx, request.(GetSignInMethodsRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "GetSignInMethods")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(GetSignInMethodsResponseObject); ok {
+		if err := validResponse.VisitGetSignInMethodsResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -15,6 +15,14 @@ typealias Step = Components.Schemas.Step
 typealias AddRecipeResult = Components.Schemas.AddRecipeResult
 typealias InviteInfo = Components.Schemas.InviteInfo
 typealias CategoryInput = Components.Schemas.CategoryInput
+typealias Passkey = Components.Schemas.Passkey
+typealias SignInMethods = Components.Schemas.SignInMethods
+
+/// A passkey ceremony the server started: its id, and the WebAuthn options as JSON.
+struct PasskeyChallenge: Sendable {
+    let ceremonyId: String
+    let options: Data
+}
 
 /// The calls the iOS app makes, as plain async functions. Recipe authoring is a
 /// web job, so there is nothing here that writes a recipe beyond its marks.
@@ -90,6 +98,68 @@ struct API: Sendable {
 
     func setPassword(_ password: String) async throws {
         try await call { _ = try await client.setPassword(body: .json(.init(password: password))).noContent }
+    }
+
+    // MARK: Passkeys and Apple
+
+    func beginPasskeyLogin() async throws -> PasskeyChallenge {
+        try await call { try Self.challenge(from: try await client.beginPasskeyLogin().ok.body.json) }
+    }
+
+    /// Finishes a passkey sign-in. `credential` is the WebAuthn JSON the device produced.
+    func finishPasskeyLogin(ceremonyId: String, credential: Data) async throws -> (Member, String?) {
+        try await call {
+            let ok = try await client.finishPasskeyLogin(body: .json(try Self.finish(ceremonyId, credential))).ok
+            return (try ok.body.json, ok.headers.Set_hyphen_Cookie.flatMap(Self.sessionToken))
+        }
+    }
+
+    /// Signs in with the identity token Apple handed back. `nonce` is the raw value whose SHA-256 went to Apple.
+    func signInWithApple(identityToken: String, nonce: String) async throws -> (Member, String?) {
+        try await call {
+            let ok = try await client.signInWithApple(body: .json(.init(identityToken: identityToken, nonce: nonce))).ok
+            return (try ok.body.json, ok.headers.Set_hyphen_Cookie.flatMap(Self.sessionToken))
+        }
+    }
+
+    func signInMethods() async throws -> SignInMethods {
+        try await call { try await client.getSignInMethods().ok.body.json }
+    }
+
+    func beginPasskeyRegistration() async throws -> PasskeyChallenge {
+        try await call { try Self.challenge(from: try await client.beginPasskeyRegistration().ok.body.json) }
+    }
+
+    func finishPasskeyRegistration(ceremonyId: String, credential: Data, name: String) async throws {
+        try await call {
+            _ = try await client.finishPasskeyRegistration(
+                body: .json(.init(value1: try Self.finish(ceremonyId, credential), value2: .init(name: name)))
+            ).created
+        }
+    }
+
+    func deletePasskey(_ id: String) async throws {
+        try await call { _ = try await client.deletePasskey(path: .init(passkeyId: id)).noContent }
+    }
+
+    func linkApple(identityToken: String, nonce: String) async throws {
+        try await call { _ = try await client.linkApple(body: .json(.init(identityToken: identityToken, nonce: nonce))).ok }
+    }
+
+    func unlinkApple() async throws {
+        try await call { _ = try await client.unlinkApple().noContent }
+    }
+
+    private static func challenge(from c: Components.Schemas.PasskeyCeremony) throws -> PasskeyChallenge {
+        PasskeyChallenge(ceremonyId: c.ceremonyId, options: try JSONEncoder().encode(c.options))
+    }
+
+    private static func finish(_ ceremonyId: String, _ credential: Data) throws -> Components.Schemas.PasskeyFinish {
+        guard let object = try JSONSerialization.jsonObject(with: credential) as? [String: Any] else {
+            throw APIError(message: "The passkey response was unreadable")
+        }
+        let container = try OpenAPIObjectContainer(unvalidatedValue: object)
+        return .init(ceremonyId: ceremonyId, credential: .init(additionalProperties: container))
     }
 
     /// Pulls the session value out of a Set-Cookie header.

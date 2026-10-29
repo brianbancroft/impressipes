@@ -1,6 +1,8 @@
 package server
 
 import (
+	"github.com/go-webauthn/webauthn/webauthn"
+
 	"context"
 	"errors"
 	"log"
@@ -12,6 +14,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/api"
+	"github.com/brianbancroft/impressipies/apps/api/internal/apple"
 	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 	"github.com/brianbancroft/impressipies/apps/api/internal/images"
@@ -35,6 +38,11 @@ type server struct {
 	limits  *limiter
 
 	appSeen sync.Map // member ids already marked as having used the mobile app
+
+	wa         *webauthn.WebAuthn // nil when passkeys are not configured
+	ceremonies *ceremonies
+	apple      *apple.Verifier // nil when Sign in with Apple is not configured
+	appleWeb   string
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -77,6 +85,13 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 	s := &server{
 		store: store, pool: pool, images: images.Store{Dir: imageDir()},
 		mailer: o.mailer, baseURL: o.baseURL, limits: newLimiter(),
+		ceremonies: newCeremonies(), apple: o.apple, appleWeb: o.appleWeb,
+	}
+	if o.passkeys != nil {
+		var err error
+		if s.wa, err = webauthn.New(o.passkeys); err != nil {
+			log.Printf("passkeys disabled: %v", err)
+		}
 	}
 	if pool != nil {
 		s.q = dbgen.New(pool)

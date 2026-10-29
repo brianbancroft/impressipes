@@ -35,10 +35,12 @@ The project uses synced folders, so new files under `Impressipies/` are picked u
 
 ## Signing in
 
-There is no passkey sign-in on the server yet (IMP-29), so the app signs in by accepting an invite link, the same way the web onboarding does:
+A new member joins by accepting an invite link, the same way the web onboarding does. After that the sign-in screen offers a passkey (iCloud Keychain, Face ID), Sign in with Apple, a password or an emailed link; add a passkey or connect Apple under Settings → Sign-in & security. Passkeys and Sign in with Apple need the `webcredentials:` associated domain and the `applesignin` entitlement (both in `project.yml`), and the server needs `APPLE_TEAM_ID` (see `docs/deploy.md`).
+
+Joining:
 
 1. On the web, an admin creates an invite (or a re-invite for an existing member to add this phone).
 2. Paste the link into the app. The link's origin picks the server; a `localhost:4200` link uses the API on `localhost:8080`.
 3. The session token is kept in the keychain and sent as the `impressipies_session` cookie.
 
-Accepting a re-invite replaces that member's stored passkeys, as it does on the web.
+Accepting a re-invite removes that member's passkeys, as it does on the web.

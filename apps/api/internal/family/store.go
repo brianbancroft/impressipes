@@ -54,6 +54,9 @@ type Store struct {
 
 	passwords  map[string]string     // member id → password hash
 	challenges map[string]*challenge // link hash → emailed link + code
+
+	passkeys []memPasskey
+	apple    map[string]memApple // Apple sub → linked member
 }
 
 type challenge struct {
@@ -72,8 +75,12 @@ func NewStore() *Store {
 
 		passwords:  map[string]string{},
 		challenges: map[string]*challenge{},
+		apple:      map[string]memApple{},
 	}
 }
+
+// NewToken returns a random URL-safe string.
+func NewToken() string { return token() }
 
 func token() string {
 	b := make([]byte, 24)

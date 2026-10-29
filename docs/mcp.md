@@ -30,7 +30,7 @@ Add `https://impressipes.bancroft.io/mcp` as a custom connector. The client disc
 Set `PUBLIC_URL` (e.g. `https://impressipes.bancroft.io`) in production so the metadata advertises the right origin.
 
 Consent uses the member's existing web session (cookie), so they must be signed in to Impressipes in that
-browser first. There is no passkey sign-in yet (IMP-29); once it lands, the consent page should offer it
+browser first. Passkey sign-in now exists (`POST /auth/passkey/*`), but the consent page does not offer it yet; it should,
 instead of asking the member to sign in elsewhere. Changes made through a grant are audited as
 `mcp:<client name>`.
 

@@ -94,3 +94,32 @@ SELECT
                 AND c.email IS DISTINCT FROM u.email
               ORDER BY c.created_at DESC LIMIT 1), '')::text AS pending_email
 FROM users u WHERE u.id = $1;
+
+-- name: AddWebauthnPasskey :exec
+INSERT INTO passkeys (credential_id, user_id, public_key, sign_count, transports, name, backup_eligible, backup_state, aaguid)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9);
+
+-- name: ListWebauthnPasskeys :many
+SELECT * FROM passkeys WHERE user_id = $1 AND octet_length(public_key) > 0 ORDER BY created_at;
+
+-- name: GetWebauthnPasskey :one
+SELECT * FROM passkeys WHERE credential_id = $1 AND octet_length(public_key) > 0;
+
+-- name: TouchPasskey :exec
+UPDATE passkeys SET sign_count = $2, backup_state = $3, last_used_at = now() WHERE credential_id = $1;
+
+-- name: DeleteWebauthnPasskey :execrows
+DELETE FROM passkeys WHERE credential_id = $1 AND user_id = $2 AND octet_length(public_key) > 0;
+
+-- name: GetUserByApple :one
+SELECT users.* FROM apple_identities a JOIN users ON users.id = a.user_id WHERE a.sub = $1;
+
+-- name: GetAppleIdentity :one
+SELECT * FROM apple_identities WHERE user_id = $1;
+
+-- name: LinkApple :exec
+INSERT INTO apple_identities (sub, user_id, email) VALUES ($1, $2, $3)
+ON CONFLICT (user_id) DO UPDATE SET sub = EXCLUDED.sub, email = EXCLUDED.email, created_at = now();
+
+-- name: UnlinkApple :execrows
+DELETE FROM apple_identities WHERE user_id = $1;

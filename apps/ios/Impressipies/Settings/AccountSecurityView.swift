@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Confirm an email and set a password, so the phone can sign back in without an invite.
+/// Passkeys, Apple, email and password: every way this member can sign back in without an invite.
 struct AccountSecurityView: View {
     @Environment(Session.self) private var session
 
@@ -11,9 +11,44 @@ struct AccountSecurityView: View {
     @State private var busy = false
     @State private var error: String?
     @State private var saved: String?
+    @State private var methods: SignInMethods?
 
     var body: some View {
         Form {
+            Section {
+                ForEach(methods?.passkeys ?? [], id: \.id) { key in
+                    HStack {
+                        Image(systemName: "person.badge.key.fill").foregroundStyle(Palette.inkMuted)
+                        VStack(alignment: .leading) {
+                            Text(key.name)
+                            Text("Added \(key.createdAt.formatted(date: .abbreviated, time: .omitted))\(key.synced ? " · syncs with iCloud" : "")")
+                                .font(.caption)
+                                .foregroundStyle(Palette.inkMuted)
+                        }
+                        Spacer()
+                        Button(role: .destructive) { removePasskey(key) } label: { Image(systemName: "trash") }
+                            .buttonStyle(.borderless)
+                            .accessibilityLabel("Remove passkey \(key.name)")
+                    }
+                }
+                Button("Add a passkey", action: addPasskey).disabled(busy)
+                if let apple = methods?.apple {
+                    LabeledContent("Apple ID", value: apple.email ?? "Connected")
+                    Button("Disconnect Apple ID", role: .destructive, action: unlinkApple).disabled(busy)
+                } else if methods != nil {
+                    AppleAuthButton(label: .continue, onError: { error = $0 }) { token, nonce in
+                        run {
+                            try await session.api.linkApple(identityToken: token, nonce: nonce)
+                            saved = "Apple ID connected"
+                        }
+                    }
+                }
+            } header: {
+                Text("Passkeys & Apple")
+            } footer: {
+                Text("A passkey saved to iCloud Keychain signs you in with Face ID on all your Apple devices, and on the web.")
+            }
+
             Section {
                 if let current = session.member?.email {
                     LabeledContent("Email", value: current)
@@ -62,8 +97,33 @@ struct AccountSecurityView: View {
         }
         .scrollContentBackground(.hidden)
         .pageBackground()
-        .navigationTitle("Email & password")
+        .navigationTitle("Sign-in & security")
         .navigationBarTitleDisplayMode(.inline)
+        .task { await reload() }
+    }
+
+    private func reload() async {
+        methods = try? await session.api.signInMethods()
+    }
+
+    private func addPasskey() {
+        run {
+            if try await session.addPasskey() { saved = "Passkey added" }
+        }
+    }
+
+    private func removePasskey(_ key: Passkey) {
+        run {
+            try await session.api.deletePasskey(key.id)
+            saved = "Passkey removed"
+        }
+    }
+
+    private func unlinkApple() {
+        run {
+            try await session.api.unlinkApple()
+            saved = "Apple ID disconnected"
+        }
     }
 
     private func run(_ work: @escaping () async throws -> Void) {
@@ -72,7 +132,10 @@ struct AccountSecurityView: View {
         busy = true
         Task {
             defer { busy = false }
-            do { try await work() } catch { self.error = APIError.from(error).message }
+            do {
+                try await work()
+                await reload()
+            } catch { self.error = APIError.from(error).message }
         }
     }
 

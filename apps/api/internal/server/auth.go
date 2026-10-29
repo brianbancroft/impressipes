@@ -136,6 +136,8 @@ func (s *server) RequestMagicLink(ctx context.Context, req api.RequestMagicLinkR
 	}
 	if c != nil {
 		s.sendChallenge(*c)
+	} else {
+		log.Print("sign-in link requested for an address with no confirmed, active member (or rate limited); nothing sent")
 	}
 	return api.RequestMagicLink202Response{}, nil
 }
@@ -221,11 +223,15 @@ func (s *server) SetPassword(ctx context.Context, req api.SetPasswordRequestObje
 	return api.SetPassword204Response{}, nil
 }
 
-const iosBundleID = "ca.brianbancroft.impressipies"
+// IOSBundleID is the iOS app's bundle identifier, which is also the audience of its Apple identity tokens.
+const IOSBundleID = "ca.brianbancroft.impressipies"
 
-// appSiteAssociation tells iOS that the app may open the emailed sign-in link.
+// appSiteAssociation tells iOS that the app may open the emailed sign-in link and
+// use this site's passkeys.
 func appSiteAssociation(team string) http.HandlerFunc {
-	body := `{"applinks":{"details":[{"appIDs":["` + team + "." + iosBundleID + `"],"components":[{"/":"/auth/verify"}]}]}}`
+	id := team + "." + IOSBundleID
+	body := `{"applinks":{"details":[{"appIDs":["` + id + `"],"components":[{"/":"/auth/verify"}]}]},` +
+		`"webcredentials":{"apps":["` + id + `"]}}`
 	return func(w http.ResponseWriter, _ *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.Write([]byte(body))

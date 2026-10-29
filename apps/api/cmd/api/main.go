@@ -4,10 +4,13 @@ import (
 	"context"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 
+	"github.com/brianbancroft/impressipies/apps/api/internal/apple"
 	"github.com/brianbancroft/impressipies/apps/api/internal/db"
 	"github.com/brianbancroft/impressipies/apps/api/internal/mail"
 	"github.com/brianbancroft/impressipies/apps/api/internal/server"
@@ -49,7 +52,7 @@ func main() {
 		opts = append(opts, server.WithBootstrapMail(
 			mailer,
 			envOr("BOOTSTRAP_ADMIN_EMAIL", "admin@impressipes.com"),
-			envOr("APP_URL", "http://localhost:4200"),
+			envOr("APP_URL", envOr("PUBLIC_URL", "http://localhost:4200")),
 		))
 	}
 
@@ -57,6 +60,24 @@ func main() {
 	if team := os.Getenv("APPLE_TEAM_ID"); team != "" {
 		opts = append(opts, server.WithAppleTeam(team))
 	}
+
+	// Passkeys are bound to the site's domain, so APP_URL (or WEBAUTHN_RP_ID, to share a
+	// parent domain) must match where people really sign in.
+	appURL := envOr("APP_URL", "http://localhost:4200")
+	if u, err := url.Parse(appURL); err == nil && u.Hostname() != "" {
+		origins := []string{strings.TrimRight(appURL, "/")}
+		for _, o := range strings.Split(os.Getenv("WEBAUTHN_ORIGINS"), ",") {
+			if o = strings.TrimSpace(o); o != "" {
+				origins = append(origins, o)
+			}
+		}
+		opts = append(opts, server.WithPasskeys(envOr("WEBAUTHN_RP_ID", u.Hostname()), origins...))
+	}
+
+	// The iOS app signs in with its bundle ID as audience; APPLE_WEB_CLIENT_ID (a Services
+	// ID) additionally turns on the web button.
+	webClient := os.Getenv("APPLE_WEB_CLIENT_ID")
+	opts = append(opts, server.WithApple(apple.New(server.IOSBundleID, webClient), webClient))
 
 	api := server.New(pool, opts...)
 	mux := http.NewServeMux()

@@ -1,6 +1,9 @@
 import { useState } from 'react';
-import { KeyRound, Mail } from 'lucide-react';
-import { login, requestMagicLink, verifyCode, type AuthResult } from './api';
+import { useQuery } from '@tanstack/react-query';
+import { Fingerprint, KeyRound, Mail } from 'lucide-react';
+import { AppleLogo } from './AppleLogo';
+import { getAuthConfig, login, requestMagicLink, verifyCode, type AuthResult } from './api';
+import { passkeysSupported, signInApple, signInWithPasskey } from './passkeys';
 import { Shell } from './Shell';
 import { Button } from './ui/button';
 import { cn } from './ui/cn';
@@ -19,7 +22,7 @@ export function SignIn() {
     <Shell>
       <p className="scribble">welcome back</p>
       <h1 className="mt-1 text-4xl leading-none md:text-5xl">Sign in</h1>
-      <p className="mt-2 text-ink-muted">Use your password, or get a one-time link by email.</p>
+      <p className="mt-2 text-ink-muted">Use a passkey or Apple, your password, or a one-time link by email.</p>
       <SignInForm className="mt-6" />
       <p className="mt-5 text-center text-sm text-ink-muted">Joining the family? Ask the admin for an invite link.</p>
     </Shell>
@@ -35,11 +38,20 @@ export function SignInForm({ className, autoFocus = true }: { className?: string
   const [sent, setSent] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const config = useQuery({ queryKey: ['auth-config'], queryFn: getAuthConfig, staleTime: Infinity }).data;
+  const usePasskey = !!config?.passkeys && passkeysSupported();
+  const appleClientId = config?.appleClientId;
 
   function finish(res: AuthResult) {
     if (res.ok) return window.location.assign(afterSignIn(res.member));
     setError(res.message);
     setBusy(false);
+  }
+
+  async function oneTap(attempt: () => Promise<AuthResult>) {
+    setBusy(true);
+    setError('');
+    finish(await attempt());
   }
 
   async function submit(e: React.FormEvent) {
@@ -63,6 +75,26 @@ export function SignInForm({ className, autoFocus = true }: { className?: string
 
   return (
     <form onSubmit={submit} className={cn('card flex flex-col gap-4 p-5 sm:p-6', className)}>
+      {(usePasskey || appleClientId) && (
+        <>
+          <div className="flex flex-col gap-3">
+            {usePasskey && (
+              <Button variant="primary" size="lg" className="w-full" disabled={busy} onClick={() => oneTap(signInWithPasskey)}>
+                <Fingerprint />Sign in with a passkey
+              </Button>
+            )}
+            {appleClientId && (
+              <Button
+                variant="secondary" size="lg" className="w-full bg-black text-white hover:text-white dark:bg-white dark:text-black dark:hover:text-black"
+                disabled={busy} onClick={() => oneTap(() => signInApple(appleClientId))}
+              >
+                <AppleLogo className="size-5" />Sign in with Apple
+              </Button>
+            )}
+          </div>
+          <p className="text-center text-sm text-ink-muted">or use your email</p>
+        </>
+      )}
       <Segmented
         label="Sign-in method"
         value={mode}

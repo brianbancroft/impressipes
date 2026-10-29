@@ -33,6 +33,13 @@ type ApiToken struct {
 	CreatedAt  pgtype.Timestamptz `json:"created_at"`
 }
 
+type AppleIdentity struct {
+	Sub       string             `json:"sub"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	Email     string             `json:"email"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type Invite struct {
 	TokenHash string             `json:"token_hash"`
 	CreatedBy pgtype.UUID        `json:"created_by"`
@@ -131,12 +138,17 @@ type OauthGrant struct {
 }
 
 type Passkey struct {
-	CredentialID []byte             `json:"credential_id"`
-	UserID       pgtype.UUID        `json:"user_id"`
-	PublicKey    []byte             `json:"public_key"`
-	SignCount    int64              `json:"sign_count"`
-	Transports   []string           `json:"transports"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	CredentialID   []byte             `json:"credential_id"`
+	UserID         pgtype.UUID        `json:"user_id"`
+	PublicKey      []byte             `json:"public_key"`
+	SignCount      int64              `json:"sign_count"`
+	Transports     []string           `json:"transports"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Name           string             `json:"name"`
+	BackupEligible bool               `json:"backup_eligible"`
+	BackupState    bool               `json:"backup_state"`
+	Aaguid         []byte             `json:"aaguid"`
+	LastUsedAt     pgtype.Timestamptz `json:"last_used_at"`
 }
 
 type Recipe struct {

@@ -10,6 +10,10 @@ export type Ingredient = components['schemas']['Ingredient'];
 export type Step = components['schemas']['Step'];
 export type ShoppingList = components['schemas']['List'];
 export type InviteInfo = components['schemas']['InviteInfo'];
+export type Passkey = components['schemas']['Passkey'];
+export type SignInMethods = components['schemas']['SignInMethods'];
+export type AuthConfig = components['schemas']['AuthConfig'];
+type Ceremony = components['schemas']['PasskeyCeremony'];
 
 const client = createClient<paths>({ baseUrl: '/api' });
 
@@ -172,3 +176,39 @@ export async function suggestItems(listId: string, q: string) {
   const { data } = await client.GET('/lists/{listId}/suggestions', { params: { path: { listId }, query: { q } } });
   return data ?? [];
 }
+
+export async function getAuthConfig(): Promise<AuthConfig> {
+  const { data } = await client.GET('/auth/config');
+  return data ?? { passkeys: false };
+}
+
+export async function getSignInMethods(): Promise<SignInMethods> {
+  const { data } = await client.GET('/me/sign-in');
+  return data ?? { passkeys: [] };
+}
+
+type CeremonyResult = { ok: true; ceremony: Ceremony } | { ok: false; status: number; message: string };
+
+const asCeremony = ({ data, error, response }: { data?: Ceremony; error?: unknown; response: Response }): CeremonyResult =>
+  data ? { ok: true, ceremony: data } : failure(error, response);
+
+export const beginPasskeyLogin = async () => asCeremony(await client.POST('/auth/passkey/begin'));
+
+export const finishPasskeyLogin = async (ceremonyId: string, credential: Record<string, unknown>) =>
+  asAuth(await client.POST('/auth/passkey/finish', { body: { ceremonyId, credential } }));
+
+export const beginPasskeyRegistration = async () => asCeremony(await client.POST('/me/passkeys/begin'));
+
+export const finishPasskeyRegistration = async (ceremonyId: string, credential: Record<string, unknown>, name: string) =>
+  asSimple(await client.POST('/me/passkeys/finish', { body: { ceremonyId, credential, name } }));
+
+export const deletePasskey = async (passkeyId: string) =>
+  asSimple(await client.DELETE('/me/passkeys/{passkeyId}', { params: { path: { passkeyId } } }));
+
+export const signInWithApple = async (identityToken: string, nonce: string) =>
+  asAuth(await client.POST('/auth/apple', { body: { identityToken, nonce } }));
+
+export const linkApple = async (identityToken: string, nonce: string) =>
+  asSimple(await client.PUT('/me/apple', { body: { identityToken, nonce } }));
+
+export const unlinkApple = async () => asSimple(await client.DELETE('/me/apple'));

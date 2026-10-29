@@ -1,7 +1,10 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearch } from '@tanstack/react-router';
 import { useState } from 'react';
-import { getMe, setEmail, setPassword, verifyCode } from './api';
+import { Fingerprint, Trash2 } from 'lucide-react';
+import { AppleLogo } from './AppleLogo';
+import { deletePasskey, getAuthConfig, getMe, getSignInMethods, setEmail, setPassword, unlinkApple, verifyCode } from './api';
+import { addPasskey, connectApple, deviceName, passkeysSupported } from './passkeys';
 import { Button } from './ui/button';
 import { Blob } from './ui/sticker';
 import { Toast } from './ui/toast';
@@ -27,10 +30,87 @@ export function Account() {
           <p className="mt-2 text-ink-muted">You’re signed in. Set a password so next time you can skip the email.</p>
         )}
       </div>
+      <SignInMethodsCard onChange={say} />
       <PasswordCard hasPassword={!!member?.hasPassword} onSaved={() => say('Password saved')} />
       <EmailCard current={member?.email} pending={pending} onConfirmed={() => say('Email confirmed')} />
       {toast && <Toast>{toast}</Toast>}
     </div>
+  );
+}
+
+function SignInMethodsCard({ onChange }: { onChange: (msg: string) => void }) {
+  const qc = useQueryClient();
+  const methods = useQuery({ queryKey: ['sign-in-methods'], queryFn: getSignInMethods }).data;
+  const config = useQuery({ queryKey: ['auth-config'], queryFn: getAuthConfig, staleTime: Infinity }).data;
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+
+  async function run(work: () => Promise<{ ok: true } | { ok: false; message: string }>, done: string) {
+    setBusy(true);
+    setError('');
+    const res = await work();
+    setBusy(false);
+    if (!res.ok) return setError(res.message);
+    await qc.invalidateQueries({ queryKey: ['sign-in-methods'] });
+    onChange(done);
+  }
+
+  const canPasskey = !!config?.passkeys && passkeysSupported();
+  const appleClientId = config?.appleClientId;
+
+  return (
+    <section className="card relative mb-6 flex flex-col gap-4 p-5">
+      <div>
+        <h2 className="text-2xl">Passkeys and Apple</h2>
+        <p className="text-ink-muted">Sign in with Face ID or Touch ID instead of a password. A passkey saved to iCloud Keychain works on all your Apple devices.</p>
+      </div>
+
+      <ul className="flex flex-col gap-2">
+        {methods?.passkeys.map((k) => (
+          <li key={k.id} className="flex items-center gap-3 rounded-md bg-surface-2 p-3">
+            <Fingerprint className="size-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="truncate font-bold">{k.name}</p>
+              <p className="text-sm text-ink-muted">
+                Added {new Date(k.createdAt).toLocaleDateString()}{k.synced ? ' · syncs across your devices' : ''}
+              </p>
+            </div>
+            <Button
+              variant="ghost" size="icon-sm" aria-label={`Remove passkey ${k.name}`} disabled={busy}
+              onClick={() => run(() => deletePasskey(k.id), 'Passkey removed')}
+            ><Trash2 /></Button>
+          </li>
+        ))}
+        {methods?.apple && (
+          <li className="flex items-center gap-3 rounded-md bg-surface-2 p-3">
+            <AppleLogo className="size-5 shrink-0" />
+            <div className="min-w-0 flex-1">
+              <p className="font-bold">Apple ID</p>
+              {methods.apple.email && <p className="truncate text-sm text-ink-muted">{methods.apple.email}</p>}
+            </div>
+            <Button
+              variant="ghost" size="icon-sm" aria-label="Disconnect Apple ID" disabled={busy}
+              onClick={() => run(unlinkApple, 'Apple ID disconnected')}
+            ><Trash2 /></Button>
+          </li>
+        )}
+      </ul>
+
+      {error && <p role="alert" className="err">{error}</p>}
+      <div className="flex flex-wrap gap-3">
+        {canPasskey && (
+          <Button variant="primary" disabled={busy} onClick={() => run(() => addPasskey(deviceName()), 'Passkey added')}>
+            <Fingerprint />Add a passkey
+          </Button>
+        )}
+        {appleClientId && !methods?.apple && (
+          <Button disabled={busy} onClick={() => run(() => connectApple(appleClientId), 'Apple ID connected')}>
+            <AppleLogo className="size-5" />Connect Apple
+          </Button>
+        )}
+      </div>
+      {!canPasskey && !appleClientId && <p className="text-sm text-ink-muted">Passkeys aren’t available in this browser.</p>}
+    </section>
   );
 }
 

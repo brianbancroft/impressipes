@@ -30,6 +30,21 @@ struct EmailSignInView: View {
                     Text("Sign in").font(.display()).foregroundStyle(Palette.ink)
                 }
 
+                VStack(spacing: 12) {
+                    Button { signInWithPasskey() } label: {
+                        Label("Sign in with a passkey", systemImage: "person.badge.key.fill")
+                    }
+                    .buttonStyle(PopButtonStyle())
+                    .disabled(busy)
+                    AppleAuthButton(label: .signIn, onError: { error = $0 }) { token, nonce in
+                        await signInWithApple(token: token, nonce: nonce)
+                    }
+                    .disabled(busy)
+                    Text("or use your email")
+                        .font(.footnote.weight(.semibold))
+                        .foregroundStyle(Palette.inkMuted)
+                }
+
                 field("Email") {
                     TextField("you@example.com", text: $email)
                         .textContentType(.username)
@@ -147,13 +162,36 @@ struct EmailSignInView: View {
         code = ""
     }
 
-    private func submit() {
-        guard canSubmit else { return }
+    /// Points the session at the server in the text field. False (with an error shown) if it isn't one.
+    private func applyServer() -> Bool {
         guard let server = URL(string: serverText.trimmingCharacters(in: .whitespaces)), server.scheme != nil else {
             error = "Check the server address."
-            return
+            return false
         }
         if server != session.server { session.setServer(server) }
+        return true
+    }
+
+    private func signInWithPasskey() {
+        guard applyServer() else { return }
+        error = nil
+        busy = true
+        Task {
+            defer { busy = false }
+            do { try await session.signInWithPasskey() } catch { self.error = APIError.from(error).message }
+        }
+    }
+
+    private func signInWithApple(token: String, nonce: String) async {
+        guard applyServer() else { return }
+        error = nil
+        busy = true
+        defer { busy = false }
+        do { try await session.signInWithApple(identityToken: token, nonce: nonce) } catch { self.error = APIError.from(error).message }
+    }
+
+    private func submit() {
+        guard canSubmit, applyServer() else { return }
         error = nil
         busy = true
         let mail = email.trimmingCharacters(in: .whitespaces)

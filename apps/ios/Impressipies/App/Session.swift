@@ -1,6 +1,7 @@
 import ApiClient
 import Foundation
 import Observation
+import UIKit
 
 /// A change pushed by the server's event stream.
 struct ListEvent: Equatable, Decodable {
@@ -25,6 +26,7 @@ final class Session {
     var notice: String?
 
     @ObservationIgnored private let tokenBox = TokenBox()
+    @ObservationIgnored private let passkeys = PasskeyPrompt()
     @ObservationIgnored private var lastLinkToken: String?
     @ObservationIgnored private var eventsTask: Task<Void, Never>?
 
@@ -97,6 +99,27 @@ final class Session {
     func verify(email: String, code: String) async throws {
         let (m, token) = try await api.verify(email: email, code: code)
         try adopt(m, token: token)
+    }
+
+    /// Signs in with a passkey from iCloud Keychain. Does nothing if the person dismisses the sheet.
+    func signInWithPasskey() async throws {
+        let begin = try await api.beginPasskeyLogin()
+        guard let credential = try await passkeys.signIn(options: begin.options) else { return }
+        let (m, token) = try await api.finishPasskeyLogin(ceremonyId: begin.ceremonyId, credential: credential)
+        try adopt(m, token: token)
+    }
+
+    func signInWithApple(identityToken: String, nonce: String) async throws {
+        let (m, token) = try await api.signInWithApple(identityToken: identityToken, nonce: nonce)
+        try adopt(m, token: token)
+    }
+
+    /// Adds a passkey for this member. Returns false if the person dismisses the sheet.
+    func addPasskey() async throws -> Bool {
+        let begin = try await api.beginPasskeyRegistration()
+        guard let credential = try await passkeys.register(options: begin.options) else { return false }
+        try await api.finishPasskeyRegistration(ceremonyId: begin.ceremonyId, credential: credential, name: UIDevice.current.model)
+        return true
     }
 
     func setEmail(_ email: String) async throws {

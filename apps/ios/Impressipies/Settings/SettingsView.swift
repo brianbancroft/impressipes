@@ -27,7 +27,7 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.vertical, 4)
-                        NavigationLink("Email & password") { AccountSecurityView() }
+                        NavigationLink("Sign-in & security") { AccountSecurityView() }
                     }
                 }
 

@@ -7,7 +7,10 @@ struct SessionMiddleware: ClientMiddleware {
     let token: @Sendable () -> String?
     let onUnauthorized: @Sendable () -> Void
 
-    private static let signInOperations: Set<String> = ["acceptInvite", "login", "requestMagicLink", "verifyMagicLink"]
+    private static let signInOperations: Set<String> = [
+        "acceptInvite", "login", "requestMagicLink", "verifyMagicLink",
+        "beginPasskeyLogin", "finishPasskeyLogin", "signInWithApple",
+    ]
 
     func intercept(
         _ request: HTTPRequest,

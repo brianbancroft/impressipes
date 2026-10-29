@@ -33,13 +33,17 @@ targets:
       - target: ImpressipiesWatch
         embed: true
         codeSign: false
-    # Lets the emailed sign-in link (https://impressipes.bancroft.io/auth/verify) open the app. The server
-    # must serve /.well-known/apple-app-site-association (set APPLE_TEAM_ID there).
+    # applinks lets the emailed sign-in link (https://impressipes.bancroft.io/auth/verify) open the app;
+    # webcredentials lets the app use the site's passkeys. The server must serve
+    # /.well-known/apple-app-site-association (set APPLE_TEAM_ID there). applesignin enables Sign in with Apple.
     entitlements:
       path: Impressipies.entitlements
       properties:
         com.apple.developer.associated-domains:
           - applinks:impressipes.bancroft.io
+          - webcredentials:impressipes.bancroft.io
+        com.apple.developer.applesignin:
+          - Default
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: ca.brianbancroft.impressipies

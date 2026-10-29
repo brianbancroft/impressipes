@@ -35,6 +35,38 @@ func (q *Queries) AddPasskey(ctx context.Context, arg AddPasskeyParams) error {
 	return err
 }
 
+const addWebauthnPasskey = `-- name: AddWebauthnPasskey :exec
+INSERT INTO passkeys (credential_id, user_id, public_key, sign_count, transports, name, backup_eligible, backup_state, aaguid)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+`
+
+type AddWebauthnPasskeyParams struct {
+	CredentialID   []byte      `json:"credential_id"`
+	UserID         pgtype.UUID `json:"user_id"`
+	PublicKey      []byte      `json:"public_key"`
+	SignCount      int64       `json:"sign_count"`
+	Transports     []string    `json:"transports"`
+	Name           string      `json:"name"`
+	BackupEligible bool        `json:"backup_eligible"`
+	BackupState    bool        `json:"backup_state"`
+	Aaguid         []byte      `json:"aaguid"`
+}
+
+func (q *Queries) AddWebauthnPasskey(ctx context.Context, arg AddWebauthnPasskeyParams) error {
+	_, err := q.db.Exec(ctx, addWebauthnPasskey,
+		arg.CredentialID,
+		arg.UserID,
+		arg.PublicKey,
+		arg.SignCount,
+		arg.Transports,
+		arg.Name,
+		arg.BackupEligible,
+		arg.BackupState,
+		arg.Aaguid,
+	)
+	return err
+}
+
 const bumpLoginCodeAttempts = `-- name: BumpLoginCodeAttempts :exec
 UPDATE login_codes SET attempts = attempts + 1 WHERE id = $1
 `
@@ -170,6 +202,39 @@ DELETE FROM sessions WHERE user_id = $1
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUserSessions, userID)
 	return err
+}
+
+const deleteWebauthnPasskey = `-- name: DeleteWebauthnPasskey :execrows
+DELETE FROM passkeys WHERE credential_id = $1 AND user_id = $2 AND octet_length(public_key) > 0
+`
+
+type DeleteWebauthnPasskeyParams struct {
+	CredentialID []byte      `json:"credential_id"`
+	UserID       pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) DeleteWebauthnPasskey(ctx context.Context, arg DeleteWebauthnPasskeyParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteWebauthnPasskey, arg.CredentialID, arg.UserID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const getAppleIdentity = `-- name: GetAppleIdentity :one
+SELECT sub, user_id, email, created_at FROM apple_identities WHERE user_id = $1
+`
+
+func (q *Queries) GetAppleIdentity(ctx context.Context, userID pgtype.UUID) (AppleIdentity, error) {
+	row := q.db.QueryRow(ctx, getAppleIdentity, userID)
+	var i AppleIdentity
+	err := row.Scan(
+		&i.Sub,
+		&i.UserID,
+		&i.Email,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getInvite = `-- name: GetInvite :one
@@ -325,6 +390,27 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 	return i, err
 }
 
+const getUserByApple = `-- name: GetUserByApple :one
+SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash, users.app_connected_at FROM apple_identities a JOIN users ON users.id = a.user_id WHERE a.sub = $1
+`
+
+func (q *Queries) GetUserByApple(ctx context.Context, sub string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByApple, sub)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.Role,
+		&i.AvatarColor,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+		&i.AppConnectedAt,
+	)
+	return i, err
+}
+
 const getUserByEmail = `-- name: GetUserByEmail :one
 SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash, app_connected_at FROM users WHERE email = $1::text
 `
@@ -344,6 +430,45 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.AppConnectedAt,
 	)
 	return i, err
+}
+
+const getWebauthnPasskey = `-- name: GetWebauthnPasskey :one
+SELECT credential_id, user_id, public_key, sign_count, transports, created_at, name, backup_eligible, backup_state, aaguid, last_used_at FROM passkeys WHERE credential_id = $1 AND octet_length(public_key) > 0
+`
+
+func (q *Queries) GetWebauthnPasskey(ctx context.Context, credentialID []byte) (Passkey, error) {
+	row := q.db.QueryRow(ctx, getWebauthnPasskey, credentialID)
+	var i Passkey
+	err := row.Scan(
+		&i.CredentialID,
+		&i.UserID,
+		&i.PublicKey,
+		&i.SignCount,
+		&i.Transports,
+		&i.CreatedAt,
+		&i.Name,
+		&i.BackupEligible,
+		&i.BackupState,
+		&i.Aaguid,
+		&i.LastUsedAt,
+	)
+	return i, err
+}
+
+const linkApple = `-- name: LinkApple :exec
+INSERT INTO apple_identities (sub, user_id, email) VALUES ($1, $2, $3)
+ON CONFLICT (user_id) DO UPDATE SET sub = EXCLUDED.sub, email = EXCLUDED.email, created_at = now()
+`
+
+type LinkAppleParams struct {
+	Sub    string      `json:"sub"`
+	UserID pgtype.UUID `json:"user_id"`
+	Email  string      `json:"email"`
+}
+
+func (q *Queries) LinkApple(ctx context.Context, arg LinkAppleParams) error {
+	_, err := q.db.Exec(ctx, linkApple, arg.Sub, arg.UserID, arg.Email)
+	return err
 }
 
 const listUsers = `-- name: ListUsers :many
@@ -369,6 +494,42 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.Email,
 			&i.PasswordHash,
 			&i.AppConnectedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listWebauthnPasskeys = `-- name: ListWebauthnPasskeys :many
+SELECT credential_id, user_id, public_key, sign_count, transports, created_at, name, backup_eligible, backup_state, aaguid, last_used_at FROM passkeys WHERE user_id = $1 AND octet_length(public_key) > 0 ORDER BY created_at
+`
+
+func (q *Queries) ListWebauthnPasskeys(ctx context.Context, userID pgtype.UUID) ([]Passkey, error) {
+	rows, err := q.db.Query(ctx, listWebauthnPasskeys, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Passkey{}
+	for rows.Next() {
+		var i Passkey
+		if err := rows.Scan(
+			&i.CredentialID,
+			&i.UserID,
+			&i.PublicKey,
+			&i.SignCount,
+			&i.Transports,
+			&i.CreatedAt,
+			&i.Name,
+			&i.BackupEligible,
+			&i.BackupState,
+			&i.Aaguid,
+			&i.LastUsedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -467,6 +628,33 @@ type SetUserProfileParams struct {
 func (q *Queries) SetUserProfile(ctx context.Context, arg SetUserProfileParams) error {
 	_, err := q.db.Exec(ctx, setUserProfile, arg.ID, arg.DisplayName, arg.AvatarColor)
 	return err
+}
+
+const touchPasskey = `-- name: TouchPasskey :exec
+UPDATE passkeys SET sign_count = $2, backup_state = $3, last_used_at = now() WHERE credential_id = $1
+`
+
+type TouchPasskeyParams struct {
+	CredentialID []byte `json:"credential_id"`
+	SignCount    int64  `json:"sign_count"`
+	BackupState  bool   `json:"backup_state"`
+}
+
+func (q *Queries) TouchPasskey(ctx context.Context, arg TouchPasskeyParams) error {
+	_, err := q.db.Exec(ctx, touchPasskey, arg.CredentialID, arg.SignCount, arg.BackupState)
+	return err
+}
+
+const unlinkApple = `-- name: UnlinkApple :execrows
+DELETE FROM apple_identities WHERE user_id = $1
+`
+
+func (q *Queries) UnlinkApple(ctx context.Context, userID pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, unlinkApple, userID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const useLoginCode = `-- name: UseLoginCode :exec

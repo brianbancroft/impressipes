@@ -24,6 +24,26 @@ type Directory interface {
 	StartVerify(ctx context.Context, memberID, email string) (*Challenge, error)
 	CompleteLink(ctx context.Context, token string) (*Member, string, error)
 	CompleteCode(ctx context.Context, email, code string) (*Member, string, error)
+
+	// SignIn starts a session for a member who has already proven who they are
+	// (a passkey assertion or an Apple identity token).
+	SignIn(ctx context.Context, memberID string) (*Member, string, error)
+	// MemberByEmail finds the member whose confirmed email is email.
+	MemberByEmail(ctx context.Context, email string) (*Member, error)
+
+	// Passkeys are WebAuthn credentials, which sync between a person's Apple devices.
+	AddPasskey(ctx context.Context, memberID string, p Passkey) error
+	Passkeys(ctx context.Context, memberID string) ([]Passkey, error)
+	// PasskeyOwner finds a passkey and the member who registered it.
+	PasskeyOwner(ctx context.Context, credentialID []byte) (*Passkey, *Member, error)
+	TouchPasskey(ctx context.Context, credentialID []byte, signCount uint32, backedUp bool) error
+	DeletePasskey(ctx context.Context, memberID string, credentialID []byte) error
+
+	// Apple links one Apple ID (identified by its stable "sub") to a member.
+	AppleLink(ctx context.Context, memberID, sub, email string) error
+	AppleMember(ctx context.Context, sub string) (*Member, error)
+	AppleIdentity(ctx context.Context, memberID string) (*AppleID, error)
+	AppleUnlink(ctx context.Context, memberID string) error
 }
 
 var (
