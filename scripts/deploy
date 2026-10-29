@@ -23,6 +23,6 @@ fi
 
 git push -u origin HEAD
 
-curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" \
+curl -fsS -X POST -H "Authorization: Bearer $COOLIFY_TOKEN" \
   "${COOLIFY_URL%/}/api/v1/deploy?uuid=$APP_UUID&force=$force"
 echo
