@@ -98,7 +98,7 @@ function Layout() {
   // Detail screens bring their own header and actions, so phones drop the tab bar there.
   const top = ['/home', '/recipes', '/lists', '/admin', '/ai', '/app-setup', '/account'].includes(path);
   return (
-    <div className="relative isolate min-h-dvh md:pl-24 lg:pl-62">
+    <div className="relative isolate min-h-dvh overflow-x-clip md:pl-24 lg:pl-62">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
       <SideRail me={me.member} />
       {top && (
