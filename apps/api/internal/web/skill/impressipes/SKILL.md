@@ -9,6 +9,11 @@ Impressipes is the family's recipe box and shared shopping lists. This skill tel
 connector well. The connector must already be added (a custom connector pointing at the site's `/mcp`
 address, or a personal token). If the tools below are not available, say so and ask the user to connect it.
 
+If connecting needs the user to approve access, give them the authorize link exactly as the OAuth flow produced
+it: copy it character for character in a code block, never retype or "tidy" it. A single wrong character in the
+path (for example `/oautioauthorize` instead of `/oauth/authorize`) lands on a "Page not found". If a link does
+not open the Impressipes approval page, check it against `<site>/oauth/authorize?...` before trying anything else.
+
 You do the reading and thinking; the tools only store structured data.
 
 ## Saving a recipe from a photo or page

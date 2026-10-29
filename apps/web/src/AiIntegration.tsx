@@ -21,7 +21,7 @@ const check = 'Finally, call the list_tags tool and tell me what you can see, so
 
 const agentPrompt = (origin: string) => `Please connect yourself to my family's Impressipes recipe box, so you can save recipes and manage our shopping list for me. Do each step yourself; only stop when you need me to click something.
 
-1. Add a remote MCP server named "impressipes" at ${origin}/mcp (Streamable HTTP, OAuth sign-in). When it needs approval, give me the link: I'll approve it in my browser, where I'm signed in to Impressipes. If you can't do an OAuth sign-in, tell me and I'll ask the Impressipes admin for a personal token, which you send as the header "Authorization: Bearer <token>".
+1. Add a remote MCP server named "impressipes" at ${origin}/mcp (Streamable HTTP, OAuth sign-in). When it needs approval, give me the approval link in a code block, copied exactly as it was produced (never retype it; one wrong character gives "Page not found"). I'll approve it in my browser, where I'm signed in to Impressipes. If you can't do an OAuth sign-in, tell me and I'll ask the Impressipes admin for a personal token, which you send as the header "Authorization: Bearer <token>".
 2. Install the Impressipes skill: download ${origin}/skill.md and save it as a skill named "impressipes" wherever you keep skills (for example skills/impressipes/SKILL.md). If you don't support skills, add its text to your standing instructions instead. A zipped copy is at ${origin}/skill.
 3. ${check}`;
 
@@ -29,7 +29,7 @@ const chatPrompt = (where: string, skill: string) => (origin: string) => `I want
 
 - It's a custom connector (a remote MCP server) at this address: ${origin}/mcp
 - ${where}
-- It signs in with OAuth: once I add it, Impressipes opens a page where I approve access.
+- It signs in with OAuth: once I add it, Impressipes opens a page where I approve access. If you give me an approval link, paste it exactly as you received it, in a code block, and never retype it.
 - ${skill}
 
 Once it's connected, read ${origin}/skill.md and follow those instructions whenever I ask about recipes, meal plans or the shopping list. ${check}`;
