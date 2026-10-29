@@ -7,9 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		25178DC58A99F591E436D249 /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */; };
 		2E0B62AB52842643F80BCBE5 /* ImpressipiesWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		A1C0000000000000000000B1 /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0000000000000000000A2 /* ApiClient */; };
-		A1C0000000000000000000B2 /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0000000000000000000A3 /* ApiClient */; };
+		4BA15CA20CD48DEB5EFDE0EE /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = 210A0003844F8B00D35E50D5 /* ApiClient */; };
+		D61D6091D8B5ABEC64F371DD /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = 4581A4D55126CCA6A7773065 /* ApiClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -19,6 +20,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 346CF7C158C4B5BBAC5F6B33;
 			remoteInfo = ImpressipiesWatch;
+		};
+		97F1DEDE04CA927B16D7ADE0 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 817C0BFA5296B690DD7440AB /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 15C6864A5129523324401189;
+			remoteInfo = Impressipies;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -38,53 +46,88 @@
 
 /* Begin PBXFileReference section */
 		0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImpressipiesWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		1E1E0BE6B0E6B50C39A2F02D /* ImpressipiesTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ImpressipiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatTests.swift; sourceTree = "<group>"; };
+		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		80B8FBD67474D47D289A19C4 /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
+		D31D3179CDB3BC957C19D9B2 /* swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift; path = "../../libs/api-spec/swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		3B3082E0B725C94D42EE8B88 /* Impressipies */ = {
+		47238C86749EB5E89D7CE81F /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
+			path = Shared;
+			sourceTree = "<group>";
+		};
+		7F1FE52F9D492AA39951ABAA /* Impressipies */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = Impressipies;
 			sourceTree = "<group>";
 		};
-		CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */ = {
+		B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = ImpressipiesWatch;
-			sourceTree = "<group>";
-		};
-		A1C0000000000000000000E1 /* Shared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Shared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
-		A1C0000000000000000000C1 /* Frameworks */ = {
+		C660BD30DA7317CE1CEB236C /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1C0000000000000000000B1 /* ApiClient in Frameworks */,
+				4BA15CA20CD48DEB5EFDE0EE /* ApiClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1C0000000000000000000C2 /* Frameworks */ = {
+		F7634CE81AD2F6A1ED21AF10 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				A1C0000000000000000000B2 /* ApiClient in Frameworks */,
+				D61D6091D8B5ABEC64F371DD /* ApiClient in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		66847EA32EF4AF25F4113AC6 /* ImpressipiesTests */ = {
+			isa = PBXGroup;
+			children = (
+				2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */,
+			);
+			path = ImpressipiesTests;
+			sourceTree = "<group>";
+		};
+		95886F66AB0C46E283B1EA59 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				D31D3179CDB3BC957C19D9B2 /* swift */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
 		BF886737D2A52431B0F7F962 = {
 			isa = PBXGroup;
 			children = (
-				3B3082E0B725C94D42EE8B88 /* Impressipies */,
-				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
-				A1C0000000000000000000E1 /* Shared */,
+				80B8FBD67474D47D289A19C4 /* project.yml */,
+				7F1FE52F9D492AA39951ABAA /* Impressipies */,
+				66847EA32EF4AF25F4113AC6 /* ImpressipiesTests */,
+				B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */,
+				95886F66AB0C46E283B1EA59 /* Packages */,
+				47238C86749EB5E89D7CE81F /* Shared */,
 				E7412ED47A1A57AD530407EB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -93,6 +136,7 @@
 			isa = PBXGroup;
 			children = (
 				6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */,
+				1E1E0BE6B0E6B50C39A2F02D /* ImpressipiesTests.xctest */,
 				0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */,
 			);
 			name = Products;
@@ -106,8 +150,8 @@
 			buildConfigurationList = C17B142ABD083336A76F8E3A /* Build configuration list for PBXNativeTarget "Impressipies" */;
 			buildPhases = (
 				24C3F7BA6B9FFCEE78CB7E01 /* Sources */,
-				A1C0000000000000000000C1 /* Frameworks */,
-				A1C0000000000000000000D1 /* Resources */,
+				F270E4A3D9563FF5FA2B0BAA /* Resources */,
+				F7634CE81AD2F6A1ED21AF10 /* Frameworks */,
 				2497E1F33C021B9DB52E652C /* Embed Watch Content */,
 			);
 			buildRules = (
@@ -116,12 +160,12 @@
 				6E58131559D2419B24C30D09 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				3B3082E0B725C94D42EE8B88 /* Impressipies */,
-				A1C0000000000000000000E1 /* Shared */,
+				7F1FE52F9D492AA39951ABAA /* Impressipies */,
+				47238C86749EB5E89D7CE81F /* Shared */,
 			);
 			name = Impressipies;
 			packageProductDependencies = (
-				A1C0000000000000000000A2 /* ApiClient */,
+				4581A4D55126CCA6A7773065 /* ApiClient */,
 			);
 			productName = Impressipies;
 			productReference = 6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */;
@@ -132,24 +176,42 @@
 			buildConfigurationList = FF1CB1191D83AAA3773248FE /* Build configuration list for PBXNativeTarget "ImpressipiesWatch" */;
 			buildPhases = (
 				C1D6F81A8433A4FA9EC59C4C /* Sources */,
-				A1C0000000000000000000C2 /* Frameworks */,
-				A1C0000000000000000000D2 /* Resources */,
+				F9E58A42290B9DBBFAF2AA18 /* Resources */,
+				C660BD30DA7317CE1CEB236C /* Frameworks */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
-				A1C0000000000000000000E1 /* Shared */,
+				B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */,
+				47238C86749EB5E89D7CE81F /* Shared */,
 			);
 			name = ImpressipiesWatch;
 			packageProductDependencies = (
-				A1C0000000000000000000A3 /* ApiClient */,
+				210A0003844F8B00D35E50D5 /* ApiClient */,
 			);
 			productName = ImpressipiesWatch;
 			productReference = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */;
 			productType = "com.apple.product-type.application";
+		};
+		876330F35FDDCA3C71637024 /* ImpressipiesTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = D275A86C455D9E46E84559ED /* Build configuration list for PBXNativeTarget "ImpressipiesTests" */;
+			buildPhases = (
+				17BD19946C7FFA332AF6A9A4 /* Sources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				BD45CBEFDB414C2D6AB4EC9E /* PBXTargetDependency */,
+			);
+			name = ImpressipiesTests;
+			packageProductDependencies = (
+			);
+			productName = ImpressipiesTests;
+			productReference = 1E1E0BE6B0E6B50C39A2F02D /* ImpressipiesTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
 		};
 /* End PBXNativeTarget section */
 
@@ -158,9 +220,14 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastSwiftUpdateCheck = 2600;
-				LastUpgradeCheck = 2600;
+				LastUpgradeCheck = 1430;
 				TargetAttributes = {
+					15C6864A5129523324401189 = {
+						ProvisioningStyle = Automatic;
+					};
+					346CF7C158C4B5BBAC5F6B33 = {
+						ProvisioningStyle = Automatic;
+					};
 				};
 			};
 			buildConfigurationList = 0F350C4D6B79D0B67344B3D1 /* Build configuration list for PBXProject "Impressipies" */;
@@ -173,7 +240,7 @@
 			mainGroup = BF886737D2A52431B0F7F962;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				A1C0000000000000000000A1 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */,
+				AC3D32079EAE7695CBD1F1A8 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E7412ED47A1A57AD530407EB /* Products */;
@@ -182,19 +249,20 @@
 			targets = (
 				15C6864A5129523324401189 /* Impressipies */,
 				346CF7C158C4B5BBAC5F6B33 /* ImpressipiesWatch */,
+				876330F35FDDCA3C71637024 /* ImpressipiesTests */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-		A1C0000000000000000000D1 /* Resources */ = {
+		F270E4A3D9563FF5FA2B0BAA /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A1C0000000000000000000D2 /* Resources */ = {
+		F9E58A42290B9DBBFAF2AA18 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -204,6 +272,14 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		17BD19946C7FFA332AF6A9A4 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				25178DC58A99F591E436D249 /* FormatTests.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		24C3F7BA6B9FFCEE78CB7E01 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -226,24 +302,81 @@
 			target = 346CF7C158C4B5BBAC5F6B33 /* ImpressipiesWatch */;
 			targetProxy = 1B620282F5C4FF80971D0CDC /* PBXContainerItemProxy */;
 		};
+		BD45CBEFDB414C2D6AB4EC9E /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 15C6864A5129523324401189 /* Impressipies */;
+			targetProxy = 97F1DEDE04CA927B16D7ADE0 /* PBXContainerItemProxy */;
+		};
 /* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
+		4830FCBB54EB4B05ECF945F8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Impressipies.app/Impressipies";
+			};
+			name = Release;
+		};
 		4F9BE5D431CEE062E7BC6993 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
@@ -271,22 +404,59 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
 				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
@@ -316,6 +486,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
@@ -337,6 +508,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
@@ -350,6 +522,22 @@
 				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies;
 				SDKROOT = iphoneos;
 				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		EE8CE6926F7691EDD40C22E4 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@loader_path/Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.tests;
+				SDKROOT = iphoneos;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Impressipies.app/Impressipies";
 			};
 			name = Debug;
 		};
@@ -374,6 +562,15 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Debug;
 		};
+		D275A86C455D9E46E84559ED /* Build configuration list for PBXNativeTarget "ImpressipiesTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EE8CE6926F7691EDD40C22E4 /* Debug */,
+				4830FCBB54EB4B05ECF945F8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
 		FF1CB1191D83AAA3773248FE /* Build configuration list for PBXNativeTarget "ImpressipiesWatch" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -386,18 +583,18 @@
 /* End XCConfigurationList section */
 
 /* Begin XCLocalSwiftPackageReference section */
-		A1C0000000000000000000A1 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */ = {
+		AC3D32079EAE7695CBD1F1A8 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */ = {
 			isa = XCLocalSwiftPackageReference;
 			relativePath = "../../libs/api-spec/swift";
 		};
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
-		A1C0000000000000000000A2 /* ApiClient */ = {
+		210A0003844F8B00D35E50D5 /* ApiClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ApiClient;
 		};
-		A1C0000000000000000000A3 /* ApiClient */ = {
+		4581A4D55126CCA6A7773065 /* ApiClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ApiClient;
 		};

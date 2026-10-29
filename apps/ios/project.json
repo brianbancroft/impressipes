@@ -1,0 +1,31 @@
+{
+  "name": "ios",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "sourceRoot": "apps/ios",
+  "tags": ["type:app", "lang:swift"],
+  "implicitDependencies": ["api-spec"],
+  "targets": {
+    "xcodegen": {
+      "executor": "nx:run-commands",
+      "cache": false,
+      "options": { "command": "xcodegen generate --spec project.yml", "cwd": "apps/ios" }
+    },
+    "build": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["xcodegen"],
+      "options": {
+        "command": "xcodebuild -project Impressipies.xcodeproj -scheme Impressipies -destination 'generic/platform=iOS Simulator' -derivedDataPath build CODE_SIGNING_ALLOWED=NO build",
+        "cwd": "apps/ios"
+      }
+    },
+    "test": {
+      "executor": "nx:run-commands",
+      "dependsOn": ["xcodegen"],
+      "options": {
+        "command": "xcodebuild -project Impressipies.xcodeproj -scheme Impressipies -destination 'platform=iOS Simulator,name=iPhone 17' -derivedDataPath build CODE_SIGNING_ALLOWED=NO test",
+        "cwd": "apps/ios"
+      }
+    }
+  }
+}
