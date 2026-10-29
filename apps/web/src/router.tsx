@@ -95,7 +95,7 @@ function Layout() {
           <ProfileMenu me={me.member} />
         </header>
       )}
-      <main id="main" className={cn('mx-auto w-full max-w-6xl px-4 pt-4 md:px-8 md:pt-8', top ? 'pb-32 md:pb-12' : 'pb-12')}>
+      <main id="main" className={cn('page-content mx-auto w-full max-w-6xl px-4 pt-4 md:px-8 md:pt-8', top ? 'pb-32 md:pb-12' : 'pb-12')}>
         <Outlet />
       </main>
       {top && <TabBar admin={me.member.role === 'admin'} />}
@@ -151,7 +151,7 @@ const routeTree = rootRoute.addChildren([
   ]),
 ]);
 
-export const router = createRouter({ routeTree, defaultPreload: 'intent' });
+export const router = createRouter({ routeTree, defaultPreload: 'intent', defaultViewTransition: true });
 
 declare module '@tanstack/react-router' {
   interface Register {
