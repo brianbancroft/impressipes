@@ -60,28 +60,16 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		47238C86749EB5E89D7CE81F /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
 		7F1FE52F9D492AA39951ABAA /* Impressipies */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
 			path = Impressipies;
 			sourceTree = "<group>";
 		};
 		B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
 			path = ImpressipiesWatch;
 			sourceTree = "<group>";
 		};
@@ -166,8 +154,8 @@
 				6E58131559D2419B24C30D09 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				7F1FE52F9D492AA39951ABAA /* Impressipies */,
 				47238C86749EB5E89D7CE81F /* Shared */,
+				7F1FE52F9D492AA39951ABAA /* Impressipies */,
 			);
 			name = Impressipies;
 			packageProductDependencies = (
@@ -190,8 +178,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */,
 				47238C86749EB5E89D7CE81F /* Shared */,
+				B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */,
 			);
 			name = ImpressipiesWatch;
 			packageProductDependencies = (
