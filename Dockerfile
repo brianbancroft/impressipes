@@ -8,9 +8,9 @@ RUN pnpm install --frozen-lockfile
 COPY apps/web apps/web
 RUN cd apps/web && pnpm exec vite build
 
-FROM golang:1.24-alpine AS api
+FROM golang:1.26-alpine AS api
 WORKDIR /src/apps/api
-COPY apps/api/go.mod ./
+COPY apps/api/go.mod apps/api/go.sum ./
 RUN go mod download
 COPY apps/api ./
 COPY --from=web /src/dist/apps/web internal/web/static

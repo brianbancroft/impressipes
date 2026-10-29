@@ -1,7 +1,7 @@
 [tools]
 node = "24"
 pnpm = "10"
-go = "1.24"
+go = "1.26"
 
 [env]
 _.path = ["{{config_root}}/node_modules/.bin"]
@@ -25,6 +25,10 @@ run = "pnpm nx run-many -t test"
 [tasks.lint]
 description = "Lint and typecheck every project"
 run = "pnpm nx run-many -t lint typecheck"
+
+[tasks.codegen]
+description = "Regenerate Go, TypeScript and Swift code from libs/api-spec/openapi.yaml"
+run = "pnpm nx run api-spec:codegen"
 
 [tasks.deploy]
 description = "Push the current branch and trigger a Coolify deploy"

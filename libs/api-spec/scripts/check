@@ -1,0 +1,17 @@
+#!/usr/bin/env bash
+# Fail when the committed generated code differs from what openapi.yaml produces.
+set -euo pipefail
+
+root="$(cd "$(dirname "$0")/../../.." && pwd)"
+cd "$root"
+generated=(apps/api/internal/api apps/web/src/api-gen libs/api-spec/swift/Sources/ApiClient/Generated)
+
+snapshot() { find "${generated[@]}" -type f -exec shasum {} + 2>/dev/null | sort; }
+
+before="$(snapshot)"
+libs/api-spec/scripts/codegen "$@"
+if [ "$before" != "$(snapshot)" ]; then
+  diff <(echo "$before") <(snapshot) || true
+  echo "Generated code is out of date. Run: mise run codegen" >&2
+  exit 1
+fi

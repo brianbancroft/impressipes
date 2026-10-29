@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Regenerate every client/server from openapi.yaml. Usage: codegen [go|ts|swift]...
+set -euo pipefail
+
+spec_dir="$(cd "$(dirname "$0")/.." && pwd)"
+root="$(cd "$spec_dir/../.." && pwd)"
+targets=("$@")
+[ ${#targets[@]} -eq 0 ] && targets=(go ts swift)
+
+for t in "${targets[@]}"; do
+  case "$t" in
+    go)
+      (cd "$root/apps/api" && go tool oapi-codegen -config "$spec_dir/oapi-codegen.yaml" "$spec_dir/openapi.yaml") ;;
+    ts)
+      (cd "$root/apps/web" && pnpm exec openapi-typescript "$spec_dir/openapi.yaml" -o src/api-gen/schema.gen.ts) ;;
+    swift)
+      (cd "$spec_dir/swift" && swift run swift-openapi-generator generate ../openapi.yaml \
+        --config openapi-generator-config.yaml --output-directory Sources/ApiClient/Generated) ;;
+    *) echo "unknown target: $t" >&2; exit 2 ;;
+  esac
+done

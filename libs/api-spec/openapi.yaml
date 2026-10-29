@@ -1,0 +1,189 @@
+openapi: 3.1.0
+info:
+  title: Impressipes API
+  version: 0.1.0
+  description: Source of truth for the Go server, the web app and the iOS app.
+servers:
+  - url: /api
+paths:
+  /healthz:
+    get:
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: Service is up
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Health" }
+  /me:
+    get:
+      operationId: getMe
+      responses:
+        "200":
+          description: The signed-in member
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /members:
+    get:
+      operationId: listMembers
+      responses:
+        "200":
+          description: Every family member
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Member" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /members/{id}/disable:
+    post:
+      operationId: disableMember
+      parameters:
+        - $ref: "#/components/parameters/MemberId"
+      responses:
+        "204": { description: Member disabled and their sessions revoked }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /members/{id}/enable:
+    post:
+      operationId: enableMember
+      parameters:
+        - $ref: "#/components/parameters/MemberId"
+      responses:
+        "204": { description: Member re-enabled }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /invites:
+    post:
+      operationId: createInvite
+      description: Issue a single-use invite link. Pass memberId to re-invite an existing member.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                memberId: { type: string }
+      responses:
+        "201":
+          description: Invite created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [token, path]
+                properties:
+                  token: { type: string }
+                  path: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+  /invites/{token}:
+    get:
+      operationId: getInvite
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/InviteToken"
+      responses:
+        "200":
+          description: Invite state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InviteInfo" }
+        "404":
+          description: No such invite
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/InviteInfo" }
+  /invites/{token}/accept:
+    post:
+      operationId: acceptInvite
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/InviteToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, color, credentialId]
+              properties:
+                name: { type: string }
+                color: { type: string }
+                credentialId: { type: string }
+      responses:
+        "201":
+          description: Invite accepted; a session cookie is set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "400": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "410": { $ref: "#/components/responses/Error" }
+security:
+  - session: []
+components:
+  securitySchemes:
+    session:
+      type: apiKey
+      in: cookie
+      name: impressipies_session
+  parameters:
+    MemberId:
+      name: id
+      in: path
+      required: true
+      schema: { type: string }
+    InviteToken:
+      name: token
+      in: path
+      required: true
+      schema: { type: string }
+  responses:
+    Error:
+      description: Error
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+  schemas:
+    Health:
+      type: object
+      required: [status]
+      properties:
+        status: { type: string, enum: [ok] }
+    Error:
+      type: object
+      required: [error]
+      properties:
+        error: { type: string }
+    Member:
+      type: object
+      required: [id, name, color, role, status]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        color: { type: string }
+        role: { type: string, enum: [admin, member] }
+        status: { type: string, enum: [active, disabled] }
+    InviteInfo:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [valid, used, expired, disabled, invalid] }
+        reinvite: { type: boolean }
+        name: { type: string }
+        color: { type: string }

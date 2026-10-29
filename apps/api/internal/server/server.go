@@ -1,21 +1,26 @@
 package server
 
 import (
-	"encoding/json"
+	"context"
 	"errors"
 	"log"
 	"net/http"
 	"strings"
 	"time"
 
+	"github.com/brianbancroft/impressipies/apps/api/internal/api"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 )
 
 const sessionCookie = "impressipies_session"
 
+type ctxKey struct{}
+
 type server struct {
 	store *family.Store
 }
+
+var _ api.StrictServerInterface = (*server)(nil)
 
 // New returns the API's root handler, with a fresh store and a bootstrap admin invite.
 func New() http.Handler {
@@ -28,162 +33,193 @@ func New() http.Handler {
 
 func NewWithStore(store *family.Store) http.Handler {
 	s := &server{store: store}
-	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", health)
-	mux.HandleFunc("GET /me", s.me)
-	mux.HandleFunc("GET /members", s.admin(s.listMembers))
-	mux.HandleFunc("POST /members/{id}/disable", s.admin(s.setStatus(family.StatusDisabled)))
-	mux.HandleFunc("POST /members/{id}/enable", s.admin(s.setStatus(family.StatusActive)))
-	mux.HandleFunc("POST /invites", s.admin(s.createInvite))
-	mux.HandleFunc("GET /invites/{token}", s.getInvite)
-	mux.HandleFunc("POST /invites/{token}/accept", s.acceptInvite)
-	return mux
+	return api.HandlerWithOptions(api.NewStrictHandler(s, nil), api.StdHTTPServerOptions{
+		Middlewares: []api.MiddlewareFunc{sessionMiddleware},
+	})
 }
 
-func health(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, map[string]string{"status": "ok"})
+// sessionMiddleware hands the request's session cookie to the strict handlers via the context.
+func sessionMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c, err := r.Cookie(sessionCookie); err == nil {
+			r = r.WithContext(context.WithValue(r.Context(), ctxKey{}, c.Value))
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
-func writeJSON(w http.ResponseWriter, code int, v any) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(code)
-	json.NewEncoder(w).Encode(v)
-}
+func errBody(msg string) api.Error { return api.Error{Error: msg} }
 
-func writeErr(w http.ResponseWriter, code int, msg string) {
-	writeJSON(w, code, map[string]string{"error": msg})
+// authFail is the status and message for a request that cannot proceed as a member.
+type authFail struct {
+	code int
+	msg  string
 }
 
 // current resolves the request's session. A disabled member gets 403 so the
 // web app can show the disabled state rather than a sign-in prompt.
-func (s *server) current(w http.ResponseWriter, r *http.Request) *family.Member {
-	c, err := r.Cookie(sessionCookie)
-	if err != nil {
-		writeErr(w, http.StatusUnauthorized, "unauthenticated")
-		return nil
+func (s *server) current(ctx context.Context) (*family.Member, *authFail) {
+	sess, _ := ctx.Value(ctxKey{}).(string)
+	if sess == "" {
+		return nil, &authFail{http.StatusUnauthorized, "unauthenticated"}
 	}
-	m, err := s.store.Session(c.Value)
+	m, err := s.store.Session(sess)
 	if err != nil {
-		writeErr(w, http.StatusUnauthorized, "unauthenticated")
-		return nil
+		return nil, &authFail{http.StatusUnauthorized, "unauthenticated"}
 	}
 	if m.Status == family.StatusDisabled {
-		writeErr(w, http.StatusForbidden, "disabled")
-		return nil
+		return nil, &authFail{http.StatusForbidden, "disabled"}
 	}
-	return m
+	return m, nil
 }
 
-func (s *server) admin(next func(http.ResponseWriter, *http.Request)) http.HandlerFunc {
-	return func(w http.ResponseWriter, r *http.Request) {
-		m := s.current(w, r)
-		if m == nil {
-			return
+func (s *server) admin(ctx context.Context) *authFail {
+	m, fail := s.current(ctx)
+	if fail != nil {
+		return fail
+	}
+	if m.Role != family.RoleAdmin {
+		return &authFail{http.StatusForbidden, "admin only"}
+	}
+	return nil
+}
+
+func toMember(m family.Member) api.Member {
+	return api.Member{
+		Id: m.ID, Name: m.Name, Color: m.Color,
+		Role: api.MemberRole(m.Role), Status: api.MemberStatus(m.Status),
+	}
+}
+
+func (s *server) GetHealth(context.Context, api.GetHealthRequestObject) (api.GetHealthResponseObject, error) {
+	return api.GetHealth200JSONResponse{Status: api.Ok}, nil
+}
+
+func (s *server) GetMe(ctx context.Context, _ api.GetMeRequestObject) (api.GetMeResponseObject, error) {
+	m, fail := s.current(ctx)
+	switch {
+	case fail == nil:
+		return api.GetMe200JSONResponse(toMember(*m)), nil
+	case fail.code == http.StatusForbidden:
+		return api.GetMe403JSONResponse(errBody(fail.msg)), nil
+	default:
+		return api.GetMe401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
+	}
+}
+
+func (s *server) ListMembers(ctx context.Context, _ api.ListMembersRequestObject) (api.ListMembersResponseObject, error) {
+	if fail := s.admin(ctx); fail != nil {
+		if fail.code == http.StatusForbidden {
+			return api.ListMembers403JSONResponse(errBody(fail.msg)), nil
 		}
-		if m.Role != family.RoleAdmin {
-			writeErr(w, http.StatusForbidden, "admin only")
-			return
+		return api.ListMembers401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
+	}
+	members := s.store.Members()
+	out := make(api.ListMembers200JSONResponse, 0, len(members))
+	for _, m := range members {
+		out = append(out, toMember(m))
+	}
+	return out, nil
+}
+
+func (s *server) DisableMember(ctx context.Context, req api.DisableMemberRequestObject) (api.DisableMemberResponseObject, error) {
+	if fail := s.admin(ctx); fail != nil {
+		if fail.code == http.StatusForbidden {
+			return api.DisableMember403JSONResponse(errBody(fail.msg)), nil
 		}
-		next(w, r)
+		return api.DisableMember401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
-}
-
-func (s *server) me(w http.ResponseWriter, r *http.Request) {
-	if m := s.current(w, r); m != nil {
-		writeJSON(w, http.StatusOK, m)
+	if err := s.store.SetStatus(req.Id, family.StatusDisabled); err != nil {
+		return api.DisableMember404JSONResponse(errBody("member not found")), nil
 	}
+	return api.DisableMember204Response{}, nil
 }
 
-func (s *server) listMembers(w http.ResponseWriter, _ *http.Request) {
-	writeJSON(w, http.StatusOK, s.store.Members())
-}
-
-func (s *server) setStatus(status string) func(http.ResponseWriter, *http.Request) {
-	return func(w http.ResponseWriter, r *http.Request) {
-		if err := s.store.SetStatus(r.PathValue("id"), status); err != nil {
-			writeErr(w, http.StatusNotFound, "member not found")
-			return
+func (s *server) EnableMember(ctx context.Context, req api.EnableMemberRequestObject) (api.EnableMemberResponseObject, error) {
+	if fail := s.admin(ctx); fail != nil {
+		if fail.code == http.StatusForbidden {
+			return api.EnableMember403JSONResponse(errBody(fail.msg)), nil
 		}
-		w.WriteHeader(http.StatusNoContent)
+		return api.EnableMember401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
+	if err := s.store.SetStatus(req.Id, family.StatusActive); err != nil {
+		return api.EnableMember404JSONResponse(errBody("member not found")), nil
+	}
+	return api.EnableMember204Response{}, nil
 }
 
-func (s *server) createInvite(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		MemberID string `json:"memberId"`
+func (s *server) CreateInvite(ctx context.Context, req api.CreateInviteRequestObject) (api.CreateInviteResponseObject, error) {
+	if fail := s.admin(ctx); fail != nil {
+		if fail.code == http.StatusForbidden {
+			return api.CreateInvite403JSONResponse(errBody(fail.msg)), nil
+		}
+		return api.CreateInvite401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
-	json.NewDecoder(r.Body).Decode(&body)
-	inv, err := s.store.CreateInvite(body.MemberID)
+	memberID := ""
+	if req.Body != nil && req.Body.MemberId != nil {
+		memberID = *req.Body.MemberId
+	}
+	inv, err := s.store.CreateInvite(memberID)
 	switch {
 	case errors.Is(err, family.ErrNotFound):
-		writeErr(w, http.StatusNotFound, "member not found")
+		return api.CreateInvite404JSONResponse(errBody("member not found")), nil
 	case errors.Is(err, family.ErrDisabled):
-		writeErr(w, http.StatusConflict, "member is disabled; enable them before re-inviting")
+		return api.CreateInvite409JSONResponse(errBody("member is disabled; enable them before re-inviting")), nil
 	case err != nil:
-		writeErr(w, http.StatusInternalServerError, "could not create invite")
-	default:
-		writeJSON(w, http.StatusCreated, map[string]string{"token": inv.Token, "path": "/invite/" + inv.Token})
+		return nil, err
 	}
+	return api.CreateInvite201JSONResponse{Token: inv.Token, Path: "/invite/" + inv.Token}, nil
 }
 
-func (s *server) getInvite(w http.ResponseWriter, r *http.Request) {
-	inv, m, err := s.store.Invite(r.PathValue("token"))
+func (s *server) GetInvite(_ context.Context, req api.GetInviteRequestObject) (api.GetInviteResponseObject, error) {
+	inv, m, err := s.store.Invite(req.Token)
 	if err != nil {
-		writeJSON(w, http.StatusNotFound, map[string]any{"state": "invalid"})
-		return
+		return api.GetInvite404JSONResponse{State: api.InviteInfoStateInvalid}, nil
 	}
-	state := "valid"
+	state := api.InviteInfoStateValid
 	switch {
 	case inv.Used:
-		state = "used"
-	case s.expired(inv):
-		state = "expired"
+		state = api.InviteInfoStateUsed
+	case !inv.ExpiresAt.After(timeNow()):
+		state = api.InviteInfoStateExpired
 	case m != nil && m.Status == family.StatusDisabled:
-		state = "disabled"
+		state = api.InviteInfoStateDisabled
 	}
-	resp := map[string]any{"state": state, "reinvite": m != nil}
+	reinvite := m != nil
+	resp := api.GetInvite200JSONResponse{State: state, Reinvite: &reinvite}
 	if m != nil {
-		resp["name"], resp["color"] = m.Name, m.Color
+		resp.Name, resp.Color = &m.Name, &m.Color
 	}
-	writeJSON(w, http.StatusOK, resp)
+	return resp, nil
 }
 
-func (s *server) expired(inv *family.Invite) bool {
-	return !inv.ExpiresAt.After(timeNow())
-}
-
-func (s *server) acceptInvite(w http.ResponseWriter, r *http.Request) {
-	var body struct {
-		Name         string `json:"name"`
-		Color        string `json:"color"`
-		CredentialID string `json:"credentialId"`
+func (s *server) AcceptInvite(_ context.Context, req api.AcceptInviteRequestObject) (api.AcceptInviteResponseObject, error) {
+	if req.Body == nil {
+		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody("invalid body"))}, nil
 	}
-	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
-		writeErr(w, http.StatusBadRequest, "invalid body")
-		return
+	name := strings.TrimSpace(req.Body.Name)
+	if name == "" || req.Body.Color == "" || req.Body.CredentialId == "" {
+		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody("name, color and credentialId are required"))}, nil
 	}
-	body.Name = strings.TrimSpace(body.Name)
-	if body.Name == "" || body.Color == "" || body.CredentialID == "" {
-		writeErr(w, http.StatusBadRequest, "name, color and credentialId are required")
-		return
-	}
-	m, sess, err := s.store.Accept(r.PathValue("token"), body.Name, body.Color, body.CredentialID)
+	m, sess, err := s.store.Accept(req.Token, name, req.Body.Color, req.Body.CredentialId)
 	switch {
 	case errors.Is(err, family.ErrNotFound):
-		writeErr(w, http.StatusNotFound, "invite not found")
+		return api.AcceptInvite404JSONResponse(errBody("invite not found")), nil
 	case errors.Is(err, family.ErrInviteUsed), errors.Is(err, family.ErrExpired):
-		writeErr(w, http.StatusGone, err.Error())
+		return api.AcceptInvite410JSONResponse(errBody(err.Error())), nil
 	case errors.Is(err, family.ErrDisabled):
-		writeErr(w, http.StatusForbidden, "disabled")
+		return api.AcceptInvite403JSONResponse(errBody("disabled")), nil
 	case err != nil:
-		writeErr(w, http.StatusInternalServerError, "could not accept invite")
-	default:
-		http.SetCookie(w, &http.Cookie{
-			Name: sessionCookie, Value: sess, Path: "/",
-			HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: 60 * 60 * 24 * 365,
-		})
-		writeJSON(w, http.StatusCreated, m)
+		return nil, err
 	}
+	cookie := (&http.Cookie{
+		Name: sessionCookie, Value: sess, Path: "/",
+		HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: 60 * 60 * 24 * 365,
+	}).String()
+	return api.AcceptInvite201JSONResponse{
+		Body:    toMember(*m),
+		Headers: api.AcceptInvite201ResponseHeaders{SetCookie: cookie},
+	}, nil
 }
 
 var timeNow = func() time.Time { return time.Now() }

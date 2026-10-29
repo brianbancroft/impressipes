@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: mise run install
+      - run: mise run lint
+      - run: mise run test
+      - name: sqlc output matches the migrations and queries
+        run: pnpm nx run api:sqlc && git diff --exit-code apps/api/internal/db/dbgen
+      - name: Generated code matches openapi.yaml
+        run: pnpm nx run api-spec:codegen-check
+
+  swift-codegen:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: jdx/mise-action@v2
+      - run: mise run install
+      - name: Generated code (including Swift) matches openapi.yaml
+        run: libs/api-spec/scripts/check
