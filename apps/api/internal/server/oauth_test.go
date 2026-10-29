@@ -100,8 +100,11 @@ func (f *oauthFlow) exchange(code string) (int, map[string]any) {
 func TestOAuthDiscovery(t *testing.T) {
 	e := newMCPEnv(t)
 	for path, key := range map[string]string{
-		"/.well-known/oauth-protected-resource":   "authorization_servers",
-		"/.well-known/oauth-authorization-server": "registration_endpoint",
+		"/.well-known/oauth-protected-resource":       "authorization_servers",
+		"/.well-known/oauth-authorization-server":     "registration_endpoint",
+		"/.well-known/oauth-authorization-server/mcp": "registration_endpoint",
+		"/.well-known/openid-configuration":           "registration_endpoint",
+		"/.well-known/openid-configuration/mcp":       "registration_endpoint",
 	} {
 		res, err := http.Get(e.srv.URL + path)
 		if err != nil {
@@ -117,6 +120,26 @@ func TestOAuthDiscovery(t *testing.T) {
 	res, _ := http.Post(e.srv.URL+"/mcp", "application/json", strings.NewReader(`{}`))
 	if !strings.Contains(res.Header.Get("WWW-Authenticate"), "resource_metadata=") {
 		t.Errorf("401 should point at the resource metadata: %q", res.Header.Get("WWW-Authenticate"))
+	}
+}
+
+func TestOAuthDefaultPaths(t *testing.T) {
+	e := newMCPEnv(t)
+	res, err := http.Post(e.srv.URL+"/register", "application/json", strings.NewReader(`{"client_name":"x","redirect_uris":["https://example.com/cb"]}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusCreated {
+		t.Errorf("/register: %d", res.StatusCode)
+	}
+	res, err = http.Get(e.srv.URL + "/authorize?client_id=nope")
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("/authorize should reach the consent handler: %d", res.StatusCode)
 	}
 }
 

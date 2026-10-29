@@ -64,6 +64,9 @@ func main() {
 	mux.Handle("GET /healthz", api)
 	mux.Handle("/mcp", api) // the MCP endpoint and its OAuth server live at the site root, not under /api
 	mux.Handle("/oauth/", api)
+	for _, p := range []string{"/authorize", "/token", "/register", "/revoke"} {
+		mux.Handle(p, api) // default OAuth paths for clients that skip discovery
+	}
 	mux.Handle("/.well-known/", api)
 	mux.Handle("GET /skill", web.SkillHandler())            // public: the downloadable Claude skill
 	mux.Handle("GET /skill.md", web.SkillMarkdownHandler()) // the same skill as text, for assistants that fetch it

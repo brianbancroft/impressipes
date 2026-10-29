@@ -41,12 +41,24 @@ const (
 func (s *server) mountOAuth(mux *http.ServeMux) {
 	mux.HandleFunc("GET /.well-known/oauth-protected-resource", s.protectedResource)
 	mux.HandleFunc("GET /.well-known/oauth-protected-resource/mcp", s.protectedResource)
-	mux.HandleFunc("GET /.well-known/oauth-authorization-server", s.authServerMetadata)
+	// Clients differ in where they look: the bare, path-suffixed (RFC 8414) and OpenID
+	// forms of the server metadata all answer the same document.
+	for _, p := range []string{"oauth-authorization-server", "openid-configuration"} {
+		mux.HandleFunc("GET /.well-known/"+p, s.authServerMetadata)
+		mux.HandleFunc("GET /.well-known/"+p+"/{rest...}", s.authServerMetadata)
+	}
 	mux.HandleFunc("POST /oauth/register", s.oauthRegister)
 	mux.HandleFunc("GET /oauth/authorize", s.oauthAuthorize)
 	mux.HandleFunc("POST /oauth/authorize", s.oauthDecide)
 	mux.HandleFunc("POST /oauth/token", s.oauthToken)
 	mux.HandleFunc("POST /oauth/revoke", s.oauthRevoke)
+	// A client that cannot read the metadata falls back to these default paths (MCP
+	// spec 2025-03-26); without them it lands on the app's "Page not found".
+	mux.HandleFunc("POST /register", s.oauthRegister)
+	mux.HandleFunc("GET /authorize", s.oauthAuthorize)
+	mux.HandleFunc("POST /authorize", s.oauthDecide)
+	mux.HandleFunc("POST /token", s.oauthToken)
+	mux.HandleFunc("POST /revoke", s.oauthRevoke)
 }
 
 // baseURL is the public origin: PUBLIC_URL when set, otherwise what the proxy forwarded.
