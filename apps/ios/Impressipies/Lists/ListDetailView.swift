@@ -255,7 +255,7 @@ struct ListDetailView: View {
         let typed = QuickAdd.parse(quickAdd)
         quickAdd = ""
         suggestions = []
-        try? await store.add(name: s.name, quantityText: typed.quantityText.ifEmpty(s.quantityText), categoryId: s.categoryId)
+        _ = try? await store.add(name: s.name, quantityText: typed.quantityText.ifEmpty(s.quantityText), categoryId: s.categoryId)
     }
 
     private struct AisleGroup: Identifiable {

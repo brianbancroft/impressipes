@@ -301,9 +301,10 @@ final class WatchListStore {
     private let api: () -> API
     private let offline: OfflineStore
 
-    init(listId: String, offline: OfflineStore = .shared, api: @escaping () -> API) {
+    init(listId: String, offline: OfflineStore? = nil, api: @escaping () -> API) {
         self.listId = listId
         self.api = api
+        let offline = offline ?? .shared
         self.offline = offline
         if let snap = offline.snapshot(listId) {
             detail = offline.overlay(snap.detail, listId: listId)

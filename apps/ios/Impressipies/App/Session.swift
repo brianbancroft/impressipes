@@ -45,7 +45,7 @@ final class Session {
         tokenBox.value = token
         // Nothing calls the API before a server is picked; the default only fills the slot.
         api = Self.makeAPI(server: server ?? APIConfig.defaultServer, box: tokenBox)
-        tokenBox.onUnauthorized = { Task { @MainActor [weak self] in self?.expire() } }
+        tokenBox.onUnauthorized = { [weak self] in Task { @MainActor in self?.expire() } }
         WatchLink.shared.start()
     }
 

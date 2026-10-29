@@ -23,9 +23,10 @@ final class ListStore {
     /// No successful sync for this long and the list says "Offline".
     static let offlineAfter: TimeInterval = 10 * 60
 
-    init(listId: String, offline: OfflineStore = .shared, api: @escaping () -> API) {
+    init(listId: String, offline: OfflineStore? = nil, api: @escaping () -> API) {
         self.listId = listId
         self.api = api
+        let offline = offline ?? .shared
         self.offline = offline
         if let snap = offline.snapshot(listId) {
             detail = offline.overlay(snap.detail, listId: listId)

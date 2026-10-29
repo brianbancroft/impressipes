@@ -31,9 +31,9 @@ final class WatchSession {
         #endif
         state = tokenBox.value == nil ? .waiting : .signedIn
         api = Self.makeAPI(server: server, box: tokenBox)
-        tokenBox.onUnauthorized = { Task { @MainActor [weak self] in self?.apply(server: nil, token: nil) } }
-        link.onContext = { server, token in
-            Task { @MainActor [weak self] in self?.apply(server: server, token: token) }
+        tokenBox.onUnauthorized = { [weak self] in Task { @MainActor in self?.apply(server: nil, token: nil) } }
+        link.onContext = { [weak self] server, token in
+            Task { @MainActor in self?.apply(server: server, token: token) }
         }
         link.start()
     }
