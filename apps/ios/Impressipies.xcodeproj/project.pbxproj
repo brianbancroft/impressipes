@@ -7,11 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		1F31461E646F0926EDBEDB16 /* ImpressipiesApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 244BEEFAFE5C31D07F729514 /* ImpressipiesApp.swift */; };
 		2E0B62AB52842643F80BCBE5 /* ImpressipiesWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		9C402E765FC6B01F87C2F7F9 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EE15B599EE9E426B1C91D5AC /* ContentView.swift */; };
-		AA49F674C76A49DA2EBDF05E /* ImpressipiesWatchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AB0C3B40974FDC0DDC9BEF8 /* ImpressipiesWatchApp.swift */; };
-		ECA9C3F5EB9F5FC92D3F23CC /* WatchContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 929B3CB28C5591BE007B51A1 /* WatchContentView.swift */; };
+		A1C0000000000000000000B1 /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0000000000000000000A2 /* ApiClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -40,23 +37,34 @@
 
 /* Begin PBXFileReference section */
 		0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImpressipiesWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		244BEEFAFE5C31D07F729514 /* ImpressipiesApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpressipiesApp.swift; sourceTree = "<group>"; };
-		6AB0C3B40974FDC0DDC9BEF8 /* ImpressipiesWatchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImpressipiesWatchApp.swift; sourceTree = "<group>"; };
-		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		929B3CB28C5591BE007B51A1 /* WatchContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchContentView.swift; sourceTree = "<group>"; };
-		EE15B599EE9E426B1C91D5AC /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXGroup section */
+/* Begin PBXFileSystemSynchronizedRootGroup section */
 		3B3082E0B725C94D42EE8B88 /* Impressipies */ = {
-			isa = PBXGroup;
-			children = (
-				EE15B599EE9E426B1C91D5AC /* ContentView.swift */,
-				244BEEFAFE5C31D07F729514 /* ImpressipiesApp.swift */,
-			);
+			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Impressipies;
 			sourceTree = "<group>";
 		};
+		CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ImpressipiesWatch;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		A1C0000000000000000000C1 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1C0000000000000000000B1 /* ApiClient in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
 		BF886737D2A52431B0F7F962 = {
 			isa = PBXGroup;
 			children = (
@@ -64,15 +72,6 @@
 				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
 				E7412ED47A1A57AD530407EB /* Products */,
 			);
-			sourceTree = "<group>";
-		};
-		CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */ = {
-			isa = PBXGroup;
-			children = (
-				6AB0C3B40974FDC0DDC9BEF8 /* ImpressipiesWatchApp.swift */,
-				929B3CB28C5591BE007B51A1 /* WatchContentView.swift */,
-			);
-			path = ImpressipiesWatch;
 			sourceTree = "<group>";
 		};
 		E7412ED47A1A57AD530407EB /* Products */ = {
@@ -92,6 +91,8 @@
 			buildConfigurationList = C17B142ABD083336A76F8E3A /* Build configuration list for PBXNativeTarget "Impressipies" */;
 			buildPhases = (
 				24C3F7BA6B9FFCEE78CB7E01 /* Sources */,
+				A1C0000000000000000000C1 /* Frameworks */,
+				A1C0000000000000000000D1 /* Resources */,
 				2497E1F33C021B9DB52E652C /* Embed Watch Content */,
 			);
 			buildRules = (
@@ -99,8 +100,12 @@
 			dependencies = (
 				6E58131559D2419B24C30D09 /* PBXTargetDependency */,
 			);
+			fileSystemSynchronizedGroups = (
+				3B3082E0B725C94D42EE8B88 /* Impressipies */,
+			);
 			name = Impressipies;
 			packageProductDependencies = (
+				A1C0000000000000000000A2 /* ApiClient */,
 			);
 			productName = Impressipies;
 			productReference = 6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */;
@@ -111,10 +116,14 @@
 			buildConfigurationList = FF1CB1191D83AAA3773248FE /* Build configuration list for PBXNativeTarget "ImpressipiesWatch" */;
 			buildPhases = (
 				C1D6F81A8433A4FA9EC59C4C /* Sources */,
+				A1C0000000000000000000D2 /* Resources */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
 			);
 			name = ImpressipiesWatch;
 			packageProductDependencies = (
@@ -130,7 +139,8 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = YES;
-				LastUpgradeCheck = 1430;
+				LastSwiftUpdateCheck = 2600;
+				LastUpgradeCheck = 2600;
 				TargetAttributes = {
 				};
 			};
@@ -143,6 +153,9 @@
 			);
 			mainGroup = BF886737D2A52431B0F7F962;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A1C0000000000000000000A1 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = E7412ED47A1A57AD530407EB /* Products */;
 			projectDirPath = "";
@@ -154,13 +167,28 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A1C0000000000000000000D1 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A1C0000000000000000000D2 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXSourcesBuildPhase section */
 		24C3F7BA6B9FFCEE78CB7E01 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9C402E765FC6B01F87C2F7F9 /* ContentView.swift in Sources */,
-				1F31461E646F0926EDBEDB16 /* ImpressipiesApp.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -168,8 +196,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				AA49F674C76A49DA2EBDF05E /* ImpressipiesWatchApp.swift in Sources */,
-				ECA9C3F5EB9F5FC92D3F23CC /* WatchContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -188,58 +214,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_NO_COMMON_BLOCKS = YES;
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				SWIFT_VERSION = 5.0;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Release;
 		};
@@ -247,7 +237,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.brianbancroft.impressipies;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.watchkitapp;
 				SDKROOT = watchos;
@@ -260,65 +251,28 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ALWAYS_SEARCH_USER_PATHS = NO;
-				CLANG_ANALYZER_NONNULL = YES;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
-				CLANG_CXX_LIBRARY = "libc++";
+				ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CLANG_ENABLE_OBJC_ARC = YES;
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
-				CLANG_WARN_BOOL_CONVERSION = YES;
-				CLANG_WARN_COMMA = YES;
-				CLANG_WARN_CONSTANT_CONVERSION = YES;
-				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
-				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_EMPTY_BODY = YES;
-				CLANG_WARN_ENUM_CONVERSION = YES;
-				CLANG_WARN_INFINITE_RECURSION = YES;
-				CLANG_WARN_INT_CONVERSION = YES;
-				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
-				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
-				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
-				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
-				CLANG_WARN_STRICT_PROTOTYPES = YES;
-				CLANG_WARN_SUSPICIOUS_MOVE = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CLANG_WARN_UNREACHABLE_CODE = YES;
-				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu11;
-				GCC_DYNAMIC_NO_PIC = NO;
-				GCC_NO_COMMON_BLOCKS = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
 				GCC_OPTIMIZATION_LEVEL = 0;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
 					"DEBUG=1",
 				);
-				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
-				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
-				GCC_WARN_UNDECLARED_SELECTOR = YES;
-				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
-				GCC_WARN_UNUSED_FUNCTION = YES;
-				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.0;
 				MARKETING_VERSION = 0.1.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				WATCHOS_DEPLOYMENT_TARGET = 10.0;
+				WATCHOS_DEPLOYMENT_TARGET = 11.0;
 			};
 			name = Debug;
 		};
@@ -326,7 +280,8 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.brianbancroft.impressipies;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.watchkitapp;
 				SDKROOT = watchos;
@@ -339,10 +294,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -357,10 +315,13 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
-				CODE_SIGN_IDENTITY = "iPhone Developer";
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_STYLE = Automatic;
+				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -402,6 +363,20 @@
 			defaultConfigurationName = Debug;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A1C0000000000000000000A1 /* XCLocalSwiftPackageReference "../../libs/api-spec/swift" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = "../../libs/api-spec/swift";
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A1C0000000000000000000A2 /* ApiClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ApiClient;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 817C0BFA5296B690DD7440AB /* Project object */;
 }
