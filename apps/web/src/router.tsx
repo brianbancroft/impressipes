@@ -12,6 +12,8 @@ import { useState } from 'react';
 import { Admin } from './Admin';
 import { getMe, type Me } from './api';
 import { CookMode } from './CookMode';
+import { ListPage } from './ListPage';
+import { ListsPage } from './ListsPage';
 import { Onboarding } from './Onboarding';
 import { RecipeEditor } from './RecipeEditor';
 import { RecipePage } from './RecipePage';
@@ -125,16 +127,8 @@ const editRecipeRoute = createRoute({
 });
 const cookRoute = createRoute({ getParentRoute: () => authedRoute, path: '/recipes/$recipeId/cook', component: CookMode });
 
-const listsRoute = createRoute({
-  getParentRoute: () => shellRoute,
-  path: '/lists',
-  component: () => (
-    <>
-      <h1 className="page-title">Lists</h1>
-      <EmptyState emoji="🛒" title="No lists yet" body="Your shopping lists will show up here." />
-    </>
-  ),
-});
+const listsRoute = createRoute({ getParentRoute: () => shellRoute, path: '/lists', component: ListsPage });
+const listRoute = createRoute({ getParentRoute: () => shellRoute, path: '/lists/$listId', component: ListPage });
 
 const adminRoute = createRoute({
   getParentRoute: () => shellRoute,
@@ -151,7 +145,7 @@ const adminRoute = createRoute({
 const routeTree = rootRoute.addChildren([
   inviteRoute,
   authedRoute.addChildren([
-    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, adminRoute]),
+    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute]),
     cookRoute,
   ]),
 ]);

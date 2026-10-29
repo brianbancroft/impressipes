@@ -105,3 +105,42 @@ export async function addRecipeToList(listId: string, recipeId: string, servings
   });
   return must(data, error, 'Could not add to list');
 }
+
+export type ListDetail = components['schemas']['ListDetail'];
+export type Item = components['schemas']['Item'];
+export type Category = components['schemas']['Category'];
+export type ItemPatch = components['schemas']['ItemPatch'];
+export type ItemInput = components['schemas']['ItemInput'];
+
+export async function createList(body: components['schemas']['ListInput']) {
+  const { data, error } = await client.POST('/lists', { body });
+  return must(data, error, 'Could not create list');
+}
+
+export async function getList(listId: string) {
+  const { data, error } = await client.GET('/lists/{listId}', { params: { path: { listId } } });
+  return must(data, error, 'Could not load list');
+}
+
+export async function archiveList(listId: string) {
+  await client.DELETE('/lists/{listId}', { params: { path: { listId } } });
+}
+
+export async function createItem(listId: string, body: ItemInput) {
+  const { data, error } = await client.POST('/lists/{listId}/items', { params: { path: { listId } }, body });
+  return must(data, error, 'Could not add item');
+}
+
+export async function updateItem(itemId: string, body: ItemPatch) {
+  const { data, error } = await client.PATCH('/items/{itemId}', { params: { path: { itemId } }, body });
+  return must(data, error, 'Could not update item');
+}
+
+export async function deleteItem(itemId: string) {
+  await client.DELETE('/items/{itemId}', { params: { path: { itemId } } });
+}
+
+export async function suggestItems(listId: string, q: string) {
+  const { data } = await client.GET('/lists/{listId}/suggestions', { params: { path: { listId }, query: { q } } });
+  return data ?? [];
+}
