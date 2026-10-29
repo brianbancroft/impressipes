@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Bot, Heart, Plus, ShoppingCart, Smartphone, Soup, UserRound, Users } from 'lucide-react';
+import { Bot, Heart, House, Plus, ShoppingCart, Smartphone, Soup, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { listLists, type Member } from './api';
 import { applyTheme, getTheme, type Theme } from './theme';
@@ -12,6 +12,7 @@ function useActive() {
   const loc = useRouterState({ select: (s) => s.location });
   const fav = (loc.search as { mark?: string }).mark === 'favourite';
   return {
+    home: loc.pathname === '/home',
     recipes: loc.pathname.startsWith('/recipes') && !fav,
     faves: loc.pathname === '/recipes' && fav,
     lists: loc.pathname.startsWith('/lists'),
@@ -68,7 +69,7 @@ export function SideRail({ me }: { me: Member }) {
   const lists = useQuery({ queryKey: ['lists'], queryFn: listLists });
   return (
     <nav aria-label="Main" className="fixed top-4 bottom-4 left-4 z-20 hidden w-18 flex-col gap-5 overflow-y-auto rounded-xl bg-rail px-2.5 py-5 text-on-rail md:flex lg:w-54 lg:px-3.5">
-      <Link to="/recipes" className="flex items-center gap-2.5 px-1.5 text-on-rail no-underline hover:text-on-rail max-lg:justify-center">
+      <Link to="/home" className="flex items-center gap-2.5 px-1.5 text-on-rail no-underline hover:text-on-rail max-lg:justify-center">
         <LogoMark className="border-on-rail" /><Wordmark className="max-lg:sr-only" />
       </Link>
       <Link
@@ -79,6 +80,7 @@ export function SideRail({ me }: { me: Member }) {
         <Plus className="size-5" strokeWidth={2.8} /><span className="max-lg:sr-only">New recipe</span>
       </Link>
       <div className="flex flex-col gap-1">
+        <Link to="/home" className={cn(railLink, a.home && railOn)} aria-current={a.home ? 'page' : undefined}><House /><span className="max-lg:sr-only">Home</span></Link>
         <Link to="/recipes" className={cn(railLink, a.recipes && railOn)} aria-current={a.recipes ? 'page' : undefined}><Soup /><span className="max-lg:sr-only">Recipes</span></Link>
         <Link to="/lists" className={cn(railLink, a.lists && railOn)} aria-current={a.lists ? 'page' : undefined}><ShoppingCart /><span className="max-lg:sr-only">Lists</span></Link>
         {me.role === 'admin' && (
@@ -120,12 +122,12 @@ export function SideRail({ me }: { me: Member }) {
 const tab = 'flex flex-col items-center gap-0.5 text-[11px] font-bold text-on-rail no-underline hover:text-on-rail [&_svg]:size-6';
 
 /** Phone tab bar with the New recipe button raised in the middle. */
-export function TabBar({ admin }: { admin: boolean }) {
+export function TabBar() {
   const a = useActive();
   return (
-    <nav aria-label="Main" className={cn('fixed inset-x-3.5 bottom-4 z-20 grid h-18 items-center rounded-[26px] bg-rail md:hidden', admin ? 'grid-cols-5' : 'grid-cols-4')}>
+    <nav aria-label="Main" className="fixed inset-x-3.5 bottom-4 z-20 grid h-18 grid-cols-5 items-center rounded-[26px] bg-rail md:hidden">
+      <Link to="/home" className={cn(tab, a.home && 'text-butter hover:text-butter')} aria-current={a.home ? 'page' : undefined}><House strokeWidth={2.2} />Home</Link>
       <Link to="/recipes" className={cn(tab, a.recipes && 'text-butter hover:text-butter')} aria-current={a.recipes ? 'page' : undefined}><Soup strokeWidth={2.2} />Recipes</Link>
-      <Link to="/lists" className={cn(tab, a.lists && 'text-butter hover:text-butter')} aria-current={a.lists ? 'page' : undefined}><ShoppingCart strokeWidth={2.2} />Lists</Link>
       <Link
         to="/recipes/new"
         aria-label="New recipe"
@@ -133,8 +135,8 @@ export function TabBar({ admin }: { admin: boolean }) {
       >
         <Plus className="size-7" strokeWidth={2.8} />
       </Link>
+      <Link to="/lists" className={cn(tab, a.lists && 'text-butter hover:text-butter')} aria-current={a.lists ? 'page' : undefined}><ShoppingCart strokeWidth={2.2} />Lists</Link>
       <Link to="/recipes" search={{ mark: 'favourite' }} className={cn(tab, a.faves && 'text-butter hover:text-butter')} aria-current={a.faves ? 'page' : undefined}><Heart strokeWidth={2.2} />Faves</Link>
-      {admin && <Link to="/admin" className={cn(tab, a.family && 'text-butter hover:text-butter')} aria-current={a.family ? 'page' : undefined}><Users strokeWidth={2.2} />Family</Link>}
     </nav>
   );
 }

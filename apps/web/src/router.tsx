@@ -16,6 +16,7 @@ import { AiIntegration } from './AiIntegration';
 import { AppSetup } from './AppSetup';
 import { getMe, type Me, type RecipeMark } from './api';
 import { CookMode } from './CookMode';
+import { HomePage } from './HomePage';
 import { ListPage } from './ListPage';
 import { ListsPage } from './ListsPage';
 import { Onboarding } from './Onboarding';
@@ -38,7 +39,7 @@ const rootRoute = createRootRoute({
   notFoundComponent: () => (
     <Shell>
       <h1 className="text-4xl">Page not found</h1>
-      <p className="mt-2 text-ink-muted"><Link to="/recipes">Back to recipes</Link></p>
+      <p className="mt-2 text-ink-muted"><Link to="/home">Back home</Link></p>
     </Shell>
   ),
 });
@@ -95,21 +96,21 @@ function Layout() {
   const me = data as Extract<Me, { kind: 'member' }>;
   const path = useRouterState({ select: (st) => st.location.pathname });
   // Detail screens bring their own header and actions, so phones drop the tab bar there.
-  const top = ['/recipes', '/lists', '/admin', '/ai', '/app-setup', '/account'].includes(path);
+  const top = ['/home', '/recipes', '/lists', '/admin', '/ai', '/app-setup', '/account'].includes(path);
   return (
     <div className="relative isolate min-h-dvh md:pl-24 lg:pl-62">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
       <SideRail me={me.member} />
       {top && (
         <header className="relative z-10 flex items-center justify-between px-4 pt-4 md:hidden">
-          <Link to="/recipes" className="flex items-center gap-2 text-ink no-underline hover:text-ink"><LogoMark /><Wordmark /></Link>
+          <Link to="/home" className="flex items-center gap-2 text-ink no-underline hover:text-ink"><LogoMark /><Wordmark /></Link>
           <ProfileMenu me={me.member} />
         </header>
       )}
       <main id="main" className={cn('page-content mx-auto w-full max-w-6xl px-4 pt-4 md:px-8 md:pt-8', top ? 'pb-32 md:pb-12' : 'pb-12')}>
         <Outlet />
       </main>
-      {top && <TabBar admin={me.member.role === 'admin'} />}
+      {top && <TabBar />}
     </div>
   );
 }
@@ -117,8 +118,10 @@ function Layout() {
 const indexRoute = createRoute({
   getParentRoute: () => shellRoute,
   path: '/',
-  beforeLoad: () => { throw redirect({ to: '/recipes' }); },
+  beforeLoad: () => { throw redirect({ to: '/home' }); },
 });
+
+const homeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/home', component: HomePage });
 
 const recipesRoute = createRoute({
   getParentRoute: () => shellRoute,
@@ -171,7 +174,7 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   verifyRoute,
   authedRoute.addChildren([
-    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute, accountRoute]),
+    shellRoute.addChildren([indexRoute, homeRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute, accountRoute]),
     cookRoute,
   ]),
 ]);

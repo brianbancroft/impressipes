@@ -17,21 +17,16 @@ function readHidden(id: string) {
 }
 
 /**
- * Getting started, on the home page until every step is done: confirm the email,
- * connect the phone app, connect an AI assistant. Each step ticks itself off from /me.
+ * Whether getting started should show: until the email is confirmed, the phone app
+ * and an AI assistant are connected (each ticks itself off from /me), unless hidden.
  */
-export function SetupChecklist() {
+export function useSetupChecklist() {
   // Refetch on focus, so a step finished in another tab or on the phone ticks off on return.
-  const me = useQuery({ queryKey: ['me'], queryFn: getMe, staleTime: 60_000, refetchOnWindowFocus: 'always' }).data;
-  const member = me?.kind === 'member' ? me.member : undefined;
+  const me = useQuery({ queryKey: ['me'], queryFn: getMe, staleTime: 60_000, refetchOnWindowFocus: 'always' });
+  const member = me.data?.kind === 'member' ? me.data.member : undefined;
   const [hidden, setHidden] = useState(() => (member ? readHidden(member.id) : false));
-  if (!member?.setup || hidden) return null;
-
-  const { setup } = member;
-  const steps = [!!member.email, setup.appConnected, setup.aiConnected];
-  const done = steps.filter(Boolean).length;
-  if (done === steps.length) return null;
-  const next = steps.indexOf(false);
+  const steps = member?.setup ? [!!member.email, member.setup.appConnected, member.setup.aiConnected] : [];
+  const complete = steps.length > 0 && steps.every(Boolean);
 
   function hide() {
     try {
@@ -41,6 +36,15 @@ export function SetupChecklist() {
     }
     setHidden(true);
   }
+
+  return { member, steps, show: !!member?.setup && !complete && !hidden, loading: me.isPending, hide };
+}
+
+export function SetupChecklist({ state }: { state: ReturnType<typeof useSetupChecklist> }) {
+  const { member, steps, show, hide } = state;
+  if (!member?.setup || !show) return null;
+  const done = steps.filter(Boolean).length;
+  const next = steps.indexOf(false);
 
   return (
     <section aria-labelledby="setup-title" className="card relative mb-8 p-5 sm:p-6">

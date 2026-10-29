@@ -1,12 +1,16 @@
 // Command seed migrates the database and loads the local-development starter
-// data (shopping lists and their categories). It is idempotent: the seed lists
-// have fixed ids, and if the first is already present nothing is written.
+// data: shopping lists with their categories, and a few sample recipes. It is
+// idempotent: the seed lists and recipes have fixed ids and are skipped once present.
+// Recipes need an owner, and the seed never creates a member (that would stop the
+// first-run admin invite), so they load on the first run after someone has signed up.
 package main
 
 import (
 	"context"
 	"log"
 	"os"
+
+	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/db"
 )
@@ -52,12 +56,17 @@ func main() {
 	}
 	defer pool.Close()
 
+	seedListsOnce(ctx, pool)
+	seedRecipesOnce(ctx, pool)
+}
+
+func seedListsOnce(ctx context.Context, pool *pgxpool.Pool) {
 	var exists bool
 	if err := pool.QueryRow(ctx, `SELECT EXISTS (SELECT 1 FROM lists WHERE id = $1)`, seedLists[0].id).Scan(&exists); err != nil {
 		log.Fatalf("seed: %v", err)
 	}
 	if exists {
-		log.Print("seed: already loaded, skipping")
+		log.Print("seed: lists already loaded, skipping")
 		return
 	}
 

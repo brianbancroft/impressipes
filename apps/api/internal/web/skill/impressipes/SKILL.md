@@ -21,8 +21,14 @@ You do the reading and thinking; the tools only store structured data.
    - keep the source's section headings
    - one instruction per step; set `timerSeconds` when the step names a wait
 5. Never invent what the source does not say. Put doubts in the notes.
-6. If you hold the image file's bytes, `attach_recipe_image`. A picture shown in chat is not available to
-   tools, so skip it then.
+6. Give the recipe a small thumbnail, but never use the photo you were given of the recipe card or cookbook
+   page: that is a picture of text, not of the food. Instead, in this order:
+   - If you can generate images, make a small, appetising picture of the finished dish (a square thumbnail
+     is plenty) and `attach_recipe_image` it.
+   - Otherwise, for a recipe from a web page, use the page's own picture of the dish (its `og:image`, or the
+     main recipe photo) when you hold its bytes.
+   - If you can do neither, skip the image. A recipe without one is fine; the app shows a placeholder.
+   A picture shown in chat is not available to tools, so only attach files whose bytes you actually hold.
 7. Finish by telling the user what was saved.
 
 ## Planning meals

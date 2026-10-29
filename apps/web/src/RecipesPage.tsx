@@ -5,7 +5,6 @@ import { useEffect, useRef, useState } from 'react';
 import { AddToListDialog } from './AddToListDialog';
 import { apiUrl, getMe, listRecipes, listTags, setMark, type RecipeMark, type RecipeSummary } from './api';
 import { formatMinutes, totalMinutes } from './recipes';
-import { SetupChecklist } from './SetupChecklist';
 import { EmptyState, ErrorState, Loading } from './states';
 import { Button } from './ui/button';
 import { cn, pick, STICKERS } from './ui/cn';
@@ -91,8 +90,6 @@ export function RecipesPage() {
         </label>
       </div>
 
-      {!filtered && <SetupChecklist />}
-
       <div className="relative mb-6 flex items-center gap-3">
         <div
           className="-my-1 -ml-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1 pr-1 pl-4 [scrollbar-width:none] md:ml-0 md:flex-wrap md:overflow-visible md:pl-0 max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)] [&::-webkit-scrollbar]:hidden"
@@ -156,7 +153,7 @@ export function RecipesPage() {
   );
 }
 
-function RecipeCard(p: { r: RecipeSummary; selecting: boolean; selected: boolean; onSelect: () => void; onMark: (m: RecipeMark) => void }) {
+export function RecipeCard(p: { r: RecipeSummary; selecting: boolean; selected: boolean; onSelect: () => void; onMark: (m: RecipeMark) => void }) {
   const { r } = p;
   const fav = r.marks.includes('favourite');
   const want = r.marks.includes('want_to_make');

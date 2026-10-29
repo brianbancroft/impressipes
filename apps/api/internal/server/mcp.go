@@ -438,7 +438,7 @@ func (s *server) mcpServer() *mcp.Server {
 			return deleteRecipeOut{Deleted: in.RecipeID, BatchID: batchString(ctx)}, nil
 		})
 
-	addTool(srv, "attach_recipe_image", "Add a photo to a recipe. Only works when you hold the image file's bytes (for example from a file tool); a picture the user showed you in chat is not available to tools, so skip this then.", false,
+	addTool(srv, "attach_recipe_image", "Add a thumbnail to a recipe: an image you generated of the finished dish, or the source web page's own picture of it. Never attach the photo of the recipe card or cookbook page you read the recipe from. Only works when you hold the image file's bytes (for example from a file tool or an image generator); a picture the user showed you in chat is not available to tools, so skip this then.", false,
 		func(ctx context.Context, in attachImageIn) (api.Image, error) {
 			data, err := base64.StdEncoding.DecodeString(strings.TrimSpace(in.ImageBase64))
 			if err != nil {
@@ -540,7 +540,7 @@ func (s *server) mcpServer() *mcp.Server {
 			"First call search_recipes with its title to make sure it is not already saved. " +
 			"Then call create_recipe with sourceKind 'photo': split ingredients into item, quantity (a number), unit and prepNote, keep section headings, " +
 			"write each instruction as its own step with a timerSeconds when it names a wait, and reuse existing tags (list_tags) where they fit. " +
-			"Do not invent anything the page does not say; put doubts in notes. Finish by telling me what you saved."), nil
+			"Do not invent anything the page does not say; put doubts in notes. Do not attach my photo as the recipe's image: if you can generate images, attach a small generated picture of the finished dish with attach_recipe_image, otherwise skip the image. Finish by telling me what you saved."), nil
 	})
 	srv.AddPrompt(&mcp.Prompt{
 		Name:        "plan-week-of-meals",
