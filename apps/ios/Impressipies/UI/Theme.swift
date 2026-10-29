@@ -170,17 +170,18 @@ struct QuantityBadge: View {
         VStack(spacing: -2) {
             Text(qty)
                 .font(.system(.headline, design: .rounded, weight: .heavy))
-                .lineLimit(1)
-                .minimumScaleFactor(0.5)
             if let unit {
                 Text(unit)
                     .font(.caption2.weight(.bold))
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.6)
+                    .textCase(.uppercase)
             }
         }
+        // Grows to fit rather than clipping or shrinking the unit.
+        .lineLimit(1)
+        .fixedSize()
         .foregroundStyle(Palette.stickerInk)
-        .frame(width: 54, height: 44)
+        .padding(.horizontal, 6)
+        .frame(minWidth: 54, minHeight: 44)
         .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(muted ? Palette.line : Palette.butter))
         .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).strokeBorder(Palette.outline, lineWidth: 2))
         .accessibilityElement(children: .combine)

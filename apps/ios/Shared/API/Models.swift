@@ -49,11 +49,45 @@ enum Format {
         return m % 60 == 0 ? "\(h) h" : "\(h) h \(m % 60) min"
     }
 
+    private static let units: [(Regex<Substring>, String)] = [
+        (/tablespoons?|tbsps?|tbs|tbl/, "tbsp"),
+        (/teaspoons?|tsps?/, "tsp"),
+        (/fluid ounces?|fl\.? ?oz/, "fl oz"),
+        (/ounces?|oz/, "oz"),
+        (/pounds?|lbs?/, "lb"),
+        (/cups?|c/, "cup"),
+        (/grams?|g|gr/, "g"),
+        (/kilograms?|kilos?|kgs?/, "kg"),
+        (/milligrams?|mg/, "mg"),
+        (/millilit(?:er|re)s?|ml/, "ml"),
+        (/centilit(?:er|re)s?|cl/, "cl"),
+        (/decilit(?:er|re)s?|dl/, "dl"),
+        (/lit(?:er|re)s?|l/, "l"),
+        (/quarts?|qts?/, "qt"),
+        (/pints?|pts?/, "pt"),
+        (/gallons?|gals?/, "gal"),
+        (/packages?|packets?|pkgs?/, "pkg"),
+        (/pieces?|pcs?/, "pc"),
+        (/inch(?:es)?|in/, "in"),
+        (/centimet(?:er|re)s?|cm/, "cm"),
+    ]
+
+    /// "tablespoons" -> "tbsp", "Grams" -> "g". Unknown units pass through. Same table as the web app.
+    static func unit(_ unit: String) -> String {
+        var u = unit.trimmingCharacters(in: .whitespaces)
+        if u.hasSuffix(".") { u.removeLast() }
+        // "T" vs "t" is the one case where capitalisation carries meaning.
+        if u == "T" { return "tbsp" }
+        if u == "t" { return "tsp" }
+        let lower = u.lowercased()
+        return units.first { (try? $0.0.wholeMatch(in: lower)) != nil }?.1 ?? u
+    }
+
     /// Splits an ingredient for the quantity badge, scaled by factor.
     static func ingredient(_ i: Ingredient, factor: Double) -> (qty: String?, unit: String?, text: String) {
         guard let q = i.quantity else { return (nil, nil, i.rawText ?? i.item) }
         let note = i.prepNote.map { ", \($0)" } ?? ""
-        return (quantity(q * factor), i.unit?.isEmpty == false ? i.unit : nil, i.item + note)
+        return (quantity(q * factor), i.unit?.isEmpty == false ? i.unit.map(unit) : nil, i.item + note)
     }
 
     /// "2 L" -> ("2", "L"); "a few" -> ("a few", nil). An item with no quantity reads as 1.
@@ -62,7 +96,7 @@ enum Format {
         if t.isEmpty { return ("1", nil) }
         if let m = t.wholeMatch(of: /(?i)x?(\d+(?:[.,\/]\d+)?)\s*(.*)/) {
             let unit = String(m.2)
-            return (String(m.1), unit.isEmpty ? nil : unit)
+            return (String(m.1), unit.isEmpty ? nil : Format.unit(unit))
         }
         return (t, nil)
     }

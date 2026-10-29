@@ -47,12 +47,12 @@ export function Tick({ checked, className }: { checked: boolean; className?: str
   );
 }
 
-/** Butter quantity badge: big number, small unit. */
+/** Butter quantity badge: big number, small unit. Grows to fit rather than clipping. */
 export function QtyBadge({ qty, unit, className }: { qty: string; unit?: string; className?: string }) {
   return (
-    <span className={cn('inline-flex w-16 flex-none items-baseline justify-center gap-1 rounded-sm border-2 border-outline bg-butter px-1 py-1.5 leading-none text-sticker-ink', className)}>
+    <span className={cn('inline-flex min-w-16 flex-none items-baseline justify-center gap-1 whitespace-nowrap rounded-sm border-2 border-outline bg-butter px-1.5 py-1.5 leading-none text-sticker-ink uppercase', className)}>
       <span className="font-display text-lg font-extrabold">{qty}</span>
-      {unit && <span className="truncate text-xs font-bold">{unit}</span>}
+      {unit && <span className="text-xs font-bold">{unit}</span>}
     </span>
   );
 }

@@ -238,7 +238,7 @@ function Ingredients({ r, factor, ticked, setTicked, stepper, bare }: {
               <button type="button" aria-pressed={on} onClick={() => toggle(n)} className="dashed-row flex min-h-12 w-full cursor-pointer items-center gap-3 border-x-0 border-t-0 bg-transparent py-1.5 text-left text-ink">
                 <Tick checked={on} className="size-6" />
                 {p.qty ? <QtyBadge qty={p.qty} unit={p.unit} className={cn(on && 'opacity-50')} /> : null}
-                <span className={cn('flex-1 text-base', on && 'text-ink-muted line-through decoration-accent-fill decoration-2')}>{p.text}</span>
+                <span className={cn('min-w-0 flex-1 text-base break-words uppercase', on && 'text-ink-muted line-through decoration-accent-fill decoration-2')}>{p.text}</span>
               </button>
             </li>
           );

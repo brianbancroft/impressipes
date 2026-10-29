@@ -127,51 +127,74 @@ struct RecipeDetailView: View {
             if r.ingredients.isEmpty {
                 Text("No ingredients listed.").foregroundStyle(Palette.inkMuted)
             }
-            ForEach(Array(r.ingredients.enumerated()), id: \.offset) { index, ing in
-                let section = ing.section ?? ""
-                if !section.isEmpty, index == 0 || r.ingredients[index - 1].section != ing.section {
-                    Text(section).font(.headline.weight(.heavy)).foregroundStyle(Palette.ink).padding(.top, 6)
-                }
-                let parts = Format.ingredient(ing, factor: factor)
-                let done = ticked.contains(index)
-                Button {
-                    if done { ticked.remove(index) } else { ticked.insert(index) }
-                } label: {
-                    HStack(spacing: 12) {
-                        TickBox(checked: done)
-                        if let qty = parts.qty {
-                            QuantityBadge(qty: qty, unit: parts.unit, muted: done)
-                        }
-                        Text(parts.text)
-                            .font(.body.weight(.medium))
-                            .strikethrough(done)
-                            .foregroundStyle(done ? Palette.inkMuted : Palette.ink)
-                            .multilineTextAlignment(.leading)
-                        Spacer(minLength: 0)
-                    }
-                    .padding(8)
-                    .frame(minHeight: 56)
-                    .sticker(radius: 16, shadow: done ? 0 : 3)
-                }
-                .buttonStyle(.plain)
-                .accessibilityAddTraits(done ? .isSelected : [])
-            }
+            ingredientRows(r)
         }
     }
 
+    /// Tickable ingredient rows. The Ingredients tab and the gather step share `ticked`.
+    @ViewBuilder
+    private func ingredientRows(_ r: Recipe) -> some View {
+        ForEach(Array(r.ingredients.enumerated()), id: \.offset) { index, ing in
+            let section = ing.section ?? ""
+            if !section.isEmpty, index == 0 || r.ingredients[index - 1].section != ing.section {
+                Text(section).font(.headline.weight(.heavy)).foregroundStyle(Palette.ink).padding(.top, 6)
+            }
+            let parts = Format.ingredient(ing, factor: factor)
+            let done = ticked.contains(index)
+            Button {
+                if done { ticked.remove(index) } else { ticked.insert(index) }
+            } label: {
+                HStack(spacing: 12) {
+                    TickBox(checked: done)
+                    if let qty = parts.qty {
+                        QuantityBadge(qty: qty, unit: parts.unit, muted: done)
+                    }
+                    Text(parts.text)
+                        .font(.body.weight(.medium))
+                        .textCase(.uppercase)
+                        .strikethrough(done)
+                        .foregroundStyle(done ? Palette.inkMuted : Palette.ink)
+                        .multilineTextAlignment(.leading)
+                    Spacer(minLength: 0)
+                }
+                .padding(8)
+                .frame(minHeight: 56)
+                .sticker(radius: 16, shadow: done ? 0 : 3)
+            }
+            .buttonStyle(.plain)
+            .accessibilityAddTraits(done ? .isSelected : [])
+        }
+    }
+
+    /// Step 1 is always gathering the ingredients, as a checklist; the recipe's own steps follow.
     private func steps(_ r: Recipe) -> some View {
         VStack(alignment: .leading, spacing: 14) {
+            HStack(alignment: .top, spacing: 12) {
+                stepNumber(0)
+                VStack(alignment: .leading, spacing: 10) {
+                    HStack(alignment: .firstTextBaseline) {
+                        Text("Gather your ingredients").font(.headline).foregroundStyle(Palette.ink)
+                        Spacer()
+                        if !r.ingredients.isEmpty {
+                            Text("\(ticked.count) of \(r.ingredients.count) ready")
+                                .font(.footnote.weight(.bold))
+                                .foregroundStyle(Palette.inkMuted)
+                        }
+                    }
+                    if r.ingredients.isEmpty {
+                        Text("No ingredients listed. On to the steps!").foregroundStyle(Palette.inkMuted)
+                    }
+                    ingredientRows(r)
+                }
+                .padding(.top, 8)
+            }
             if r.steps.isEmpty {
                 Text("No steps written down.").foregroundStyle(Palette.inkMuted)
             }
-            ForEach(Array(r.steps.enumerated()), id: \.offset) { index, step in
+            ForEach(Array(r.steps.enumerated()), id: \.offset) { offset, step in
+                let index = offset + 1
                 HStack(alignment: .top, spacing: 12) {
-                    Text("\(index + 1)")
-                        .font(.system(.headline, design: .rounded, weight: .black))
-                        .foregroundStyle(Palette.stickerInk)
-                        .frame(width: 38, height: 38)
-                        .background(Circle().fill(Palette.stickers[index % Palette.stickers.count]))
-                        .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
+                    stepNumber(index)
                     VStack(alignment: .leading, spacing: 6) {
                         Text(step.text).foregroundStyle(Palette.ink)
                         if let t = step.timerSeconds {
@@ -182,6 +205,15 @@ struct RecipeDetailView: View {
                 }
             }
         }
+    }
+
+    private func stepNumber(_ index: Int) -> some View {
+        Text("\(index + 1)")
+            .font(.system(.headline, design: .rounded, weight: .black))
+            .foregroundStyle(Palette.stickerInk)
+            .frame(width: 38, height: 38)
+            .background(Circle().fill(Palette.stickers[index % Palette.stickers.count]))
+            .overlay(Circle().strokeBorder(Palette.outline, lineWidth: 2))
     }
 
     private func markButton(_ r: Recipe, _ mark: RecipeMark, on: String, off: String, label: String) -> some View {

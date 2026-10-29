@@ -16,9 +16,21 @@ final class FormatTests: XCTestCase {
 
     func testSplitQuantity() {
         XCTAssertEqual(Format.splitQuantity("2 L").qty, "2")
-        XCTAssertEqual(Format.splitQuantity("2 L").unit, "L")
+        XCTAssertEqual(Format.splitQuantity("2 L").unit, "l")
         XCTAssertEqual(Format.splitQuantity("a few").qty, "a few")
         XCTAssertEqual(Format.splitQuantity("").qty, "1")
+    }
+
+    func testUnitAbbreviations() {
+        XCTAssertEqual(Format.unit("tablespoons"), "tbsp")
+        XCTAssertEqual(Format.unit("Teaspoon"), "tsp")
+        XCTAssertEqual(Format.unit("T"), "tbsp")
+        XCTAssertEqual(Format.unit("t"), "tsp")
+        XCTAssertEqual(Format.unit("fluid ounces"), "fl oz")
+        XCTAssertEqual(Format.unit("lbs."), "lb")
+        XCTAssertEqual(Format.unit("L"), "l")
+        XCTAssertEqual(Format.unit("handfuls"), "handfuls")
+        XCTAssertEqual(Format.splitQuantity("2 cups").unit, "cup")
     }
 
     func testQuickAddParsesLeadingAndTrailingQuantity() {

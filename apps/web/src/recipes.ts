@@ -14,7 +14,7 @@ export function formatQuantity(n: number): string {
 
 export function scaleIngredient(i: Ingredient, factor: number): string {
   if (i.quantity == null) return i.rawText ?? i.item;
-  const parts = [formatQuantity(i.quantity * factor), i.unit, i.item].filter(Boolean);
+  const parts = [formatQuantity(i.quantity * factor), i.unit && abbreviateUnit(i.unit), i.item].filter(Boolean);
   return parts.join(' ') + (i.prepNote ? `, ${i.prepNote}` : '');
 }
 
@@ -45,10 +45,41 @@ export function sourceLine(r: Recipe, memberName?: (id: string) => string | unde
     .join(', ');
 }
 
+const UNITS: [RegExp, string][] = [
+  [/^(tablespoons?|tbsps?|tbs|tbl)$/, 'tbsp'],
+  [/^(teaspoons?|tsps?)$/, 'tsp'],
+  [/^(fluid ounces?|fl\.? ?oz)$/, 'fl oz'],
+  [/^(ounces?|oz)$/, 'oz'],
+  [/^(pounds?|lbs?)$/, 'lb'],
+  [/^(cups?|c)$/, 'cup'],
+  [/^(grams?|g|gr)$/, 'g'],
+  [/^(kilograms?|kilos?|kgs?)$/, 'kg'],
+  [/^(milligrams?|mg)$/, 'mg'],
+  [/^(millilit(er|re)s?|ml)$/, 'ml'],
+  [/^(centilit(er|re)s?|cl)$/, 'cl'],
+  [/^(decilit(er|re)s?|dl)$/, 'dl'],
+  [/^(lit(er|re)s?|l)$/, 'l'],
+  [/^(quarts?|qts?)$/, 'qt'],
+  [/^(pints?|pts?)$/, 'pt'],
+  [/^(gallons?|gals?)$/, 'gal'],
+  [/^(packages?|packets?|pkgs?)$/, 'pkg'],
+  [/^(pieces?|pcs?)$/, 'pc'],
+  [/^(inch(es)?|in)$/, 'in'],
+  [/^(centimet(er|re)s?|cm)$/, 'cm'],
+];
+
+/** "tablespoons" -> "tbsp", "Grams" -> "g". Unknown units pass through. */
+export function abbreviateUnit(unit: string): string {
+  const u = unit.trim().replace(/\.$/, '');
+  // "T" vs "t" is the one case where capitalisation carries meaning.
+  if (u === 'T' || u === 't') return u === 'T' ? 'tbsp' : 'tsp';
+  return UNITS.find(([re]) => re.test(u.toLowerCase()))?.[1] ?? u;
+}
+
 /** Splits an ingredient for the quantity badge: { qty: "1 ½", unit: "cup", text: "flour, sifted" }. */
 export function ingredientParts(i: Ingredient, factor: number): { qty?: string; unit?: string; text: string } {
   if (i.quantity == null) return { text: i.rawText ?? i.item };
-  return { qty: formatQuantity(i.quantity * factor), unit: i.unit || undefined, text: i.item + (i.prepNote ? `, ${i.prepNote}` : '') };
+  return { qty: formatQuantity(i.quantity * factor), unit: i.unit ? abbreviateUnit(i.unit) : undefined, text: i.item + (i.prepNote ? `, ${i.prepNote}` : '') };
 }
 
 /** "2 L" -> { qty: "2", unit: "L" }; "a few" -> { qty: "a few" }. Items with no quantity read as 1. */
@@ -56,5 +87,5 @@ export function splitQuantity(text: string): { qty: string; unit?: string } {
   const t = text.trim();
   if (!t) return { qty: '1' };
   const m = /^x?(\d+(?:[.,/]\d+)?)\s*(.*)$/i.exec(t);
-  return m ? { qty: m[1], unit: m[2] || undefined } : { qty: t };
+  return m ? { qty: m[1], unit: m[2] ? abbreviateUnit(m[2]) : undefined } : { qty: t };
 }
