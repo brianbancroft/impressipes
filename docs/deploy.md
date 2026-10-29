@@ -30,3 +30,15 @@ mise run deploy            # or scripts/deploy; add --force for a no-cache rebui
 ```
 
 This pushes the current branch, then calls Coolify's deploy API for the app.
+
+## Database
+
+The API stores everything in Postgres when `DATABASE_URL` is set, migrating the schema on boot. Without it the API runs on its in-memory household store and the list, recipe and sync endpoints answer `503`.
+
+The Postgres 17 database is `impressipies-db` in the Impressipies project on Coolify. To connect the app:
+
+1. Copy the database's **Postgres URL (internal)** from its Coolify page.
+2. Add it to the `impressipes` application as `DATABASE_URL` (runtime only).
+3. `mise run deploy`. The log shows `database migrated`, and, while no member exists, a `first run: open /invite/...` link for the admin account.
+
+Live changes stream from `GET /api/events` (server-sent events, fed by Postgres `LISTEN/NOTIFY`). Behind a proxy, leave response buffering off for that path.

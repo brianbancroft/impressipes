@@ -11,6 +11,18 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const archiveList = `-- name: ArchiveList :execrows
+UPDATE lists SET archived = true WHERE id = $1 AND NOT archived
+`
+
+func (q *Queries) ArchiveList(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, archiveList, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const createList = `-- name: CreateList :one
 INSERT INTO lists (name, emoji, colour, sort_order)
 VALUES ($1, $2, $3, $4)
@@ -74,6 +86,209 @@ func (q *Queries) CreateListCategory(ctx context.Context, arg CreateListCategory
 		&i.Colour,
 		&i.Icon,
 		&i.SortOrder,
+	)
+	return i, err
+}
+
+const currentItemVersion = `-- name: CurrentItemVersion :one
+SELECT COALESCE(max(version), 0)::bigint FROM list_items
+`
+
+func (q *Queries) CurrentItemVersion(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, currentItemVersion)
+	var column_1 int64
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const deleteCategory = `-- name: DeleteCategory :execrows
+DELETE FROM list_categories WHERE id = $1 AND list_id = $2
+`
+
+type DeleteCategoryParams struct {
+	ID     pgtype.UUID `json:"id"`
+	ListID pgtype.UUID `json:"list_id"`
+}
+
+func (q *Queries) DeleteCategory(ctx context.Context, arg DeleteCategoryParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteCategory, arg.ID, arg.ListID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const findOpenItemByName = `-- name: FindOpenItemByName :one
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items
+WHERE list_id = $1 AND deleted_at IS NULL AND checked_at IS NULL
+  AND lower(btrim(regexp_replace(name, '\s+', ' ', 'g'))) = $2
+LIMIT 1
+`
+
+type FindOpenItemByNameParams struct {
+	ListID pgtype.UUID `json:"list_id"`
+	Name   string      `json:"name"`
+}
+
+func (q *Queries) FindOpenItemByName(ctx context.Context, arg FindOpenItemByNameParams) (ListItem, error) {
+	row := q.db.QueryRow(ctx, findOpenItemByName, arg.ListID, arg.Name)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getCategory = `-- name: GetCategory :one
+SELECT id, list_id, name, colour, icon, sort_order FROM list_categories WHERE id = $1 AND list_id = $2
+`
+
+type GetCategoryParams struct {
+	ID     pgtype.UUID `json:"id"`
+	ListID pgtype.UUID `json:"list_id"`
+}
+
+func (q *Queries) GetCategory(ctx context.Context, arg GetCategoryParams) (ListCategory, error) {
+	row := q.db.QueryRow(ctx, getCategory, arg.ID, arg.ListID)
+	var i ListCategory
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.Name,
+		&i.Colour,
+		&i.Icon,
+		&i.SortOrder,
+	)
+	return i, err
+}
+
+const getItem = `-- name: GetItem :one
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) GetItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
+	row := q.db.QueryRow(ctx, getItem, id)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const getItemMemory = `-- name: GetItemMemory :one
+SELECT list_id, normalized_name, last_category_id, last_quantity, use_count FROM item_memory WHERE list_id = $1 AND normalized_name = $2
+`
+
+type GetItemMemoryParams struct {
+	ListID         pgtype.UUID `json:"list_id"`
+	NormalizedName string      `json:"normalized_name"`
+}
+
+func (q *Queries) GetItemMemory(ctx context.Context, arg GetItemMemoryParams) (ItemMemory, error) {
+	row := q.db.QueryRow(ctx, getItemMemory, arg.ListID, arg.NormalizedName)
+	var i ItemMemory
+	err := row.Scan(
+		&i.ListID,
+		&i.NormalizedName,
+		&i.LastCategoryID,
+		&i.LastQuantity,
+		&i.UseCount,
+	)
+	return i, err
+}
+
+const getList = `-- name: GetList :one
+SELECT id, name, emoji, colour, sort_order, archived, created_at FROM lists WHERE id = $1 AND NOT archived
+`
+
+func (q *Queries) GetList(ctx context.Context, id pgtype.UUID) (List, error) {
+	row := q.db.QueryRow(ctx, getList, id)
+	var i List
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Emoji,
+		&i.Colour,
+		&i.SortOrder,
+		&i.Archived,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const insertItemIfAbsent = `-- name: InsertItemIfAbsent :one
+INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+ON CONFLICT (id) DO UPDATE SET id = list_items.id
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+`
+
+type InsertItemIfAbsentParams struct {
+	ID             pgtype.UUID `json:"id"`
+	ListID         pgtype.UUID `json:"list_id"`
+	CategoryID     pgtype.UUID `json:"category_id"`
+	Name           string      `json:"name"`
+	QuantityText   string      `json:"quantity_text"`
+	Note           string      `json:"note"`
+	AddedBy        pgtype.UUID `json:"added_by"`
+	SourceRecipeID pgtype.UUID `json:"source_recipe_id"`
+	Position       int32       `json:"position"`
+}
+
+func (q *Queries) InsertItemIfAbsent(ctx context.Context, arg InsertItemIfAbsentParams) (ListItem, error) {
+	row := q.db.QueryRow(ctx, insertItemIfAbsent,
+		arg.ID,
+		arg.ListID,
+		arg.CategoryID,
+		arg.Name,
+		arg.QuantityText,
+		arg.Note,
+		arg.AddedBy,
+		arg.SourceRecipeID,
+		arg.Position,
+	)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
 	)
 	return i, err
 }
@@ -219,6 +434,39 @@ func (q *Queries) ListLists(ctx context.Context) ([]List, error) {
 	return items, nil
 }
 
+const nextCategorySortOrder = `-- name: NextCategorySortOrder :one
+SELECT COALESCE(max(sort_order) + 1, 0)::int FROM list_categories WHERE list_id = $1
+`
+
+func (q *Queries) NextCategorySortOrder(ctx context.Context, listID pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, nextCategorySortOrder, listID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const nextItemPosition = `-- name: NextItemPosition :one
+SELECT COALESCE(max(position) + 1, 0)::int FROM list_items WHERE list_id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) NextItemPosition(ctx context.Context, listID pgtype.UUID) (int32, error) {
+	row := q.db.QueryRow(ctx, nextItemPosition, listID)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const nextListSortOrder = `-- name: NextListSortOrder :one
+SELECT COALESCE(max(sort_order) + 1, 0)::int FROM lists
+`
+
+func (q *Queries) NextListSortOrder(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, nextListSortOrder)
+	var column_1 int32
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
 const rememberItem = `-- name: RememberItem :exec
 INSERT INTO item_memory (list_id, normalized_name, last_category_id, last_quantity)
 VALUES ($1, $2, $3, $4)
@@ -249,7 +497,7 @@ const setItemChecked = `-- name: SetItemChecked :one
 UPDATE list_items
 SET checked_at = CASE WHEN $2::boolean THEN now() END,
     checked_by = CASE WHEN $2::boolean THEN $3::uuid END
-WHERE id = $1
+WHERE id = $1 AND deleted_at IS NULL
 RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
 `
 
@@ -281,13 +529,31 @@ func (q *Queries) SetItemChecked(ctx context.Context, arg SetItemCheckedParams) 
 	return i, err
 }
 
-const softDeleteItem = `-- name: SoftDeleteItem :exec
-UPDATE list_items SET deleted_at = now() WHERE id = $1
+const softDeleteItem = `-- name: SoftDeleteItem :one
+UPDATE list_items SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
 `
 
-func (q *Queries) SoftDeleteItem(ctx context.Context, id pgtype.UUID) error {
-	_, err := q.db.Exec(ctx, softDeleteItem, id)
-	return err
+func (q *Queries) SoftDeleteItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
+	row := q.db.QueryRow(ctx, softDeleteItem, id)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const suggestItems = `-- name: SuggestItems :many
@@ -326,6 +592,136 @@ func (q *Queries) SuggestItems(ctx context.Context, arg SuggestItemsParams) ([]I
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateCategory = `-- name: UpdateCategory :one
+UPDATE list_categories SET
+    name = COALESCE($1, name),
+    colour = COALESCE($2, colour),
+    icon = COALESCE($3, icon),
+    sort_order = COALESCE($4, sort_order)
+WHERE id = $5 AND list_id = $6
+RETURNING id, list_id, name, colour, icon, sort_order
+`
+
+type UpdateCategoryParams struct {
+	Name      pgtype.Text `json:"name"`
+	Colour    pgtype.Text `json:"colour"`
+	Icon      pgtype.Text `json:"icon"`
+	SortOrder pgtype.Int4 `json:"sort_order"`
+	ID        pgtype.UUID `json:"id"`
+	ListID    pgtype.UUID `json:"list_id"`
+}
+
+func (q *Queries) UpdateCategory(ctx context.Context, arg UpdateCategoryParams) (ListCategory, error) {
+	row := q.db.QueryRow(ctx, updateCategory,
+		arg.Name,
+		arg.Colour,
+		arg.Icon,
+		arg.SortOrder,
+		arg.ID,
+		arg.ListID,
+	)
+	var i ListCategory
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.Name,
+		&i.Colour,
+		&i.Icon,
+		&i.SortOrder,
+	)
+	return i, err
+}
+
+const updateItem = `-- name: UpdateItem :one
+UPDATE list_items SET
+    name = COALESCE($1, name),
+    quantity_text = COALESCE($2, quantity_text),
+    note = COALESCE($3, note),
+    position = COALESCE($4, position),
+    category_id = CASE WHEN $5::boolean THEN $6::uuid ELSE category_id END
+WHERE id = $7 AND deleted_at IS NULL
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+`
+
+type UpdateItemParams struct {
+	Name         pgtype.Text `json:"name"`
+	QuantityText pgtype.Text `json:"quantity_text"`
+	Note         pgtype.Text `json:"note"`
+	Position     pgtype.Int4 `json:"position"`
+	SetCategory  bool        `json:"set_category"`
+	CategoryID   pgtype.UUID `json:"category_id"`
+	ID           pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (ListItem, error) {
+	row := q.db.QueryRow(ctx, updateItem,
+		arg.Name,
+		arg.QuantityText,
+		arg.Note,
+		arg.Position,
+		arg.SetCategory,
+		arg.CategoryID,
+		arg.ID,
+	)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const updateList = `-- name: UpdateList :one
+UPDATE lists SET
+    name = COALESCE($1, name),
+    emoji = COALESCE($2, emoji),
+    colour = COALESCE($3, colour),
+    sort_order = COALESCE($4, sort_order)
+WHERE id = $5 AND NOT archived
+RETURNING id, name, emoji, colour, sort_order, archived, created_at
+`
+
+type UpdateListParams struct {
+	Name      pgtype.Text `json:"name"`
+	Emoji     pgtype.Text `json:"emoji"`
+	Colour    pgtype.Text `json:"colour"`
+	SortOrder pgtype.Int4 `json:"sort_order"`
+	ID        pgtype.UUID `json:"id"`
+}
+
+func (q *Queries) UpdateList(ctx context.Context, arg UpdateListParams) (List, error) {
+	row := q.db.QueryRow(ctx, updateList,
+		arg.Name,
+		arg.Emoji,
+		arg.Colour,
+		arg.SortOrder,
+		arg.ID,
+	)
+	var i List
+	err := row.Scan(
+		&i.ID,
+		&i.Name,
+		&i.Emoji,
+		&i.Colour,
+		&i.SortOrder,
+		&i.Archived,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const upsertListItem = `-- name: UpsertListItem :one

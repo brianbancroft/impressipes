@@ -62,6 +62,20 @@ func (q *Queries) AddRecipeStep(ctx context.Context, arg AddRecipeStepParams) er
 	return err
 }
 
+const addRecipeTag = `-- name: AddRecipeTag :exec
+INSERT INTO recipe_tags (recipe_id, tag_id) VALUES ($1, $2) ON CONFLICT DO NOTHING
+`
+
+type AddRecipeTagParams struct {
+	RecipeID pgtype.UUID `json:"recipe_id"`
+	TagID    pgtype.UUID `json:"tag_id"`
+}
+
+func (q *Queries) AddRecipeTag(ctx context.Context, arg AddRecipeTagParams) error {
+	_, err := q.db.Exec(ctx, addRecipeTag, arg.RecipeID, arg.TagID)
+	return err
+}
+
 const createRecipe = `-- name: CreateRecipe :one
 INSERT INTO recipes (title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -111,6 +125,33 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Rec
 	return i, err
 }
 
+const deleteRecipeIngredients = `-- name: DeleteRecipeIngredients :exec
+DELETE FROM recipe_ingredients WHERE recipe_id = $1
+`
+
+func (q *Queries) DeleteRecipeIngredients(ctx context.Context, recipeID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRecipeIngredients, recipeID)
+	return err
+}
+
+const deleteRecipeSteps = `-- name: DeleteRecipeSteps :exec
+DELETE FROM recipe_steps WHERE recipe_id = $1
+`
+
+func (q *Queries) DeleteRecipeSteps(ctx context.Context, recipeID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRecipeSteps, recipeID)
+	return err
+}
+
+const deleteRecipeTags = `-- name: DeleteRecipeTags :exec
+DELETE FROM recipe_tags WHERE recipe_id = $1
+`
+
+func (q *Queries) DeleteRecipeTags(ctx context.Context, recipeID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, deleteRecipeTags, recipeID)
+	return err
+}
+
 const getRecipe = `-- name: GetRecipe :one
 SELECT id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at FROM recipes WHERE id = $1 AND deleted_at IS NULL
 `
@@ -134,6 +175,83 @@ func (q *Queries) GetRecipe(ctx context.Context, id pgtype.UUID) (Recipe, error)
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const listTags = `-- name: ListTags :many
+SELECT t.name FROM tags t
+WHERE EXISTS (SELECT 1 FROM recipe_tags rt JOIN recipes r ON r.id = rt.recipe_id
+              WHERE rt.tag_id = t.id AND r.deleted_at IS NULL)
+ORDER BY t.name
+`
+
+func (q *Queries) ListTags(ctx context.Context) ([]string, error) {
+	rows, err := q.db.Query(ctx, listTags)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []string{}
+	for rows.Next() {
+		var name string
+		if err := rows.Scan(&name); err != nil {
+			return nil, err
+		}
+		items = append(items, name)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markRecipe = `-- name: MarkRecipe :exec
+INSERT INTO recipe_favourites (recipe_id, user_id, kind) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING
+`
+
+type MarkRecipeParams struct {
+	RecipeID pgtype.UUID `json:"recipe_id"`
+	UserID   pgtype.UUID `json:"user_id"`
+	Kind     string      `json:"kind"`
+}
+
+func (q *Queries) MarkRecipe(ctx context.Context, arg MarkRecipeParams) error {
+	_, err := q.db.Exec(ctx, markRecipe, arg.RecipeID, arg.UserID, arg.Kind)
+	return err
+}
+
+const marksForRecipes = `-- name: MarksForRecipes :many
+SELECT recipe_id, kind FROM recipe_favourites
+WHERE user_id = $1 AND recipe_id = ANY($2::uuid[]) ORDER BY kind
+`
+
+type MarksForRecipesParams struct {
+	UserID pgtype.UUID   `json:"user_id"`
+	Ids    []pgtype.UUID `json:"ids"`
+}
+
+type MarksForRecipesRow struct {
+	RecipeID pgtype.UUID `json:"recipe_id"`
+	Kind     string      `json:"kind"`
+}
+
+func (q *Queries) MarksForRecipes(ctx context.Context, arg MarksForRecipesParams) ([]MarksForRecipesRow, error) {
+	rows, err := q.db.Query(ctx, marksForRecipes, arg.UserID, arg.Ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []MarksForRecipesRow{}
+	for rows.Next() {
+		var i MarksForRecipesRow
+		if err := rows.Scan(&i.RecipeID, &i.Kind); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const recipeIngredients = `-- name: RecipeIngredients :many
@@ -201,13 +319,36 @@ func (q *Queries) RecipeSteps(ctx context.Context, recipeID pgtype.UUID) ([]Reci
 }
 
 const searchRecipes = `-- name: SearchRecipes :many
-SELECT id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at FROM recipes
-WHERE deleted_at IS NULL AND title ILIKE '%' || $1::text || '%'
-ORDER BY title
+SELECT r.id, r.title, r.summary, r.servings, r.prep_minutes, r.cook_minutes, r.source_url, r.source_kind, r.notes, r.created_by, r.created_at, r.updated_at, r.deleted_at FROM recipes r
+WHERE r.deleted_at IS NULL
+  AND ($1::text = '' OR position(lower($1::text) in lower(r.title)) > 0
+       OR position(lower($1::text) in lower(r.summary)) > 0
+       OR EXISTS (SELECT 1 FROM recipe_ingredients i WHERE i.recipe_id = r.id
+                  AND position(lower($1::text) in lower(i.item)) > 0)
+       OR EXISTS (SELECT 1 FROM recipe_tags rt JOIN tags t ON t.id = rt.tag_id
+                  WHERE rt.recipe_id = r.id AND position(lower($1::text) in lower(t.name)) > 0))
+  AND ($2::text = '' OR EXISTS (SELECT 1 FROM recipe_tags rt JOIN tags t ON t.id = rt.tag_id
+                                           WHERE rt.recipe_id = r.id AND t.name = $2::text))
+  AND ($3::text = '' OR EXISTS (SELECT 1 FROM recipe_favourites f
+                                            WHERE f.recipe_id = r.id AND f.user_id = $4::uuid
+                                              AND f.kind = $3::text))
+ORDER BY lower(r.title), r.id
 `
 
-func (q *Queries) SearchRecipes(ctx context.Context, query string) ([]Recipe, error) {
-	rows, err := q.db.Query(ctx, searchRecipes, query)
+type SearchRecipesParams struct {
+	Query  string      `json:"query"`
+	Tag    string      `json:"tag"`
+	Mark   string      `json:"mark"`
+	UserID pgtype.UUID `json:"user_id"`
+}
+
+func (q *Queries) SearchRecipes(ctx context.Context, arg SearchRecipesParams) ([]Recipe, error) {
+	rows, err := q.db.Query(ctx, searchRecipes,
+		arg.Query,
+		arg.Tag,
+		arg.Mark,
+		arg.UserID,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -238,4 +379,124 @@ func (q *Queries) SearchRecipes(ctx context.Context, query string) ([]Recipe, er
 		return nil, err
 	}
 	return items, nil
+}
+
+const softDeleteRecipe = `-- name: SoftDeleteRecipe :execrows
+UPDATE recipes SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL
+`
+
+func (q *Queries) SoftDeleteRecipe(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, softDeleteRecipe, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
+const tagsForRecipes = `-- name: TagsForRecipes :many
+SELECT rt.recipe_id, t.name FROM recipe_tags rt JOIN tags t ON t.id = rt.tag_id
+WHERE rt.recipe_id = ANY($1::uuid[]) ORDER BY t.name
+`
+
+type TagsForRecipesRow struct {
+	RecipeID pgtype.UUID `json:"recipe_id"`
+	Name     string      `json:"name"`
+}
+
+func (q *Queries) TagsForRecipes(ctx context.Context, ids []pgtype.UUID) ([]TagsForRecipesRow, error) {
+	rows, err := q.db.Query(ctx, tagsForRecipes, ids)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []TagsForRecipesRow{}
+	for rows.Next() {
+		var i TagsForRecipesRow
+		if err := rows.Scan(&i.RecipeID, &i.Name); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const unmarkRecipe = `-- name: UnmarkRecipe :exec
+DELETE FROM recipe_favourites WHERE recipe_id = $1 AND user_id = $2 AND kind = $3
+`
+
+type UnmarkRecipeParams struct {
+	RecipeID pgtype.UUID `json:"recipe_id"`
+	UserID   pgtype.UUID `json:"user_id"`
+	Kind     string      `json:"kind"`
+}
+
+func (q *Queries) UnmarkRecipe(ctx context.Context, arg UnmarkRecipeParams) error {
+	_, err := q.db.Exec(ctx, unmarkRecipe, arg.RecipeID, arg.UserID, arg.Kind)
+	return err
+}
+
+const updateRecipe = `-- name: UpdateRecipe :one
+UPDATE recipes SET title = $2, summary = $3, servings = $4, prep_minutes = $5, cook_minutes = $6,
+    source_url = $7, source_kind = $8, notes = $9, updated_at = now()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at
+`
+
+type UpdateRecipeParams struct {
+	ID          pgtype.UUID    `json:"id"`
+	Title       string         `json:"title"`
+	Summary     string         `json:"summary"`
+	Servings    pgtype.Numeric `json:"servings"`
+	PrepMinutes pgtype.Int4    `json:"prep_minutes"`
+	CookMinutes pgtype.Int4    `json:"cook_minutes"`
+	SourceUrl   pgtype.Text    `json:"source_url"`
+	SourceKind  string         `json:"source_kind"`
+	Notes       string         `json:"notes"`
+}
+
+func (q *Queries) UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Recipe, error) {
+	row := q.db.QueryRow(ctx, updateRecipe,
+		arg.ID,
+		arg.Title,
+		arg.Summary,
+		arg.Servings,
+		arg.PrepMinutes,
+		arg.CookMinutes,
+		arg.SourceUrl,
+		arg.SourceKind,
+		arg.Notes,
+	)
+	var i Recipe
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Summary,
+		&i.Servings,
+		&i.PrepMinutes,
+		&i.CookMinutes,
+		&i.SourceUrl,
+		&i.SourceKind,
+		&i.Notes,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
+const upsertTag = `-- name: UpsertTag :one
+INSERT INTO tags (name) VALUES ($1)
+ON CONFLICT (name) DO UPDATE SET name = EXCLUDED.name
+RETURNING id, name
+`
+
+func (q *Queries) UpsertTag(ctx context.Context, name string) (Tag, error) {
+	row := q.db.QueryRow(ctx, upsertTag, name)
+	var i Tag
+	err := row.Scan(&i.ID, &i.Name)
+	return i, err
 }

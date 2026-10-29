@@ -134,6 +134,404 @@ paths:
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
         "410": { $ref: "#/components/responses/Error" }
+  /lists:
+    get:
+      operationId: listLists
+      responses:
+        "200":
+          description: Active lists in display order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/List" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: createList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListInput" }
+      responses:
+        "201":
+          description: List created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /lists/{listId}:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    get:
+      operationId: getList
+      responses:
+        "200":
+          description: The list with its categories and live items
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListDetail" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    patch:
+      operationId: updateList
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListPatch" }
+      responses:
+        "200":
+          description: Updated list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: archiveList
+      description: Archives the list; its items are kept.
+      responses:
+        "204": { description: Archived }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/categories:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    post:
+      operationId: createCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryInput" }
+      responses:
+        "201":
+          description: Category created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/categories/{categoryId}:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+      - $ref: "#/components/parameters/CategoryId"
+    patch:
+      operationId: updateCategory
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CategoryPatch" }
+      responses:
+        "200":
+          description: Updated category
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: deleteCategory
+      description: Deletes the category; its items become uncategorised.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/items:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    post:
+      operationId: createItem
+      description: >
+        Adds an item. The client may supply the id so an offline retry is idempotent.
+        A missing category or quantity is filled from the list's item memory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ItemInput" }
+      responses:
+        "201":
+          description: Item created or, on a retry, returned unchanged
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Item" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/suggestions:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    get:
+      operationId: suggestItems
+      description: Autocomplete from what the household has added to this list before.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Up to eight suggestions, most used first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Suggestion" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /items/{itemId}:
+    parameters:
+      - $ref: "#/components/parameters/ItemId"
+    patch:
+      operationId: updateItem
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ItemPatch" }
+      responses:
+        "200":
+          description: Updated item
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Item" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: deleteItem
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /sync:
+    get:
+      operationId: pullSync
+      description: >
+        Item changes (including deletions) after a version. Start with since=0 and
+        store the returned version for the next pull.
+      parameters:
+        - name: since
+          in: query
+          required: true
+          schema: { type: integer, format: int64, minimum: 0 }
+      responses:
+        "200":
+          description: Changes since the given version
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncChanges" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: pushSync
+      description: >
+        Applies a batch of offline operations in order. Every operation is idempotent
+        on its item id, so a retried batch is safe.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ops]
+              properties:
+                ops:
+                  type: array
+                  maxItems: 500
+                  items: { $ref: "#/components/schemas/SyncOp" }
+      responses:
+        "200":
+          description: Per-operation outcomes and the version after the batch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SyncResult" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /recipes:
+    get:
+      operationId: listRecipes
+      parameters:
+        - name: q
+          in: query
+          schema: { type: string }
+          description: Matches title, summary, ingredients and tags.
+        - name: tag
+          in: query
+          schema: { type: string }
+        - name: mark
+          in: query
+          description: Only recipes the signed-in member has marked this way.
+          schema: { $ref: "#/components/schemas/RecipeMark" }
+      responses:
+        "200":
+          description: Recipe summaries, A to Z
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RecipeSummary" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+    post:
+      operationId: createRecipe
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeInput" }
+      responses:
+        "201":
+          description: Recipe created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /recipes/{recipeId}:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    get:
+      operationId: getRecipe
+      responses:
+        "200":
+          description: The full recipe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    put:
+      operationId: replaceRecipe
+      description: Replaces the recipe, including its ingredients, steps and tags.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RecipeInput" }
+      responses:
+        "200":
+          description: Updated recipe
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Recipe" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: deleteRecipe
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /recipes/{recipeId}/marks/{mark}:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+      - name: mark
+        in: path
+        required: true
+        schema: { $ref: "#/components/schemas/RecipeMark" }
+    put:
+      operationId: markRecipe
+      responses:
+        "204": { description: Marked for the signed-in member }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: unmarkRecipe
+      responses:
+        "204": { description: Mark removed }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /tags:
+    get:
+      operationId: listTags
+      responses:
+        "200":
+          description: Every tag in use
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { type: string }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/add-recipe:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    post:
+      operationId: addRecipeToList
+      description: >
+        Adds a recipe's ingredients to the list, scaled to the requested servings.
+        Ingredients already on the list are merged into the existing item, and each
+        new item is categorised from the list's item memory.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [recipeId]
+              properties:
+                recipeId: { type: string }
+                servings: { type: number, format: double, minimum: 0 }
+      responses:
+        "200":
+          description: What changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AddRecipeResult" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /lists/{listId}/activity:
+    parameters:
+      - $ref: "#/components/parameters/ListId"
+    get:
+      operationId: listActivity
+      parameters:
+        - name: limit
+          in: query
+          schema: { type: integer, minimum: 1, maximum: 200, default: 50 }
+      responses:
+        "200":
+          description: Newest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Activity" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
 security:
   - session: []
 components:
@@ -150,6 +548,26 @@ components:
       schema: { type: string }
     InviteToken:
       name: token
+      in: path
+      required: true
+      schema: { type: string }
+    ListId:
+      name: listId
+      in: path
+      required: true
+      schema: { type: string }
+    CategoryId:
+      name: categoryId
+      in: path
+      required: true
+      schema: { type: string }
+    ItemId:
+      name: itemId
+      in: path
+      required: true
+      schema: { type: string }
+    RecipeId:
+      name: recipeId
       in: path
       required: true
       schema: { type: string }
@@ -187,3 +605,232 @@ components:
         reinvite: { type: boolean }
         name: { type: string }
         color: { type: string }
+    List:
+      type: object
+      required: [id, name, emoji, colour, sortOrder]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        emoji: { type: string }
+        colour: { type: string }
+        sortOrder: { type: integer }
+    ListInput:
+      type: object
+      required: [name, colour]
+      properties:
+        name: { type: string }
+        emoji: { type: string }
+        colour: { type: string }
+        categories:
+          type: array
+          items: { $ref: "#/components/schemas/CategoryInput" }
+    ListPatch:
+      type: object
+      properties:
+        name: { type: string }
+        emoji: { type: string }
+        colour: { type: string }
+        sortOrder: { type: integer }
+    ListDetail:
+      allOf:
+        - $ref: "#/components/schemas/List"
+        - type: object
+          required: [categories, items]
+          properties:
+            categories:
+              type: array
+              items: { $ref: "#/components/schemas/Category" }
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/Item" }
+    Category:
+      type: object
+      required: [id, listId, name, colour, icon, sortOrder]
+      properties:
+        id: { type: string }
+        listId: { type: string }
+        name: { type: string }
+        colour: { type: string }
+        icon: { type: string }
+        sortOrder: { type: integer }
+    CategoryInput:
+      type: object
+      required: [name, colour]
+      properties:
+        name: { type: string }
+        colour: { type: string }
+        icon: { type: string }
+    CategoryPatch:
+      type: object
+      properties:
+        name: { type: string }
+        colour: { type: string }
+        icon: { type: string }
+        sortOrder: { type: integer }
+    Item:
+      type: object
+      required: [id, listId, name, quantityText, note, checked, addedBy, position, version, updatedAt, deleted]
+      properties:
+        id: { type: string }
+        listId: { type: string }
+        categoryId: { type: string }
+        name: { type: string }
+        quantityText: { type: string }
+        note: { type: string }
+        checked: { type: boolean }
+        checkedBy: { type: string }
+        addedBy: { type: string }
+        sourceRecipeId: { type: string }
+        position: { type: integer }
+        version: { type: integer, format: int64 }
+        updatedAt: { type: string, format: date-time }
+        deleted: { type: boolean }
+    ItemInput:
+      type: object
+      required: [name]
+      properties:
+        id: { type: string, description: Client-generated UUID. }
+        name: { type: string }
+        quantityText: { type: string }
+        note: { type: string }
+        categoryId: { type: string }
+    ItemPatch:
+      type: object
+      properties:
+        name: { type: string }
+        quantityText: { type: string }
+        note: { type: string }
+        categoryId: { type: string, description: Empty string clears the category. }
+        checked: { type: boolean }
+        position: { type: integer }
+    Suggestion:
+      type: object
+      required: [name, quantityText]
+      properties:
+        name: { type: string }
+        quantityText: { type: string }
+        categoryId: { type: string }
+    SyncChanges:
+      type: object
+      required: [version, items]
+      properties:
+        version: { type: integer, format: int64 }
+        items:
+          type: array
+          items: { $ref: "#/components/schemas/Item" }
+    SyncOp:
+      type: object
+      required: [type, itemId]
+      properties:
+        type: { type: string, enum: [upsert, check, uncheck, delete] }
+        itemId: { type: string }
+        listId: { type: string, description: Required for upsert. }
+        item: { $ref: "#/components/schemas/ItemInput" }
+    SyncResult:
+      type: object
+      required: [version, results]
+      properties:
+        version: { type: integer, format: int64 }
+        results:
+          type: array
+          items:
+            type: object
+            required: [itemId, status]
+            properties:
+              itemId: { type: string }
+              status: { type: string, enum: [applied, not_found, invalid] }
+    RecipeMark:
+      type: string
+      enum: [favourite, want_to_make]
+    Ingredient:
+      type: object
+      required: [item]
+      properties:
+        section: { type: string }
+        quantity: { type: number, format: double }
+        unit: { type: string }
+        item: { type: string }
+        prepNote: { type: string }
+        rawText: { type: string }
+    Step:
+      type: object
+      required: [text]
+      properties:
+        text: { type: string }
+        timerSeconds: { type: integer, minimum: 1 }
+    RecipeInput:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string }
+        summary: { type: string }
+        servings: { type: number, format: double }
+        prepMinutes: { type: integer, minimum: 0 }
+        cookMinutes: { type: integer, minimum: 0 }
+        sourceUrl: { type: string }
+        sourceKind: { type: string, enum: [url, photo, manual, ai] }
+        notes: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        ingredients:
+          type: array
+          items: { $ref: "#/components/schemas/Ingredient" }
+        steps:
+          type: array
+          items: { $ref: "#/components/schemas/Step" }
+    RecipeSummary:
+      type: object
+      required: [id, title, summary, sourceKind, tags, marks, createdBy, updatedAt]
+      properties:
+        id: { type: string }
+        title: { type: string }
+        summary: { type: string }
+        servings: { type: number, format: double }
+        prepMinutes: { type: integer }
+        cookMinutes: { type: integer }
+        sourceKind: { type: string }
+        tags:
+          type: array
+          items: { type: string }
+        marks:
+          type: array
+          description: The signed-in member's marks.
+          items: { $ref: "#/components/schemas/RecipeMark" }
+        createdBy: { type: string }
+        updatedAt: { type: string, format: date-time }
+    Recipe:
+      allOf:
+        - $ref: "#/components/schemas/RecipeSummary"
+        - type: object
+          required: [notes, ingredients, steps]
+          properties:
+            sourceUrl: { type: string }
+            notes: { type: string }
+            ingredients:
+              type: array
+              items: { $ref: "#/components/schemas/Ingredient" }
+            steps:
+              type: array
+              items: { $ref: "#/components/schemas/Step" }
+    AddRecipeResult:
+      type: object
+      required: [added, merged]
+      properties:
+        added:
+          type: array
+          items: { $ref: "#/components/schemas/Item" }
+        merged:
+          type: array
+          items: { $ref: "#/components/schemas/Item" }
+    Activity:
+      type: object
+      required: [id, via, action, detail, createdAt]
+      properties:
+        id: { type: integer, format: int64 }
+        userId: { type: string }
+        via: { type: string }
+        action: { type: string }
+        recipeId: { type: string }
+        detail: { type: object, additionalProperties: true }
+        createdAt: { type: string, format: date-time }

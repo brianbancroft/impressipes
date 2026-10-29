@@ -12,6 +12,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
+	"github.com/brianbancroft/impressipies/apps/api/internal/uuidx"
 )
 
 // SessionTTL is how long a signed-in device stays signed in.
@@ -30,22 +31,9 @@ func hashToken(tok string) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func uuidString(u pgtype.UUID) string {
-	if !u.Valid {
-		return ""
-	}
-	b := u.Bytes
-	h := hex.EncodeToString(b[:])
-	return h[0:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:]
-}
+func uuidString(u pgtype.UUID) string { return uuidx.String(u) }
 
-func parseUUID(s string) (pgtype.UUID, bool) {
-	var u pgtype.UUID
-	if err := u.Scan(s); err != nil {
-		return u, false
-	}
-	return u, true
-}
+func parseUUID(s string) (pgtype.UUID, bool) { return uuidx.Parse(s) }
 
 func memberOf(u dbgen.User) Member {
 	status := StatusActive

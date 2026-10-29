@@ -11,6 +11,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/api"
+	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 )
 
@@ -20,6 +21,9 @@ type ctxKey struct{}
 
 type server struct {
 	store family.Directory
+	pool  *pgxpool.Pool // nil in memory mode, where only the household endpoints work
+	q     *dbgen.Queries
+	hub   *hub
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -43,19 +47,37 @@ func New(pool *pgxpool.Pool) http.Handler {
 			log.Printf("first run: open /invite/%s to create the admin account", inv.Token)
 		}
 	}
-	return NewWithStore(dir)
+	return NewWithStore(context.Background(), dir, pool)
 }
 
-func NewWithStore(store family.Directory) http.Handler {
-	s := &server{store: store}
-	return api.HandlerWithOptions(api.NewStrictHandler(s, nil), api.StdHTTPServerOptions{
-		Middlewares: []api.MiddlewareFunc{sessionMiddleware},
+// NewWithStore builds the handler on a directory and, optionally, a database pool.
+// ctx ends the background listener that feeds the event stream.
+func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Pool) http.Handler {
+	s := &server{store: store, pool: pool}
+	if pool != nil {
+		s.q = dbgen.New(pool)
+		s.hub = newHub()
+		go s.hub.listen(ctx, pool)
+	}
+	strict := api.NewStrictHandlerWithOptions(s, nil, api.StrictHTTPServerOptions{
+		RequestErrorHandlerFunc:  requestError,
+		ResponseErrorHandlerFunc: responseError,
 	})
+	mux := http.NewServeMux()
+	// The event stream is not part of the OpenAPI document: a long-lived response
+	// does not fit the generated request/response handlers.
+	mux.HandleFunc("GET /events", s.events)
+	rest := api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
+		ErrorHandlerFunc: requestError,
+	})
+	mux.Handle("/", rest)
+	return sessionMiddleware(mux)
 }
 
 // sessionMiddleware hands the request's session cookie to the strict handlers via the context.
 func sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r = r.WithContext(context.WithValue(r.Context(), viaKey{}, clientVia(r)))
 		if c, err := r.Cookie(sessionCookie); err == nil {
 			r = r.WithContext(context.WithValue(r.Context(), ctxKey{}, c.Value))
 		}

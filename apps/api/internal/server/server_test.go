@@ -44,7 +44,7 @@ func tokenOf(t *testing.T, rec *httptest.ResponseRecorder) string {
 }
 
 func TestHealth(t *testing.T) {
-	if rec := do(New(), http.MethodGet, "/healthz", ""); rec.Code != http.StatusOK {
+	if rec := do(New(nil), http.MethodGet, "/healthz", ""); rec.Code != http.StatusOK {
 		t.Fatalf("got status %d, want 200", rec.Code)
 	}
 }
@@ -55,7 +55,7 @@ func TestInviteOnboardingFlow(t *testing.T) {
 }
 
 func inviteOnboardingFlow(t *testing.T, store family.Directory) {
-	h := NewWithStore(store)
+	h := NewWithStore(t.Context(), store, nil)
 
 	boot, _ := store.CreateInvite(context.Background(), "")
 	accept := `{"name":"Mum","color":"#e11d48","credentialId":"cred-1"}`
