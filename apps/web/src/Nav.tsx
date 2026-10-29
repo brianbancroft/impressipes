@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Download, Heart, Plus, ShoppingCart, Soup, Users } from 'lucide-react';
+import { Bot, Heart, Plus, ShoppingCart, Smartphone, Soup, Users } from 'lucide-react';
 import { useState } from 'react';
 import { listLists, type Member } from './api';
 import { applyTheme, getTheme, type Theme } from './theme';
@@ -44,7 +44,8 @@ export function ProfileMenu({ me, children }: { me: Member; children?: React.Rea
         {me.role === 'admin' && (
           <MenuItem asChild><Link to="/admin" className="text-ink no-underline hover:text-ink"><Users />Family</Link></MenuItem>
         )}
-        <MenuItem asChild><a href="/skill" download="skill.zip" className="text-ink no-underline hover:text-ink"><Download />Download Claude skill</a></MenuItem>
+        <MenuItem asChild><Link to="/ai" className="text-ink no-underline hover:text-ink"><Bot />AI integration</Link></MenuItem>
+        <MenuItem asChild><Link to="/app-setup" className="text-ink no-underline hover:text-ink"><Smartphone />App setup</Link></MenuItem>
         <MenuSeparator />
         <MenuLabel>Theme</MenuLabel>
         <MenuRadioGroup value={theme} onValueChange={(v) => { applyTheme(v as Theme); setTheme(v as Theme); }}>

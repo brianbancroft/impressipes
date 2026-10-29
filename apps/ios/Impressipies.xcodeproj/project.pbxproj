@@ -10,6 +10,7 @@
 		25178DC58A99F591E436D249 /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */; };
 		2E0B62AB52842643F80BCBE5 /* ImpressipiesWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4BA15CA20CD48DEB5EFDE0EE /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = 210A0003844F8B00D35E50D5 /* ApiClient */; };
+		CECA5D71BF6B0A718E94AC0C /* OfflineStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 170A2EA0959C5404973A7613 /* OfflineStoreTests.swift */; };
 		D61D6091D8B5ABEC64F371DD /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = 4581A4D55126CCA6A7773065 /* ApiClient */; };
 /* End PBXBuildFile section */
 
@@ -46,6 +47,7 @@
 
 /* Begin PBXFileReference section */
 		0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ImpressipiesWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		170A2EA0959C5404973A7613 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 		1E1E0BE6B0E6B50C39A2F02D /* ImpressipiesTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ImpressipiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatTests.swift; sourceTree = "<group>"; };
 		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -107,6 +109,7 @@
 			isa = PBXGroup;
 			children = (
 				2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */,
+				170A2EA0959C5404973A7613 /* OfflineStoreTests.swift */,
 			);
 			path = ImpressipiesTests;
 			sourceTree = "<group>";
@@ -277,6 +280,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				25178DC58A99F591E436D249 /* FormatTests.swift in Sources */,
+				CECA5D71BF6B0A718E94AC0C /* OfflineStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -490,6 +494,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Impressipes uses the camera to scan the QR code that sets your server address.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
@@ -512,6 +517,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "Impressipes uses the camera to scan the QR code that sets your server address.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";

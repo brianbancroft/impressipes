@@ -13,6 +13,7 @@ struct SignInView: View {
     @State private var color = Palette.memberColours[0]
     @State private var busy = false
     @State private var error: String?
+    @State private var scanning = false
 
     var body: some View {
         ScrollView {
@@ -47,10 +48,26 @@ struct SignInView: View {
         .scrollDismissesKeyboard(.interactively)
         .pageBackground()
         .onAppear { serverText = session.server.absoluteString }
+        .sheet(isPresented: $scanning) {
+            QRScannerSheet { url in
+                session.setServer(url)
+                serverText = url.absoluteString
+            }
+        }
     }
 
     private var linkStep: some View {
         VStack(alignment: .leading, spacing: 16) {
+            VStack(alignment: .leading, spacing: 8) {
+                Button { scanning = true } label: { Label("Scan QR code", systemImage: "qrcode.viewfinder") }
+                    .buttonStyle(PopButtonStyle())
+                Text("Server: \(session.server.host() ?? session.server.absoluteString)")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Palette.inkMuted)
+                Text("Open Impressipes on the web and choose App setup from your profile menu.")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkMuted)
+            }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Invite link").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
                 HStack {

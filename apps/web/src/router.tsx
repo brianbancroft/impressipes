@@ -10,6 +10,8 @@ import {
   useRouterState,
 } from '@tanstack/react-router';
 import { Admin } from './Admin';
+import { AiIntegration } from './AiIntegration';
+import { AppSetup } from './AppSetup';
 import { getMe, type Me, type RecipeMark } from './api';
 import { CookMode } from './CookMode';
 import { ListPage } from './ListPage';
@@ -84,7 +86,7 @@ function Layout() {
   const me = data as Extract<Me, { kind: 'member' }>;
   const path = useRouterState({ select: (st) => st.location.pathname });
   // Detail screens bring their own header and actions, so phones drop the tab bar there.
-  const top = ['/recipes', '/lists', '/admin'].includes(path);
+  const top = ['/recipes', '/lists', '/admin', '/ai', '/app-setup'].includes(path);
   return (
     <div className="relative isolate min-h-dvh md:pl-24 lg:pl-62">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
@@ -143,10 +145,13 @@ const adminRoute = createRoute({
   },
 });
 
+const aiRoute = createRoute({ getParentRoute: () => shellRoute, path: '/ai', component: AiIntegration });
+const appSetupRoute = createRoute({ getParentRoute: () => shellRoute, path: '/app-setup', component: AppSetup });
+
 const routeTree = rootRoute.addChildren([
   inviteRoute,
   authedRoute.addChildren([
-    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute]),
+    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute]),
     cookRoute,
   ]),
 ]);
