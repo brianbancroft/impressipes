@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-60 -60 120 120" width="32" height="32"><style>
+.c{fill:#8A6A00}.f{fill:#C62F55}@media (prefers-color-scheme:dark){.c{fill:#CFA52E}.f{fill:#FF8DA5}}</style>
+<g class="c"><circle cx="49.0" cy="0.0" r="10"/><circle cx="42.4" cy="24.5" r="10"/><circle cx="24.5" cy="42.4" r="10"/><circle cx="0.0" cy="49.0" r="10"/><circle cx="-24.5" cy="42.4" r="10"/><circle cx="-42.4" cy="24.5" r="10"/><circle cx="-49.0" cy="0.0" r="10"/><circle cx="-42.4" cy="-24.5" r="10"/><circle cx="-24.5" cy="-42.4" r="10"/><circle cx="-0.0" cy="-49.0" r="10"/><circle cx="24.5" cy="-42.4" r="10"/><circle cx="42.4" cy="-24.5" r="10"/><circle r="50"/></g>
+    <circle r="38" class="f"/>
+    <g class="c"><rect x="-46" y="-19" width="92" height="11" rx="5.5"/><rect x="-46" y="8" width="92" height="11" rx="5.5"/><rect x="-19" y="-46" width="11" height="92" rx="5.5"/><rect x="8" y="-46" width="11" height="92" rx="5.5"/></g></svg>
