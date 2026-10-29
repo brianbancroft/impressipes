@@ -1,8 +1,11 @@
 package web
 
 import (
+	"archive/zip"
+	"bytes"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 	"testing/fstest"
 )
@@ -46,5 +49,32 @@ func TestHandlerWithoutBuild(t *testing.T) {
 	handler(fstest.MapFS{}).ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/", nil))
 	if rec.Code != 404 {
 		t.Errorf("code %d, want 404", rec.Code)
+	}
+}
+
+func TestSkillHandler(t *testing.T) {
+	rec := httptest.NewRecorder()
+	SkillHandler().ServeHTTP(rec, httptest.NewRequest(http.MethodGet, "/skill", nil))
+	if rec.Code != 200 {
+		t.Fatalf("code %d, want 200", rec.Code)
+	}
+	if got := rec.Header().Get("Content-Type"); got != "application/zip" {
+		t.Errorf("content type %q", got)
+	}
+	if got := rec.Header().Get("Content-Disposition"); !strings.Contains(got, "skill.zip") {
+		t.Errorf("content disposition %q", got)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(rec.Body.Bytes()), int64(rec.Body.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var found bool
+	for _, f := range zr.File {
+		if f.Name == "impressipes/SKILL.md" {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("impressipes/SKILL.md missing from %d files", len(zr.File))
 	}
 }

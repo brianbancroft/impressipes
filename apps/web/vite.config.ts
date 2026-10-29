@@ -7,6 +7,6 @@ export default defineConfig({
   build: { outDir: '../../dist/apps/web', emptyOutDir: true },
   server: {
     port: 4200,
-    proxy: { '/api': 'http://localhost:8080' },
+    proxy: { '/api': 'http://localhost:8080', '/skill': 'http://localhost:8080' },
   },
 });

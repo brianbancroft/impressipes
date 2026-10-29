@@ -87,6 +87,7 @@ final class Session {
     func signOut() {
         stopEvents()
         tokenBox.value = nil
+        OfflineStore.shared.reset()
         Keychain.write(nil, for: Self.tokenKey)
         member = nil
         state = .signedOut

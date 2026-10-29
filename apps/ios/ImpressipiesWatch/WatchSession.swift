@@ -50,6 +50,7 @@ final class WatchSession {
             api = Self.makeAPI(server: url, box: tokenBox)
         }
         tokenBox.value = token
+        if token == nil { OfflineStore.shared.reset() }
         Keychain.write(token, for: Self.tokenKey)
         state = token == nil ? .waiting : .signedIn
     }

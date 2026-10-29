@@ -49,6 +49,14 @@ struct ListDetailView: View {
         let open = store.items.filter { !$0.checked }
         let basket = store.items.filter(\.checked).sorted { $0.updatedAt > $1.updatedAt }
         return List {
+            if store.isOffline {
+                Label("Offline. Ticks and new items will sync when you're back.", systemImage: "icloud.slash")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Palette.inkMuted)
+                    .frame(maxWidth: .infinity)
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+            }
             if store.items.isEmpty {
                 StateMessage(emoji: list.emoji.ifEmpty("🛒"), title: "Nothing on here yet", message: "Type above and press return. \"2 cans chickpeas\" works.")
                     .listRowBackground(Color.clear)
@@ -148,6 +156,7 @@ struct ListDetailView: View {
         ItemRow(
             item: item,
             recipeTitle: item.sourceRecipeId.flatMap { store.recipeTitles[$0] },
+            pending: store.pendingIds.contains(item.id),
             onToggle: {
                 UIImpactFeedbackGenerator(style: .light).impactOccurred()
                 Task { await store.toggle(item) }
@@ -291,6 +300,7 @@ struct AisleLabel: View {
 struct ItemRow: View {
     let item: Item
     var recipeTitle: String?
+    var pending = false
     let onToggle: () -> Void
 
     var body: some View {
@@ -321,6 +331,13 @@ struct ItemRow: View {
                 }
             }
             Spacer(minLength: 0)
+            if pending {
+                // Not yet acknowledged by the server; gone on sync.
+                Image(systemName: "clock")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Palette.inkMuted)
+                    .accessibilityLabel("Waiting to sync")
+            }
         }
         .padding(.vertical, 6)
         .padding(.trailing, 12)

@@ -3,8 +3,12 @@ import SwiftUI
 /// All lists as big colour tiles with how much is left to get.
 struct ListsView: View {
     @Environment(Session.self) private var session
-    @State private var lists: [ShoppingList] = []
-    @State private var details: [String: ListDetail] = [:]
+    @State private var lists: [ShoppingList] = OfflineStore.shared.lists
+    @State private var details: [String: ListDetail] = Dictionary(
+        uniqueKeysWithValues: OfflineStore.shared.lists.compactMap { l in
+            OfflineStore.shared.snapshot(l.id).map { (l.id, OfflineStore.shared.overlay($0.detail, listId: l.id)) }
+        }
+    )
     @State private var loaded = false
     @State private var error: String?
     @State private var editing: ListFormSheet.Mode?
@@ -66,9 +70,11 @@ struct ListsView: View {
     }
 
     private func load() async {
+        _ = await OfflineStore.shared.flush(using: session.api)
         do {
             let fetched = try await session.api.lists().sorted { $0.sortOrder < $1.sortOrder }
             lists = fetched
+            OfflineStore.shared.save(lists: fetched)
             error = nil
             // Counts come from each list's items; there are only a handful of lists.
             let api = session.api
@@ -77,7 +83,11 @@ struct ListsView: View {
                     group.addTask { (l.id, try? await api.list(l.id)) }
                 }
                 for await (id, d) in group {
-                    if let d { details[id] = d }
+                    if let d {
+                        OfflineStore.shared.save(snapshot: ListSnapshot(detail: d, syncedAt: .now), for: id)
+                        // Counts include changes still waiting to sync.
+                        details[id] = OfflineStore.shared.overlay(d, listId: id)
+                    }
                 }
             }
         } catch {

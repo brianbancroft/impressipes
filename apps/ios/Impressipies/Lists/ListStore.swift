@@ -2,19 +2,41 @@ import Foundation
 import Observation
 
 /// One list's items, with optimistic edits that roll back if the server says no.
+/// Ticking and adding keep working out of reach of the server: they join the
+/// offline queue and go out when it can be reached again (IMP-58).
 @MainActor @Observable
 final class ListStore {
     let listId: String
     private(set) var detail: ListDetail?
+    /// Only set when there is nothing to show at all, or an edit the server refused.
     private(set) var error: String?
+    private(set) var updated: Date?
+    private(set) var pendingIds: Set<String> = []
+    /// Advances with every refresh attempt so "Offline" can appear while the server stays unreachable.
+    private(set) var checkedAt = Date()
     /// Recipe titles for the "from …" line on items added from a recipe.
     private(set) var recipeTitles: [String: String] = [:]
 
     private let api: () -> API
+    private let offline: OfflineStore
 
-    init(listId: String, api: @escaping () -> API) {
+    /// No successful sync for this long and the list says "Offline".
+    static let offlineAfter: TimeInterval = 10 * 60
+
+    init(listId: String, offline: OfflineStore = .shared, api: @escaping () -> API) {
         self.listId = listId
         self.api = api
+        self.offline = offline
+        if let snap = offline.snapshot(listId) {
+            detail = offline.overlay(snap.detail, listId: listId)
+            updated = snap.syncedAt
+        }
+        pendingIds = offline.pendingIds(in: listId)
+    }
+
+    var isOffline: Bool {
+        guard let updated else { return detail != nil }
+        return checkedAt.timeIntervalSince(updated) > Self.offlineAfter
     }
 
     var list: ShoppingList? { detail?.list }
@@ -27,13 +49,44 @@ final class ListStore {
     }
 
     func load() async {
+        await flush()
+        checkedAt = .now
         do {
-            detail = try await api().list(listId)
+            let fresh = try await api().list(listId)
+            let now = Date.now
+            offline.save(snapshot: ListSnapshot(detail: fresh, syncedAt: now), for: listId)
+            detail = offline.overlay(fresh, listId: listId)
+            updated = now
             error = nil
             await loadRecipeTitles()
         } catch {
-            self.error = APIError.from(error).message
+            // Being out of reach is normal: keep what's on screen.
+            if detail == nil { self.error = APIError.from(error).message }
         }
+    }
+
+    /// Sends anything waiting in the queue.
+    func flush() async {
+        for item in await offline.flush(using: api()) where item.listId == listId { replace(item) }
+        pendingIds = offline.pendingIds(in: listId)
+    }
+
+    /// Sends the change now; if the server can't be reached, queues it instead.
+    /// A server refusal still throws.
+    private func send(_ op: PendingOp, _ work: () async throws -> Item) async throws {
+        await flush()
+        if offline.pending.isEmpty {
+            do {
+                replace(try await work())
+                return
+            } catch {
+                guard APIError.isUnreachable(error) else { throw APIError.from(error) }
+            }
+        }
+        // Out of reach, or earlier changes are still stuck: keep this one behind them.
+        offline.enqueue(op)
+        pendingIds = offline.pendingIds(in: listId)
+        if let local = offline.localItem(for: op, after: items.map(\.position).max() ?? 0) { replace(local) }
     }
 
     private func loadRecipeTitles() async {
@@ -71,23 +124,29 @@ final class ListStore {
     func toggle(_ item: Item) async {
         var next = item
         next.checked.toggle()
+        next.updatedAt = .now
         replace(next)
         try? await attempt(item) {
-            replace(try await api().updateItem(item.id, .init(checked: next.checked)))
+            try await send(PendingOp(listId: listId, itemId: item.id, kind: .check(next.checked), at: next.updatedAt)) {
+                try await api().updateItem(item.id, .init(checked: next.checked))
+            }
         }
     }
 
     @discardableResult
     func add(name: String, quantityText: String, note: String? = nil, categoryId: String?) async throws -> Item {
-        let created = try await api().createItem(
-            listId: listId,
-            name: name,
-            quantityText: quantityText.isEmpty ? nil : quantityText,
-            note: note?.isEmpty == false ? note : nil,
-            categoryId: categoryId
-        )
-        replace(created)
-        return created
+        let id = UUID().uuidString.lowercased()
+        let note = note ?? ""
+        let op = PendingOp(listId: listId, itemId: id, kind: .add(name: name, quantityText: quantityText, note: note, categoryId: categoryId), at: .now)
+        try await send(op) {
+            try await api().createItem(
+                listId: listId, id: id, name: name,
+                quantityText: quantityText.isEmpty ? nil : quantityText,
+                note: note.isEmpty ? nil : note, categoryId: categoryId
+            )
+        }
+        // Either the server's copy, or the local one waiting in the queue.
+        return items.first { $0.id == id }!
     }
 
     func update(_ item: Item, name: String, quantityText: String, note: String, categoryId: String?) async throws {

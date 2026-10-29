@@ -369,7 +369,7 @@ final class WatchListStore {
         var next = item
         next.checked = checked
         next.updatedAt = .now
-        offline.enqueue(PendingCheck(listId: listId, itemId: item.id, checked: checked, at: next.updatedAt))
+        offline.enqueue(PendingOp(listId: listId, itemId: item.id, kind: .check(checked), at: next.updatedAt))
         pendingIds = offline.pendingIds(in: listId)
         withAnimation(animation) { replace(next) }
         await flush()
