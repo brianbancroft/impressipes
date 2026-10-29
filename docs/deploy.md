@@ -1,0 +1,20 @@
+# Deploying
+
+The root `Dockerfile` builds the SPA, embeds it in the Go binary (`apps/api/internal/web/static`) and ships the binary on distroless. One container serves everything on `$PORT` (default 8080):
+
+| Path | Served by |
+| --- | --- |
+| `/api/*` | The API, with the `/api` prefix stripped (same as the Vite dev proxy) |
+| `/healthz` | Health check |
+| anything else | The SPA, falling back to `index.html` for client-side routes |
+
+```bash
+docker build -t impressipies .
+docker run --rm -p 8080:8080 impressipies
+```
+
+## Coolify
+
+1. New application from this repo, branch `main`, build pack **Dockerfile**, port `8080`.
+2. Health check path `/healthz`. The image has no shell or curl, so use Coolify's HTTP check rather than a container exec check.
+3. Copy the application's deploy webhook into the GitHub repo's webhooks (push events) so pushes to `main` deploy.

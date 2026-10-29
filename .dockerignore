@@ -1,0 +1,8 @@
+.git
+.nx
+node_modules
+**/node_modules
+dist
+apps/ios
+designs
+docs

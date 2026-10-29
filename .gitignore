@@ -5,3 +5,8 @@ dist
 .env.local
 *.log
 .DS_Store
+apps/api/internal/web/static/*
+!apps/api/internal/web/static/.gitkeep
+apps/ios/build
+.build
+xcuserdata
