@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Impressipies hi-fi watchOS screens and complications (IMP-20)</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@600;700;800&display=swap');
+@page { size: 1760px 1080px; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #e9e4de; font-family: system-ui, -apple-system, "Segoe UI", sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+/* tokens (IMP-14) */
+.light {
+  --bg:#FFF8F0; --surface:#FFFFFF; --surface-2:#FBEFE2; --line:#EADBCB; --ink:#2B2118; --ink-muted:#6B5D50;
+  --accent:#C62F55; --on-accent:#FFFFFF; --accent-soft:#FCE4EA; --success:#1F6B45; --warning:#8A5A00; --danger:#B3261E; --info:#2455B0;
+  --tomato:#B83A2B; --sky:#3C8DE0; --leaf:#5E9626; --violet:#8E4CC0; --tangerine:#E0701A; --teal:#0E7C86;
+  --berry:#C42A7B; --mustard:#8A6A00; --indigo:#3D3FA8; --cocoa:#7A4A2E; --forest:#1F6B45; --slate:#7E8896;
+  --shadow: 0 1px 2px rgba(43,33,24,.08), 0 6px 16px rgba(43,33,24,.06);
+  --scrim: rgba(43,33,24,.42);
+}
+.dark {
+  --bg:#1A1512; --surface:#2A221D; --surface-2:#342B24; --line:#43372E; --ink:#F7EEE4; --ink-muted:#BDAE9F;
+  --accent:#FF8DA5; --on-accent:#2B0A12; --accent-soft:#4A2230; --success:#5BD39A; --warning:#E5B93C; --danger:#FF8A80; --info:#8FB4FF;
+  --tomato:#FF7A66; --sky:#7DB8FF; --leaf:#9BD65F; --violet:#C79BF2; --tangerine:#FFA24F; --teal:#4FD0D6;
+  --berry:#FF7DB8; --mustard:#CFA52E; --indigo:#8F94F5; --cocoa:#B58059; --forest:#5BD39A; --slate:#A5B0BD;
+  --shadow: none; --scrim: rgba(0,0,0,.6);
+}
+:root { --display: "Nunito", ui-rounded, "SF Pro Rounded", system-ui, sans-serif; }
+
+
+/* presentation pages */
+
+/* presentation pages (same as IMP-19) */
+.page { width:1760px; height:1080px; padding:40px 56px; page-break-after:always; break-after:page; background:#e9e4de; position:relative; overflow:hidden; }
+.page > h1 { font:800 28px var(--display); margin:0 0 4px; color:#2B2118; }
+.page > .sub { font:500 15px system-ui; color:#6B5D50; margin:0 0 16px; max-width:1560px; line-height:1.4; }
+.frames { display:flex; gap:28px; align-items:flex-start; }
+.cap { font:600 12.5px ui-monospace, Menlo, monospace; color:#6B5D50; margin-top:8px; max-width:300px; line-height:1.35; }
+.cap b { color:#2B2118; }
+.spec { display:grid; grid-template-columns:1fr 1fr 1fr; gap:24px; margin-top:14px; }
+.spec section, .panel { background:#fff8f0; border:1px solid #eadbcb; border-radius:20px; padding:18px 22px; }
+.spec h3, .panel h3 { font:800 17px var(--display); margin:0 0 8px; color:#2B2118; }
+.spec ul, .panel ul { margin:0; padding-left:18px; font:400 13.5px/1.45 system-ui; color:#2B2118; }
+.spec li, .panel li { margin-bottom:5px; }
+.spec code, .panel code, .tbl code { font:600 12px ui-monospace, Menlo, monospace; background:#fbefe2; padding:1px 5px; border-radius:5px; }
+.sw { display:flex; flex-wrap:wrap; gap:8px; margin:8px 0 4px; }
+.sw span { width:26px; height:26px; border-radius:50%; display:block; }
+.sc { transform-origin:0 0; }
+.illo { display:block; }
+.tbl { width:100%; border-collapse:collapse; font:400 12.5px/1.4 system-ui; color:#2B2118; }
+.tbl th { text-align:left; font:800 11px var(--display); letter-spacing:.06em; text-transform:uppercase; color:#6B5D50; padding:6px 10px; border-bottom:2px solid #eadbcb; }
+.tbl td { padding:6px 10px; border-bottom:1px solid #eadbcb; vertical-align:top; }
+.tbl td:first-child { font:800 13px var(--display); white-space:nowrap; }
+.tag { display:inline-block; font:700 11px ui-monospace, Menlo, monospace; background:#2B2118; color:#FFF8F0; border-radius:6px; padding:1px 6px; margin-left:4px; }
+.warn { background:#fff3d6; border:1px solid #e5b93c; border-radius:14px; padding:10px 14px; font:500 13.5px/1.4 system-ui; color:#2B2118; }
+
+/* ========================= watch (always dark) ========================= */
+.wch { position:relative; overflow:hidden; background:var(--bg); color:var(--ink); font-family:system-ui, -apple-system, sans-serif; box-shadow:0 0 0 6px #000, 0 0 0 7px #3a3a3c; --wdt:1; }
+.wch .wh { display:flex; justify-content:space-between; align-items:baseline; padding:10px 12px 0 14px; }
+.wch .wt { font:800 calc(15px*var(--wdt))/calc(18px*var(--wdt)) var(--display); }
+.wch .wtm { font:600 12px system-ui; color:var(--ink-muted); }
+.wch .wsub { padding:1px 14px 0; font:500 12px/14px system-ui; color:var(--ink-muted); display:flex; align-items:center; gap:4px; }
+.wch .wbody { padding:6px 8px 0; }
+.wch .wadd { margin:0 0 6px; min-height:44px; border-radius:12px; background:var(--surface-2); display:flex; align-items:center; gap:8px; padding:0 12px; font:600 calc(15px*var(--wdt))/calc(18px*var(--wdt)) system-ui; color:var(--accent); }
+.wch .wadd .mic { margin-left:auto; color:var(--ink-muted); }
+.wch .wadd.press { background:color-mix(in srgb, var(--accent) 22%, var(--surface-2)); }
+.wch .wcat { height:28px; border-radius:8px; margin:8px 0 4px; position:relative; display:flex; align-items:center; padding:0 10px 0 12px; gap:6px; background:color-mix(in srgb, var(--c) 16%, var(--surface)); overflow:hidden; }
+.wch .wcat::before { content:""; position:absolute; left:0; top:0; bottom:0; width:4px; background:var(--c); }
+.wch .wcat .chip { width:16px; height:16px; border-radius:50%; background:var(--c); display:grid; place-items:center; font-size:9px; flex:none; }
+.wch .wcat .lab { font:800 calc(12px*var(--wdt))/1 var(--display); letter-spacing:.06em; text-transform:uppercase; color:var(--ink); flex:1; white-space:nowrap; overflow:hidden; }
+.wch .wcat .n { font:700 calc(12px*var(--wdt)) var(--display); color:var(--ink-muted); }
+.wch .wrow { min-height:44px; border-radius:12px; background:var(--surface); margin-bottom:4px; display:flex; align-items:center; padding:4px 10px 4px 8px; gap:8px; position:relative; }
+.wch .wrow .body { flex:1; min-width:0; }
+.wch .wrow .nm { font:500 calc(15px*var(--wdt))/calc(18px*var(--wdt)) system-ui; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.wch .wrow .q { font:500 calc(12px*var(--wdt))/calc(14px*var(--wdt)) system-ui; color:var(--ink-muted); }
+.wch .wrow.done .nm { color:var(--ink-muted); text-decoration:line-through; text-decoration-thickness:1.5px; }
+.wch .wrow.press { transform:scale(.98); background:color-mix(in srgb, var(--c) 12%, var(--surface)); }
+.wch .wrow.wash { background:color-mix(in srgb, var(--accent) 18%, var(--surface)); }
+.wch .wrow .sync { color:var(--warning); flex:none; display:grid; }
+.wch .wrow .sdot { width:14px; height:14px; border-radius:50%; flex:none; }
+.wch .wr { width:22px; height:22px; border-radius:50%; border:2.5px solid var(--c); display:grid; place-items:center; flex:none; }
+.wch .wr.on { background:var(--c); }
+.wch .wr.on svg { display:block; }
+.wch .wr svg { display:none; }
+.wch .wpick { min-height:44px; border-radius:12px; background:var(--surface); margin-bottom:4px; display:flex; align-items:center; gap:8px; padding:4px 10px 4px 0; overflow:hidden; position:relative; }
+.wch .wpick .bar { width:4px; align-self:stretch; margin:-4px 0; background:var(--c); }
+.wch .wpick .em { font-size:calc(20px*var(--wdt)); width:26px; text-align:center; flex:none; margin-left:6px; }
+.wch .wpick .nm { flex:1; min-width:0; font:800 calc(15px*var(--wdt))/calc(18px*var(--wdt)) var(--display); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.wch .wpick .nm.wrap { white-space:normal; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+.wch .wpick .cnt { font:700 calc(13px*var(--wdt)) var(--display); padding:2px 9px; border-radius:999px; background:var(--accent-soft); color:var(--ink); flex:none; }
+.wch .wpick .cnt.zero { background:transparent; color:var(--success); display:flex; align-items:center; gap:3px; padding:2px 0; }
+.wch .wgot { min-height:44px; display:flex; align-items:center; gap:6px; padding:0 6px; font:600 calc(15px*var(--wdt))/calc(18px*var(--wdt)) system-ui; color:var(--ink-muted); }
+.wch .wfoot { text-align:center; font:500 12px/14px system-ui; color:var(--ink-muted); padding:6px 0 10px; }
+.wch .wes { text-align:center; padding:0 10px; }
+.wch .wes .art { display:grid; place-items:center; margin:0 auto 4px; }
+.wch .wes h2 { font:800 15px/18px var(--display); margin:0 0 2px; }
+.wch .wes p { font:400 12px/15px system-ui; color:var(--ink-muted); margin:0 0 8px; }
+.wch .wbtn { height:44px; border-radius:22px; display:flex; align-items:center; justify-content:center; background:var(--accent); color:var(--on-accent); font:800 15px var(--display); margin:0 4px; }
+.wch.aod .wrow, .wch.aod .wcat, .wch.aod .wadd { background:transparent; }
+.wch.aod .wcat::before { display:none; }
+.wch.aod .wr { border-color:var(--ink-muted); }
+.sysdict { margin:8px; border:2px dashed #8d7d6e; border-radius:16px; height:calc(100% - 60px); display:grid; place-items:center; text-align:center; font:600 12px/1.4 system-ui; color:#BDAE9F; padding:12px; }
+
+/* faces and widgets */
+.face { position:relative; border-radius:50px; background:#000; box-shadow:0 0 0 6px #000, 0 0 0 7px #3a3a3c; color:#F7EEE4; overflow:hidden; font-family:system-ui; }
+.face .big { position:absolute; left:0; right:0; text-align:center; font:300 56px/1 var(--display); letter-spacing:-1px; }
+.tint { --ink:#FF8DA5; --ink-muted:#FF8DA5; --c:#FF8DA5; --surface:#FF8DA5; color:#FF8DA5; }
+.tint .dim { opacity:.45; }
+.wgt { background:var(--surface); border-radius:20px; padding:10px 12px; position:relative; overflow:hidden; }
+.wgt::before { content:""; position:absolute; left:0; top:0; bottom:0; width:5px; background:var(--c); }
+
+.wch .wpick .zero2 { font:600 12px/14px system-ui; color:var(--success); display:flex; align-items:center; gap:3px; }
+
+.wch .wbody { overflow:hidden; position:relative; height:calc(100% - 32px); }
+</style>
+</head>
+<body>
+<script>
+
+/* =====================================================================
+   IMP-20 hi-fi watchOS screens and complications.
+   Watch is always dark: only the .dark token values are used.
+   ===================================================================== */
+const I = (p, w = 16, sw = 2.6, extra = '') => `<svg width="${w}" height="${w}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" ${extra}>${p}</svg>`;
+const ic = {
+  check: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--bg)" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`,
+  checkW: `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7"/></svg>`,
+  chevr: I('<path d="M9 6l6 6-6 6"/>', 14, 3),
+  chevd: I('<path d="M6 9l6 6 6-6"/>', 14, 3),
+  plus: I('<path d="M12 4v16M4 12h16"/>', 20, 3),
+  mic: I('<rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0014 0M12 18v3"/>', 18, 2.2),
+  clock: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 14, 2.6),
+  cloudoff: I('<path d="M17.5 18H7a4.5 4.5 0 01-.6-8.96A6 6 0 0117.7 8.3 4.9 4.9 0 0117.5 18z"/><path d="M3 3l18 18"/>', 13, 2.4),
+};
+/* eslint: pie() and mini() are copied unchanged from designs/imp-19 */
+const V = (n) => `var(--${n})`;
+const star = (x, y, s, c) => `<path transform="translate(${x} ${y}) scale(${s/10})" d="M0 -10 Q1.6 -1.6 10 0 Q1.6 1.6 0 10 Q-1.6 1.6 -10 0 Q-1.6 -1.6 0 -10z" fill="${V(c)}"/>`;
+const FS = 'fill="none" stroke="var(--on-accent)" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"';
+const eye = (x, y, r = 4) => `<circle cx="${x}" cy="${y}" r="${r}" fill="var(--on-accent)"/>`;
+const cheeks = `<circle cx="-25" cy="8" r="5.5" fill="var(--accent-soft)" fill-opacity=".9"/><circle cx="25" cy="8" r="5.5" fill="var(--accent-soft)" fill-opacity=".9"/>`;
+const FACES = {
+  hello:   (c) => `${c}${eye(-13,-5)}${eye(13,-5)}<path d="M-7 6 Q0 13 7 6" ${FS}/>`,
+  happy:   (c) => `${c}<path d="M-19 -3 Q-13 -11 -7 -3 M7 -3 Q13 -11 19 -3" ${FS}/><path d="M-10 5 Q0 21 10 5Z" fill="var(--on-accent)" stroke="var(--on-accent)" stroke-width="2.4" stroke-linejoin="round"/>`,
+  sleepy:  (c) => `${c}<path d="M-19 -7 Q-13 -1 -7 -7 M7 -7 Q13 -1 19 -7" ${FS}/><ellipse cx="0" cy="9" rx="3.2" ry="2.7" fill="var(--on-accent)"/>`,
+  dizzy:   (c) => `${c}<path d="M-18 -9 L-8 1 M-8 -9 L-18 1 M8 -9 L18 1 M18 -9 L8 1" ${FS} stroke-width="3"/><path d="M-10 10 q3.3 -4.5 6.6 0 t6.7 0 t6.7 0" ${FS} stroke-width="3"/>`,
+  curious: (c) => `${c}${eye(-9,-4,4.2)}${eye(17,-4,4.2)}<path d="M9 -14 Q16 -19 23 -14" ${FS} stroke-width="2.6"/><path d="M-3 8 Q3 12 9 7" ${FS}/>`,
+};
+/* The mascot. Drawn about the origin, radius 59.5 incl. scalloped crust. */
+function pie({ cx = 100, cy = 84, kind = 'hello', tilt = 0, detail = true, scale = 1 } = {}) {
+  const n = detail ? 22 : 16; let sc = '';
+  for (let i = 0; i < n; i++) { const a = i / n * Math.PI * 2; sc += `<circle cx="${(Math.cos(a)*51.5).toFixed(1)}" cy="${(Math.sin(a)*51.5).toFixed(1)}" r="${detail ? 7.2 : 9}"/>`; }
+  const leaf = detail ? `<g transform="translate(23 -42) rotate(-30)"><path d="M0 0 C4 -13 19 -15 24 -6 C13 -3 6 3 0 0Z" fill="var(--leaf)"/></g>` : '';
+  return `<g id="pie" transform="translate(${cx} ${cy}) rotate(${tilt}) scale(${scale})">
+    <g id="crust" fill="var(--mustard)">${sc}<circle r="51"/></g>
+    <circle r="42.5" fill="var(--ink)" fill-opacity=".14"/>
+    <circle id="filling" r="40" fill="var(--accent)"/>
+    <g id="face">${FACES[kind](detail ? cheeks : '')}</g>${leaf}</g>`;
+}
+const shadow = (cy = 152, rx = 56) => `<ellipse cx="100" cy="${cy}" rx="${rx}" ry="6" fill="var(--ink)" fill-opacity=".08"/>`;
+const mini = (kind, w = 48) => `<svg class="illo" viewBox="38 28 124 124" width="${w}" height="${w}" role="img" aria-label="Pie mascot, ${kind}">${pie({ cy: 92, kind, detail: false })}</svg>`;
+
+
+const CATS = { produce: ['leaf', '🥬', 'Produce'], dairy: ['sky', '🥛', 'Dairy'], pantry: ['tangerine', '🥫', 'Pantry'], bakery: ['mustard', '🍞', 'Bakery'], meat: ['tomato', '🥩', 'Meat'], other: ['slate', '📦', 'Other'] };
+const PEOPLE = { sam: 'berry', alex: 'sky', jordan: 'leaf' };
+const WS = { 41: [176, 215], 45: [198, 242], 49: [205, 251] };
+const MINI = { 41: 40, 45: 46, 49: 50 };
+
+/* ----- components ----- */
+const wring = (c, on) => `<i class="wr ${on ? 'on' : ''}" style="--c:var(--${c})">${ic.check}</i>`;
+const wrow = ({ nm, q, c = 'leaf', on, press, wash, sync, dot, style = '' }) => `<div class="wrow ${on ? 'done' : ''} ${press ? 'press' : ''} ${wash ? 'wash' : ''}" style="--c:var(--${c});${style}">${wring(c, on)}<div class="body"><div class="nm">${nm}</div>${q ? `<div class="q">${q}</div>` : ''}</div>${sync ? `<span class="sync">${ic.clock}</span>` : ''}${dot ? `<span class="sdot" style="background:var(--${dot})"></span>` : ''}</div>`;
+const wcat = (k, n) => `<div class="wcat" style="--c:var(--${CATS[k][0]})"><div class="chip">${CATS[k][1]}</div><div class="lab">${CATS[k][2]}</div><div class="n">${n}</div></div>`;
+const wadd = (press) => `<div class="wadd ${press ? 'press' : ''}">${ic.plus} Add item<span class="mic">${ic.mic}</span></div>`;
+const wgot = (n, open) => `<div class="wgot">${open ? ic.chevd : ic.chevr}<span>Got it (${n})</span></div>`;
+const wpick = ({ e, nm, n, c, wrap }) => `<div class="wpick" style="--c:var(--${c})"><div class="bar"></div><div class="em">${e}</div><div style="flex:1;min-width:0"><div class="nm ${wrap ? 'wrap' : ''}" style="flex:none">${nm}</div>${n === 0 ? `<div class="zero2">${ic.checkW.replace('#fff', 'currentColor').replace('width="14" height="14"', 'width="12" height="12"')}All done</div>` : ''}</div>${n === 0 ? '' : `<span class="cnt">${n}</span>`}</div>`;
+const wfoot = (t = 'Updated 10:42') => `<div class="wfoot">${t}</div>`;
+
+function wframe(mm, title, inner, { sub = '', s = 1.35, wdt = 1, aod = false, time = '9:41', scroll = 0 } = {}) {
+  const [w, h] = WS[mm], r = Math.round(w * 0.24);
+  const f = `<div class="wch dark ${aod ? 'aod' : ''}" style="width:${w}px;height:${h}px;border-radius:${r}px;--wdt:${wdt}"><div class="wh"><span class="wt">${scroll ? '' : title}</span><span class="wtm">${time}</span></div>${sub && !scroll ? `<div class="wsub">${sub}</div>` : ''}<div class="wbody"><div style="margin-top:-${scroll}px">${inner}</div></div></div>`;
+  return `<div style="padding:10px"><div style="width:${w * s}px;height:${h * s}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(${s})">${f}</div></div></div>`;
+}
+const cap = (id, name, state, extra) => `<div class="cap"><b>${id}</b> ${name} / ${state}${extra ? ' · ' + extra : ''}</div>`;
+const fr = (html, ...c) => `<div>${html}${cap(...c)}</div>`;
+const page = (title, sub, frames, spec = '', gap = 28) => `<div class="page"><h1>${title}</h1><p class="sub">${sub}</p><div class="frames" style="gap:${gap}px">${frames.join('')}</div>${spec}</div>`;
+const sections = (...s) => `<div class="spec">${s.map(([h, items]) => `<section><h3>${h}</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></section>`).join('')}</div>`;
+
+/* ----- sample content ----- */
+const picker = (mm, { more = false, long = false } = {}) => `${wpick({ e: '🛒', nm: 'Main', n: 12, c: 'berry' })}${wpick({ e: '🏬', nm: long ? 'Costco and Sam’s Club run' : 'Costco', n: 7, c: 'sky', wrap: long })}${wpick({ e: '🔧', nm: mm === 41 ? 'Hardware' : 'Home Hardware', n: 0, c: 'tangerine' })}${wpick({ e: '🧵', nm: 'PLA filament', n: 3, c: 'violet' })}${more ? wpick({ e: '🎂', nm: 'Birthday', n: 5, c: 'mustard' }) : ''}`;
+const costco = ({ doneId = null, withGot = 4, gotOpen = false, press = null, add = true, sync = false, wash = null, dotRow = null, produce = 3, dairy = 2 } = {}) => `${add ? wadd() : ''}${wcat('produce', produce)}${wrow({ nm: 'Bananas', q: '× 6', c: 'leaf', press: press === 'bananas', on: doneId === 'bananas' })}${wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' })}${wrow({ nm: 'Roma tomatoes', q: '1 kg', c: 'leaf' })}${wcat('dairy', dairy)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky', sync })}${wrow({ nm: 'Greek yogurt', c: 'sky', dot: dotRow, wash: wash === 'yogurt' })}${wgot(withGot, gotOpen)}`;
+
+/* ============================== PAGES ============================== */
+const out = [];
+
+/* 1 cover */
+out.push(`<div class="page"><h1>Impressipies · Hi-fi watchOS screens &amp; complications (IMP-20)</h1>
+<p class="sub">The Apple Watch companion at 41, 45 and 49 mm, always dark: list picker, list detail, check-off, dictated add, sync and offline states, and the Smart Stack widget and complication families. Built from the IMP-14 tokens, IMP-15 components, the IMP-10 research and IMP-11 frames K1 to K4, with the IMP-18 motion and haptics and the IMP-19 empty states folded in. Designed in Claude Code (HTML, rendered to PDF), the same way as IMP-16 to IMP-19.</p>
+<div class="spec">
+<section><h3>Pages</h3><ul>
+<li>2 · Anatomy and tokens: row, header, Add item, Got it, sizes</li>
+<li>3 · List picker (K1)</li>
+<li>4 · List detail (K2) at 41, 45, 49 mm, with the full scroll</li>
+<li>5 · Check-off and undo (W1 motion, W1 haptic)</li>
+<li>6 · Dictated add (K3)</li>
+<li>7 · Sync, offline and others’ changes (K4, W3)</li>
+<li>8 · Empty, first launch, error (reused from IMP-19)</li>
+<li>9 · Smart Stack widget</li>
+<li>10 · Complications, full colour and tinted</li>
+<li>11 · Dynamic Type, contrast, VoiceOver, Reduce Motion</li>
+<li>12 · Open questions and conflicts found</li>
+<li>13 · Handoff for the build tickets</li></ul></section>
+<section><h3>What came from IMP-17, 18 and 19</h3><ul>
+<li><b>IMP-18 (motion and haptics):</b> W1 check-off 600 ms, W2 dictated add, W3 row from someone else, haptics W1 to W5, Reduce Motion means instant removal. Annotated on pages 5 to 7. It is <b>not signed off</b>, so every duration here is still a proposal.</li>
+<li><b>IMP-18 contrast flag, applied:</b> white on the dark category fills is 1.7 to 2.7:1 for 11 of 12 colours (I recomputed it, same numbers). The watch is dark only, so the filled check uses <code>bg</code> (5.3 to 10.5:1) on every watch screen. This needs an IMP-15 change on iOS dark too.</li>
+<li><b>IMP-19 (empty states):</b> pie glyph, copy and layout reused untouched on page 8: “No lists yet”, “Nothing to get”, “All done”, “Offline”, “Couldn’t load”. Add item row stays on top.</li>
+<li><b>IMP-17 (web) habits kept:</b> first pass before IMP-12 round 1, a list of copy I added that was not briefed, and tokens only with no raw hex.</li></ul></section>
+<section><h3>Decisions made here</h3><ul>
+<li><b>Row is the tap target.</b> 44 pt minimum, ring is a 22 pt indicator, not a button. Colour is never the only cue: every header keeps icon and label, a done row has a check and strikethrough.</li>
+<li><b>One dictation is one item</b> (IMP-10, decided). The IMP-11 text for K3 says it splits into three; I followed IMP-10 and flag it on page 12.</li>
+<li><b>The watch opens on the picker</b>, also from a complication or the Smart Stack (IMP-10, decided).</li>
+<li><b>Quiet sync.</b> A pending clock per row, “Updated hh:mm” footer, “Offline” under the title only after 10 minutes without a sync. No error screen for being away from the phone.</li>
+<li><b>Someone else’s item</b> gets a 14 pt sender-colour dot that fades after about 1.2 s (IMP-18 W3). No permanent “added by”.</li>
+<li><b>Widget:</b> “Costco · 7 left” everywhere, the same format as the picker row (IMP-10).</li></ul></section></div></div>`);
+
+/* 2 anatomy */
+const anat = wframe(45, 'Costco', `${wadd()}${wcat('dairy', 2)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky' })}${wrow({ nm: 'Greek yogurt', c: 'sky', on: true })}${wgot(4)}`, { s: 2 });
+const anatPick = wframe(45, 'Lists', picker(45), { s: 2 });
+out.push(page('Anatomy and tokens', 'Dark values only (IMP-14). System fonts per the ticket; Nunito stands in for SF Pro Rounded in this PDF. Units are points, 1:1 with the IMP-15 grid. Left: the list picker and list detail at 2x, 45 mm.', [
+  fr(anatPick, 'K1', 'List picker', '45 mm, 2x'), fr(anat, 'K2', 'List detail', '45 mm, 2x, one row done'),
+  `<div style="flex:1;min-width:0"><div class="panel"><h3>Measurements (pt)</h3><table class="tbl">
+<tr><th>Part</th><th>Spec</th></tr>
+<tr><td>Screen</td><td>41 mm 176 × 215 · 45 mm 198 × 242 · 49 mm 205 × 251. Side margin 8, row gap 4, title block 10 from top.</td></tr>
+<tr><td>Picker row</td><td>min-height 44, radius 12, <code>surface</code>; 4 wide list-colour bar; emoji 20; name 15/18 Nunito 800; count pill 13 on <code>accent-soft</code>; 0 shows a check and “All done” in <code>success</code>.</td></tr>
+<tr><td>Category header</td><td>28 high, radius 8, 16% tint over <code>surface</code>, 4 wide left bar, 16 icon chip, label 12 caps +6%, count 12 <code>ink-muted</code>. Icon and label always.</td></tr>
+<tr><td>Item row</td><td>min-height 44 (grows with Dynamic Type), radius 12, <code>surface</code>; ring 22, 2.5 stroke; name 15/18 two lines max; quantity 12/14 <code>ink-muted</code> on its own line; trailing clock or sender dot.</td></tr>
+<tr><td>Done row</td><td>Ring filled with the category fill, check drawn in <code>bg</code> (not white), name <code>ink-muted</code> with 1.5 strikethrough.</td></tr>
+<tr><td>Add item</td><td>44 high, radius 12, <code>surface-2</code>, “+ Add item” 15/18 600 in <code>accent</code>, mic glyph trailing. Always first row; opens the system input sheet.</td></tr>
+<tr><td>Got it</td><td>44 high, chevron + “Got it (n)” 15/18 600 <code>ink-muted</code>, collapsed by default.</td></tr>
+<tr><td>Footer</td><td>“Updated hh:mm” 12/14 <code>ink-muted</code>, centred, at the end of the list.</td></tr>
+<tr><td>Offline label</td><td>Cloud-off glyph 13 + “Offline” 12/14 <code>ink-muted</code> under the title. Not <code>warning</code>: offline is normal.</td></tr>
+</table></div></div>`], sections(
+  ['Type', ['Item name 15/18, caption 12/14, title 15/18, header 12 caps. System fonts; display face is SF Pro Rounded (<code>.rounded</code> design).', 'Nothing under 12 pt. Dynamic Type is on page 11.']],
+  ['Colour', ['<code>bg #1A1512</code>, <code>surface #2A221D</code>, <code>surface-2 #342B24</code>, <code>ink #F7EEE4</code>, <code>ink-muted #BDAE9F</code>, <code>accent #FF8DA5</code>.', 'Category colours from the dark column. Never used as text colour.']],
+  ['Shape and space', ['Radii 8 / 12 / pill. 4 pt grid. No shadows on dark.', 'Digital Crown scrolls every list. No custom scroll.']])));
+
+/* 3 picker */
+out.push(page('List picker (K1)', 'The watch always opens here (IMP-10). One full-width row per list: list colour bar, emoji, name, unchecked count. A list at zero reads “All done”, as on iPhone. No item previews.', [
+  fr(wframe(41, 'Lists', picker(41)), 'K1', 'List picker', 'populated', '41 mm'),
+  fr(wframe(45, 'Lists', picker(45)), 'K1', 'List picker', 'populated', '45 mm'),
+  fr(wframe(49, 'Lists', picker(49)), 'K1', 'List picker', 'populated', '49 mm'),
+  fr(wframe(45, 'Lists', `${picker(45, { long: true })}${wpick({ e: '🎂', nm: 'Birthday', n: 5, c: 'mustard' })}`), 'K1', 'List picker', 'long name wraps to 2 lines, list scrolls', '45 mm'),
+  fr(wframe(45, 'Lists', `${wpick({ e: '🛒', nm: 'Main', n: 12, c: 'berry' })}${wpick({ e: '🏬', nm: 'Costco', n: 7, c: 'sky' })}`, { sub: `${ic.cloudoff} Offline` }), 'K1', 'List picker', 'stale 10+ min', '45 mm'),
+], sections(
+  ['Behaviour', ['Tap a row to open the list. Row press state is a 12% tint of the list colour.', 'Order matches the phone. The list colour comes from <code>lists.colour</code> resolved to the dark value.', 'Counts, not previews. The label “Costco · 7” from the PRD is the same pair, name plus count.']],
+  ['Why this shape', ['IMP-10: counts, a plain vertical list in a <code>NavigationStack</code> so the Crown scrolls it with no code.', 'The bar and emoji identify a list, so colour is not the only cue; the name is always shown.', 'Hardware at 41 mm is shortened in this mock only. In the app the name truncates; a second line is allowed for long names (frame 4).']],
+  ['Not drawn', ['List settings, create or delete a list: the watch has none.', 'Pull to refresh: not used; sync is background (IMP-58).', 'Which list the complication uses: page 10.']])));
+
+/* 4 detail */
+const strip = (() => { const w = 198, h = 652; return `<div class="wch dark" style="width:${w}px;height:${h}px;border-radius:30px"><div class="wh"><span class="wt">🏬 Costco</span><span class="wtm">9:41</span></div><div class="wbody">${wadd()}${wcat('produce', 3)}${wrow({ nm: 'Bananas', q: '× 6', c: 'leaf' })}${wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' })}${wrow({ nm: 'Roma tomatoes', q: '1 kg', c: 'leaf' })}${wcat('dairy', 2)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky' })}${wrow({ nm: 'Greek yogurt', c: 'sky' })}${wcat('pantry', 2)}${wrow({ nm: 'Chickpeas', q: '2 cans', c: 'tangerine' })}${wrow({ nm: 'Olive oil, extra virgin, cold pressed', q: '1 L', c: 'tangerine' })}${wgot(4)}${wfoot()}</div></div>`; })();
+out.push(page('List detail (K2)', 'Coloured category headers with counts, unchecked items under them, quantity on a second line, the Add item row on top, a collapsed “Got it (n)” at the end and an “Updated” footer. The right frame is the whole scroll at 45 mm: the Crown moves through it.', [
+  fr(wframe(41, '🏬 Costco', costco()), 'K2', 'List detail', 'populated', '41 mm'),
+  fr(wframe(45, '🏬 Costco', costco()), 'K2', 'List detail', 'populated', '45 mm'),
+  fr(wframe(49, '🏬 Costco', costco()), 'K2', 'List detail', 'populated', '49 mm'),
+  fr(wframe(45, '🏬 Costco', `${wcat('dairy', 2)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky' })}${wrow({ nm: 'Greek yogurt', c: 'sky' })}${wgot(4, true)}${wrow({ nm: 'Eggs', q: '× 12', c: 'sky', on: true })}${wrow({ nm: 'Butter', c: 'sky', on: true })}`), 'K2', 'List detail', 'Got it open', '45 mm'),
+  `<div>${strip.replace('class="wch dark"', 'class="wch dark" ')}${cap('K2', 'List detail', 'full scroll', '45 mm, 1x; 242 pt window shown on the left')}</div>`,
+], sections(
+  ['Rules', ['Add item is the first row and stays when the list is empty or all done (IMP-19).', 'New items land at the top of their category. A new category adds its header.', 'Unknown category falls back to Other and never blocks (IMP-4).', 'Empty categories collapse away with their last row.']],
+  ['Text', ['Names wrap to two lines then truncate with an ellipsis, so a row never grows past three text lines at default size.', 'Quantity moves to the second line (IMP-10), never right-aligned: width is too tight.', 'Got it is collapsed on open so the screen shows only what is left.']],
+  ['Scroll', ['Crown scrolls; the title scrolls away. No sticky header on the watch.', 'Footer “Updated 10:42” sits after Got it so a quick glance shows how fresh the list is without opening it.', 'No clear, delete or edit on the watch. Mistakes are fixed on the phone.']])));
+
+/* 5 check-off */
+const SB = (n = 2, got = 4) => `${wcat('produce', n)}`;
+const seq = (state) => {
+  const B = (o = {}) => wrow({ nm: 'Bananas', q: '× 6', c: 'leaf', ...o });
+  const Sp = wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' });
+  const rows = {
+    idle: `${wcat('produce', 2)}${B()}${Sp}${wgot(4)}`,
+    press: `${wcat('produce', 2)}${B({ press: true })}${Sp}${wgot(4)}`,
+    done: `${wcat('produce', 2)}${B({ on: true })}${Sp}${wgot(4)}`,
+    leaving: `${wcat('produce', 2)}${B({ on: true, style: 'opacity:.25;transform:translateY(-6px)' })}${Sp}${wgot(4)}`,
+    settled: `${wcat('produce', 1)}${Sp}${wgot(5)}`,
+    undo: `${wcat('produce', 1)}${Sp}${wgot(5, true)}${B({ on: true, press: true })}${wrow({ nm: 'Eggs', q: '× 12', c: 'sky', on: true })}`,
+  };
+  return wframe(45, '🏬 Costco', rows[state], { s: 1.05 });
+};
+out.push(page('Check-off and undo (W1)', 'Tap the row anywhere. The ring fills in the category fill with a <code>bg</code> check, the name dims and strikes through, the row holds about 200 ms, then leaves while the header count drops and Got it grows. Undo is opening Got it and tapping the item again; there is no toast on the watch.', [
+  fr(seq('idle'), '1', 'Idle', 't = 0', 'Reduce Motion: same'),
+  fr(seq('press'), '2', 'Press', 't = 0 to 120 ms', 'row scale .98; haptic W1 .success at tap'),
+  fr(seq('done'), '3', 'Done hold', 't = 20 to 320 ms', 'ring fill 120 ms, check 20 to 120, strike 80 to 200'),
+  fr(seq('leaving'), '4', 'Leaving', 't = 320 to 540 ms', 'fade 100 ms, collapse 220 ms inout'),
+  fr(seq('settled'), '5', 'Settled', 't = 600 ms', 'Produce 2 → 1, Got it 4 → 5'),
+  fr(seq('undo'), '6', 'Undo', 'Got it open, tap item', 'haptic W4 .click; row returns to its old place'),
+], sections(
+  ['Motion (IMP-18 W1, proposal)', ['Ring fill 0 to 120 ms out; check 20 to 120; text dim and strike 80 to 200; hold about 200 ms; row fade 320 to 420 and collapse 320 to 540; counts cross-fade at 400 to 500.', 'Curves: out <code>(.2, 0, 0, 1)</code>, in <code>(.4, 0, 1, 1)</code>, inout <code>(.4, 0, .2, 1)</code>.']],
+  ['Reduce Motion and haptics', ['Reduce Motion: instant removal at the next frame, about 40 ms. Counts swap in the same frame. Haptic unchanged.', 'W1 <code>.success</code> at tap, one per tap, minimum 250 ms between plays. W4 <code>.click</code> on Undo from Got it.', 'No celebration on the watch: the last check-off plays W1 and the list shows the static All done state (page 8).']],
+  ['Why colour is not the cue', ['Done = check + strikethrough + muted text, not the ring colour alone.', 'The check is <code>bg</code> on the fill (5.3 to 10.5:1) instead of white (1.7 to 2.7:1 on 11 of 12 dark fills). Needs the IMP-15 change; page 11 has the table.', 'Storyboard frames are simulated in HTML, not captured from a device.']])));
+
+/* 6 add */
+const sys = (mm) => { const [w, h] = WS[mm]; return `<div style="padding:10px"><div style="width:${w * 1.05}px;height:${h * 1.05}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(1.05)"><div class="wch dark" style="width:${w}px;height:${h}px;border-radius:${Math.round(w * 0.24)}px"><div class="wh"><span class="wt">New item</span><span class="wtm">9:41</span></div><div class="sysdict">System input sheet.<br>Drawn by watchOS: dictation, its own cancel and confirm, the user’s language.<br><br>“milk two litres”</div></div></div></div></div>`; };
+const addList = (extra, scroll = 0) => wframe(45, '🏬 Costco', extra, { s: 1.05, scroll });
+out.push(page('Dictated add (K3, W2)', 'Tap Add item and the system input sheet takes over. We draw nothing of our own while it is open; the sheet confirms what was heard. When it closes, the item is added straight away: one dictation, one item, parsed by the IMP-4 parser (“milk 2L” becomes Milk and 2 L, category from item memory, else Other).', [
+  fr(addList(`${wadd(true)}${wcat('produce', 3)}${wrow({ nm: 'Bananas', q: '× 6', c: 'leaf' })}${wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' })}`), '1', 'Add item', 'pressed', 'tap opens the system sheet'),
+  fr(sys(45), '2', 'System sheet', 'not designed here', 'cancel and confirm are the system’s'),
+  fr(addList(`${wadd()}${wcat('produce', 3)}${wrow({ nm: 'Bananas', q: '× 6', c: 'leaf' })}${wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' })}${wcat('dairy', 3)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky', wash: true })}${wrow({ nm: 'Greek yogurt', c: 'sky' })}`, 110), '3', 'Inserted', 't = 0 to 200 ms', 'row grows 0 → 44, haptic W2 .directionUp, accent wash'),
+  fr(addList(`${wadd()}${wcat('produce', 3)}${wrow({ nm: 'Bananas', q: '× 6', c: 'leaf' })}${wrow({ nm: 'Spinach', q: '1 bag', c: 'leaf' })}${wcat('dairy', 3)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky' })}${wrow({ nm: 'Greek yogurt', c: 'sky' })}`, 110), '4', 'Settled', 't = 1200 ms', 'wash gone; stays at the top of Dairy'),
+], sections(
+  ['Rules (IMP-10, decided)', ['One dictation is one item. No splitting on “and” or commas. The IMP-11 text for K3 says it splits into three and offers “Add as written”; that conflicts with this decision (page 12).', 'No review step of our own. If dictation returns nothing, nothing changes: no row, no haptic.', 'Dictation is watch-only. The iPhone gets none of its own.']],
+  ['Motion (IMP-18 W2, proposal)', ['Animate only after the sheet closes. Row inserts at the top of its category: height 0 → 44 over 200 ms out, fade 160 ms, header count cross-fade at 120 to 220, accent-soft wash fading to 0 by 1200 ms.', 'Haptic W2 <code>.directionUp</code> at insertion. Reduce Motion: instant insert, wash kept.']],
+  ['Mistakes', ['A wrong item is removed on the phone. The watch has no delete or edit.', 'Item memory (IMP-4) is the main mitigation for product names such as “PETG”; dictation accuracy is untested (IMP-12).', 'The system sheet also offers Scribble and a keyboard on current watchOS. “No typing” cannot be enforced by the app (page 12).']])));
+
+/* 7 sync */
+const dotRow = (r) => costco({ dotRow: r });
+out.push(page('Sync, offline and others’ changes (K4, W3)', 'Offline is normal, never an error screen. A row that has not synced shows a small clock. After 10 minutes without a successful sync the title gets an “Offline” line. A change by someone else arrives with a transient dot, only if the row is on the visible screen.', [
+  fr(wframe(45, '🏬 Costco', costco({ sync: true }), { s: 1.05, scroll: 112 }), 'K4', 'Pending row', 'recent, not yet synced', 'clock glyph in <code>warning</code>, disappears on sync'),
+  fr(wframe(45, '🏬 Costco', `${wcat('dairy', 2)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky', sync: true })}${wrow({ nm: 'Greek yogurt', c: 'sky' })}${wfoot()}`, { s: 1.05, sub: `${ic.cloudoff} Offline` }), 'K4', 'Stale', '10+ min without a sync', '“Offline” label + “Updated 10:42”'),
+  fr(wframe(45, '🏬 Costco', costco({ dotRow: 'sky', wash: 'yogurt' }), { s: 1.05, scroll: 112 }), 'W3', 'Arrival', 't = 240 ms', 'Alex’s Greek yogurt: sky dot 14 pt, 16% sky wash, haptic W3 .click'),
+  fr(wframe(45, '🏬 Costco', costco(), { s: 1.05, scroll: 112 }), 'W3', 'Arrival settled', 't = 1400 ms', 'dot gone; no permanent “added by”'),
+  fr(wframe(45, '🏬 Costco', costco(), { s: 1.05, aod: true, time: '9:41', scroll: 112 }), 'AOD', 'Always-On', 'luminance reduced', 'fills and washes removed, no animation, no haptic (proposal)'),
+], sections(
+  ['Sync states (IMP-10, IMP-58)', ['Pending glyph per row only. No spinner, no text. Footer “Updated hh:mm”.', 'Stale threshold is 10 minutes without a successful sync. Below that nothing is shown.', 'Phone away is normal: the list stays usable and changes sync both ways.']],
+  ['Others’ changes (IMP-5, IMP-18 W3)', ['Animate and click only when the row is on the visible screen, the app is active and the display is not dimmed (<code>isLuminanceReduced</code> false). Otherwise insert silently; below the viewport only the count changes, above it the scroll position is kept.', 'Sender dot is the avatar colour (<code>users.avatar_color</code>, dark value), 14 pt, fades out 1200 to 1400 ms. VoiceOver says “Greek yogurt, added by Alex”.', 'Arrivals within 2 s coalesce into one haptic. No haptic for others’ check-offs.']],
+  ['Always-On', ['Not in the brief. Drawn as a proposal: surfaces and tints drop out, text stays, check and strikethrough stay (they carry the meaning).', 'Nothing animates while the display is dimmed. Check in the watchOS simulator and on a device.']])));
+
+/* 8 empty and error (IMP-19) */
+const kind = { noLists: 'hello', emptyList: 'hello', allDone: 'happy', offline: 'sleepy', error: 'dizzy' };
+const WCOPY = { noLists: ['No lists yet', 'Open Impressipies on your iPhone to load your lists.', 'Refresh'], emptyList: ['Nothing to get', '', 'Add item'], allDone: ['All done', '', 'Add item'], offline: ['Offline', 'Waiting for your iPhone.', 'Try again'], error: ['Couldn’t load', 'Your list is safe.', 'Try again'] };
+const es = (id, mm, { add = false, got = false, btn = true } = {}) => { const [h, p, a] = WCOPY[id]; return `${add ? wadd() : ''}<div class="wes" style="padding-top:${add ? 2 : 6}px"><div class="art">${mini(kind[id], MINI[mm])}</div><h2>${h}</h2>${p ? `<p>${p}</p>` : ''}${btn ? `<div class="wbtn">${a}</div>` : ''}</div>${got ? wgot(9) : ''}`; };
+out.push(page('Empty, first launch and error (from IMP-19)', 'Reused unchanged from the IMP-19 watch page so the two tickets cannot drift. The pie is a 40 to 50 pt glyph, no props. First launch is the empty state the ticket asks for: nothing cached, no network.', [
+  fr(wframe(45, 'Lists', es('noLists', 45)), 'K1', 'List picker', 'first launch, nothing cached', '45 mm'),
+  fr(wframe(45, '🏬 Costco', es('emptyList', 45, { add: true, btn: false })), 'K2', 'List detail', 'empty', '45 mm'),
+  fr(wframe(45, '🏬 Costco', es('allDone', 45, { add: true, btn: false, got: true })), 'K2', 'List detail', 'all done', '45 mm'),
+  fr(wframe(45, 'Lists', es('offline', 45)), 'K4', 'List picker', 'offline, nothing cached', '45 mm'),
+  fr(wframe(45, '🏬 Costco', es('error', 45)), 'K2', 'List detail', 'load error', '45 mm'),
+], sections(
+  ['What changed from IMP-19', ['Nothing in the artwork or copy. The Add item row now uses the mic glyph from page 2; everything else is the same.', 'No celebration on the watch. All done is a static state (IMP-18).']],
+  ['Where each appears', ['First launch, offline and error use a full state only when nothing is cached. With cached data, offline stays the “Offline” line on page 7.', 'Empty list and All done keep the Add item row on top.']],
+  ['Check on a device', ['Pie glyph legibility at 40 pt on 41 mm (simulated here only).', '“Try again” and “Refresh” are 44 pt pill buttons; the Crown still scrolls past them.']])));
+
+/* 9 smart stack */
+const gauge = (done, total, c, size = 56) => { const r = 24, C = 2 * Math.PI * r; return `<svg viewBox="0 0 60 60" width="${size}" height="${size}"><circle cx="30" cy="30" r="${r}" fill="none" stroke="var(--ink-muted)" stroke-opacity=".35" stroke-width="5"/><circle cx="30" cy="30" r="${r}" fill="none" stroke="var(--${c})" stroke-width="5" stroke-linecap="round" stroke-dasharray="${(C * done / total).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 30 30)"/><text x="30" y="35" text-anchor="middle" font-family="Nunito, system-ui" font-weight="800" font-size="22" fill="var(--ink)">${total - done}</text></svg>`; };
+const ssA = `<div class="wgt" style="--c:var(--sky);height:78px;display:flex;flex-direction:column;justify-content:center;padding-left:18px"><div style="font:800 15px/18px var(--display)">🏬 Costco</div><div style="font:800 30px/34px var(--display)">7 <span style="font:600 15px system-ui;color:var(--ink-muted)">left</span></div></div>`;
+const ssB = `<div class="wgt" style="--c:var(--sky);height:118px;padding-left:18px"><div style="display:flex;justify-content:space-between;align-items:baseline"><div style="font:800 15px/18px var(--display)">🏬 Costco</div><div style="font:700 13px var(--display);color:var(--ink-muted)">7 left</div></div><div style="margin-top:6px;font:500 13px/18px system-ui"><div><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--leaf);margin-right:6px"></i>Bananas × 6</div><div><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--leaf);margin-right:6px"></i>Spinach</div><div><i style="display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--sky);margin-right:6px"></i>Milk 2 L</div></div></div>`;
+const stackFrame = (inner, mm = 45) => { const [w, h] = WS[mm], s = 1.55; return `<div style="padding:10px"><div style="width:${w * s}px;height:${h * s}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(${s})"><div class="wch dark" style="width:${w}px;height:${h}px;border-radius:${Math.round(w * .24)}px"><div class="wh"><span class="wtm" style="margin-left:auto">9:41</span></div><div class="wbody" style="padding-top:2px">${inner}<div style="position:absolute;right:3px;top:96px;display:flex;flex-direction:column;gap:4px"><i style="width:4px;height:12px;border-radius:2px;background:var(--ink)"></i><i style="width:4px;height:4px;border-radius:2px;background:var(--ink-muted)"></i><i style="width:4px;height:4px;border-radius:2px;background:var(--ink-muted)"></i></div></div></div></div></div></div>`; };
+out.push(page('Smart Stack widget', 'The rectangular widget in the Smart Stack (watchOS 10 and later; confirm in Xcode previews). Two options: A is the PRD format, “Costco · 7 left”, as one big number; B adds the first three items. A tap opens the watch app on the list picker, same as launching it (IMP-10, decided).', [
+  fr(stackFrame(ssA), 'SS-A', 'Smart Stack', 'count only (recommended)', 'matches the PRD and the picker row'),
+  fr(stackFrame(ssB), 'SS-B', 'Smart Stack', 'count + 3 items', 'new: previews were dropped on the picker (IMP-10)'),
+  fr(stackFrame(`<div class="wgt" style="--c:var(--sky);height:78px;display:flex;flex-direction:column;justify-content:center;padding-left:18px"><div style="font:800 15px/18px var(--display)">🏬 Costco</div><div style="font:800 15px/18px var(--display);color:var(--success);display:flex;gap:4px;align-items:center">${ic.checkW.replace('#fff', 'currentColor')} All done</div></div>`), 'SS-A', 'Smart Stack', 'list complete', 'count 0 reads “All done”'),
+  fr(stackFrame(`<div class="wgt" style="--c:var(--slate);height:78px;display:flex;flex-direction:column;justify-content:center;padding-left:18px"><div style="font:800 15px/18px var(--display)">Impressipies</div><div style="font:500 13px/16px system-ui;color:var(--ink-muted)">Open on your iPhone to load your lists.</div></div>`), 'SS-A', 'Smart Stack', 'first launch, no data', 'same copy as page 8'),
+], sections(
+  ['Content', ['Header: list emoji and name in 15/18 display 800. Body: unchecked count, the number big, “left” in <code>ink-muted</code>. Left bar in the list colour (dark value).', 'Radius 20 (card). <code>surface</code> fill. Category colour is not text colour.']],
+  ['Behaviour', ['<code>widgetURL</code> opens the app at the list picker, not the list (IMP-10).', 'Reads the shared store; refresh follows sync (IMP-58) and the system’s widget budget, so the count can lag. No stale label is shown (page 12).', 'Shows the list with the most unchecked items unless the person picks one (configurable intent). Needs a decision.']],
+  ['Not drawn', ['Relevance by location or time of day.', 'Quantity badges, check-off from the widget (interactive widgets are out of scope).', 'Option B’s dot colours are the category dots, so each item has colour plus text; no extra icons.']])));
+
+/* 10 complications */
+const FAM = (mode) => {
+  const c = 'sky', tint = mode === 'tint' ? ' tint' : '';
+  const circ = `<svg viewBox="0 0 60 60" width="62" height="62"><circle cx="30" cy="30" r="29" fill="${mode === 'tint' ? 'none' : 'var(--surface)'}" fill-opacity=".9"/>${gauge(5, 12, c, 60).replace(/<svg[^>]*>|<\/svg>/g, '')}</svg>`;
+  const corner = `<svg viewBox="0 0 100 100" width="100" height="100"><defs><path id="cp${mode}" d="M10 94 A86 86 0 0 1 94 10"/></defs><text x="6" y="26" font-size="18">🏬</text><text font-family="Nunito, system-ui" font-weight="800" font-size="12.5" fill="var(--ink)"><textPath href="#cp${mode}" startOffset="38">Costco · 7 left</textPath></text></svg>`;
+  const rect = `<div style="width:150px;height:60px;border-radius:14px;padding:8px 10px;background:${mode === 'tint' ? 'transparent' : 'var(--surface)'};border-left:5px solid var(--${c});position:relative"><div style="font:800 14px/16px var(--display)">🏬 Costco</div><div style="font:600 12px/14px system-ui;color:var(--ink-muted)">7 left</div><div style="margin-top:5px;height:4px;border-radius:2px;background:var(--ink-muted);opacity:.35"></div><div style="margin-top:-4px;width:${150 * 5 / 12 * .88}px;height:4px;border-radius:2px;background:var(--${c})"></div></div>`;
+  const inline = `<div style="font:700 13px system-ui;white-space:nowrap">🏬 Costco · 7 left</div>`;
+  return { tint, circ, corner, rect, inline };
+};
+const faceFrame = (mode, which) => {
+  const { tint, circ, corner, rect, inline } = FAM(mode);
+  const w = 198, h = 242;
+  const inner = which === 1
+    ? `<div style="position:absolute;left:0;right:0;top:20px;text-align:center">${inline}</div><div class="big" style="top:52px">10:09</div><div style="position:absolute;left:24px;top:132px">${rect}</div>`
+    : `<div style="position:absolute;left:4px;top:4px">${corner}</div><div class="big" style="top:60px;font-size:50px">10:09</div><div style="position:absolute;left:68px;top:136px">${circ}</div>`;
+  return `<div style="padding:10px"><div style="width:${w * 1.45}px;height:${h * 1.45}px"><div class="sc" style="width:${w}px;height:${h}px;transform:scale(1.45)"><div class="face dark${tint}" style="width:${w}px;height:${h}px;--ink:${mode === 'tint' ? '#FF8DA5' : '#F7EEE4'};--ink-muted:${mode === 'tint' ? '#FF8DA5' : '#BDAE9F'};color:var(--ink)">${inner}</div></div></div></div>`;
+};
+out.push(page('Complications: full colour and tinted', 'Four accessory families on a dark face, in full colour and in the system’s tinted mode (one hue; the system flattens colour). Every complication reads “Costco · 7 left”: the same pair as the picker row. In tinted mode the list colour is lost, so the name, the emoji and the number carry everything.', [
+  fr(faceFrame('full', 1), 'C1', 'Inline + rectangular', 'full colour', 'accessoryInline, accessoryRectangular'),
+  fr(faceFrame('tint', 1), 'C1', 'Inline + rectangular', 'tinted', 'colour removed, text only'),
+  fr(faceFrame('full', 2), 'C2', 'Corner + circular', 'full colour', 'accessoryCorner, accessoryCircular'),
+  fr(faceFrame('tint', 2), 'C2', 'Corner + circular', 'tinted', 'gauge keeps its shape in one hue'),
+], sections(
+  ['Families', ['<b>Inline:</b> emoji + “Costco · 7 left”, one line, truncates the name first.', '<b>Rectangular:</b> name, “7 left”, a progress bar (checked ÷ total) in the list colour.', '<b>Circular:</b> gauge of checked ÷ total with the unchecked count in the middle.', '<b>Corner:</b> emoji in the corner, curved “Costco · 7 left”.']],
+  ['Rules', ['Tint comes from the dark list colour only in full colour. Tinted mode never relies on it.', 'A tap opens the app at the list picker (IMP-10). One list per complication; the person chooses it, default the list with the most unchecked items.', 'Count 0 reads “Costco · All done”. No data reads “Impressipies” with no number.']],
+  ['Sizes', ['Family sizes are drawn approximately here. Take final sizes and safe areas from WidgetKit previews at 41, 45 and 49 mm.', 'The gauge’s progress is a second cue; the number is the first.', 'Complications do not animate, and show no haptic.']])));
+
+/* 11 accessibility */
+const dt = (wdt, label) => fr(wframe(45, '🏬 Costco', `${wcat('dairy', 2)}${wrow({ nm: 'Milk', q: '2 L', c: 'sky' })}${wrow({ nm: 'Greek yogurt, plain, 500 g', c: 'sky' })}${wgot(4)}`, { s: 1.05, wdt }), 'DT', 'Dynamic Type', label, '45 mm');
+const fills = { tomato: '#FF7A66', sky: '#7DB8FF', leaf: '#9BD65F', violet: '#C79BF2', tangerine: '#FFA24F', teal: '#4FD0D6', berry: '#FF7DB8', mustard: '#CFA52E', indigo: '#8F94F5', cocoa: '#B58059', forest: '#5BD39A', slate: '#A5B0BD' };
+const lum = (h) => { const c = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255).map((v) => v <= .03928 ? v / 12.92 : Math.pow((v + .055) / 1.055, 2.4)); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+const cr = (a, b) => { const x = lum(a), y = lum(b); return ((Math.max(x, y) + .05) / (Math.min(x, y) + .05)).toFixed(1); };
+const crRows = Object.entries(fills).map(([k, v]) => `<tr><td><i style="display:inline-block;width:12px;height:12px;border-radius:50%;background:${v};vertical-align:-1px;margin-right:6px"></i>${k}</td><td>${cr(v, '#FFFFFF')}</td><td>${cr(v, '#1A1512')}</td><td>${cr(v, '#2A221D')}</td></tr>`).join('');
+out.push(page('Dynamic Type, contrast, VoiceOver, Reduce Motion', 'Rows grow with the text size (min-height, never fixed height) and the 44 pt hit target holds. Contrast numbers below are computed from the IMP-14 dark values, not eyeballed.', [
+  dt(.9, 'smaller'), dt(1, 'default'), dt(1.25, 'larger'), dt(1.5, 'largest, names wrap to 2 lines'),
+  `<div style="flex:1;min-width:0"><div class="panel"><h3>Contrast on watch fills</h3><table class="tbl"><tr><th>Category (dark)</th><th>White check</th><th>bg check</th><th>As ring on surface</th></tr>${crRows}</table></div></div>`,
+], sections(
+  ['Contrast (computed)', ['White check on the fill: 1.7 to 2.7:1 for 11 of 12, only cocoa passes 3:1 (3.4). The <code>bg</code> check is 5.3 to 10.5:1 for all 12, so this design uses it.', '<code>ink-muted</code> on <code>surface</code> 7.2:1, <code>ink</code> 13.6:1, <code>accent</code> on <code>surface-2</code> 6.3:1, <code>warning</code> on <code>surface</code> 8.4:1, <code>success</code> on <code>bg</code> 9.7:1.']],
+  ['VoiceOver', ['Row: “Bananas, 6, Produce, not checked.” Action: tap to check. Done row: “Bananas, checked.” Undo: “Bananas, in Got it, tap to put back.”', 'Header: “Produce, 2 items”. Arrival: “Greek yogurt, added by Alex.” Picker row: “Costco, 7 items left.”', 'Complication: “Costco, 7 left, 5 of 12 done.”']],
+  ['Reduce Motion', ['Check-off, add and arrival are instant (page 5 to 7). Colour changes stay. Information is never removed: check, strike, counts and dot all remain.', 'Haptics are independent of Reduce Motion. System Haptics off must break nothing.', 'At the largest sizes the Add item mic glyph stays; the label wraps.']])));
+
+/* 12 open questions */
+out.push(`<div class="page"><h1>Open questions and conflicts found</h1><p class="sub">Nothing here changes IMP-14 tokens. The first block is where the earlier tickets disagree with each other; I picked one and said which.</p>
+<div class="spec">
+<section><h3>Conflicts between earlier tickets</h3><ul>
+<li><b>One dictation, one item, or several?</b> IMP-10 decided one item, no splitting, no review step. The IMP-11 text for K3 says “eggs, milk and 2 cans chickpeas” becomes three items and shows an “Add as written” screen. I followed IMP-10 (it is later and marked decided). The K3 text should be corrected.</li>
+<li><b>Who added it.</b> IMP-10 said probably not on a 45 mm screen. IMP-18 W3 shows a 14 pt sender dot for about 1.2 s. I drew the transient dot only, no permanent label. Confirm.</li>
+<li><b>White check vs <code>bg</code> check.</b> IMP-15 specifies white. IMP-18 recomputed and proposed <code>bg</code> in dark. The watch uses <code>bg</code> here; iOS dark and web dark still show white until IMP-15 is updated.</li>
+<li><b>IMP-18 is not signed off</b> (motion and haptics need a device, in IMP-12 round 2), and <b>IMP-12 round 1 has not run</b> although hi-fi was meant to wait for it. Treat these screens as a first pass.</li></ul></section>
+<section><h3>Decide</h3><ul>
+<li><b>“No typing” cannot be enforced.</b> watchOS presents Scribble and a keyboard as well as dictation. IMP-10 assumed dictation only. Fine if the parser handles typed text too.</li>
+<li><b>Smart Stack: A (count) or B (count + 3 items)?</b> B reverses IMP-10’s “counts, not previews”. A is the recommendation.</li>
+<li><b>Which list does the widget show?</b> Drawn: the list with the most unchecked, or the person’s choice.</li>
+<li><b>Widget staleness.</b> The count can lag the sync. No label is drawn; a stale count in a store aisle may mislead. Show “·” after N minutes?</li>
+<li><b>Always-On display</b> is a proposal, not in the brief.</li>
+<li><b>Header height 28 and label 12.</b> IMP-15’s header is 36 on iOS. 28 keeps three headers on screen at 41 mm; check legibility on a device.</li></ul></section>
+<section><h3>Check on devices, copy added</h3><ul>
+<li>Pie glyph at 40 pt on 41 mm; 44 pt rows with two-line names on 41 mm; Digital Crown scroll with the footer.</li>
+<li>Haptics W1 to W5 feel and timing; whether the system dictation sheet’s own haptic collides with W2 (IMP-18 open question 5).</li>
+<li>Complication family sizes and the curved corner text in Xcode previews; tinted mode on every face style.</li>
+<li>Fonts: the PDF uses Nunito; the watch app uses SF Pro Rounded.</li>
+<li><b>Copy I added that was not in the briefs:</b> “Open on your iPhone to load your lists.” in the widget (reused from IMP-10), “Costco · All done”, “Costco, 7 items left” and the other VoiceOver strings, the sample items on the Costco list.</li>
+<li>Not covered: watch list settings, signing in on the watch, Siri and shortcuts, notifications.</li></ul></section>
+</div></div>`);
+
+/* 13 handoff */
+out.push(`<div class="page"><h1>Handoff for the build tickets</h1><p class="sub">Dependent tickets: the watch build tickets IMP-57 to IMP-60 named in IMP-10 and IMP-15, and the iOS check-off ticket for the shared motion tokens. Everything on the watch uses the IMP-14 Color Sets with the Dark appearance only.</p>
+<div class="spec">
+<section><h3>SwiftUI structure</h3><ul>
+<li><code>NavigationStack { List }</code> for the picker and the detail so the Digital Crown scrolls them. <code>.preferredColorScheme(.dark)</code> on the root.</li>
+<li>Rows: <code>.frame(minHeight: 44)</code>, <code>.contentShape(.rect)</code>, <code>.listRowBackground</code> with the <code>surface</code> color in a 12 radius shape. Header: <code>.frame(height: 28)</code> with the left bar overlay.</li>
+<li><code>CheckRing(tint:)</code> shares the iOS component; the check colour is <code>bg</code> on watch. <code>CategoryChip(size: 16)</code>.</li>
+<li>Add item: a <code>TextField</code> that presents the system input sheet; on submit run the IMP-4 parser and insert. One text is one item.</li>
+<li>Got it: a collapsible <code>DisclosureGroup</code>-style section, collapsed on appear, never remembered.</li></ul></section>
+<section><h3>Motion, haptics, throttles</h3><ul>
+<li>One <code>enum Motion</code> shared with iOS (IMP-18). Reduce Motion via <code>@Environment(\\.accessibilityReduceMotion)</code>; on the watch, removal is instant.</li>
+<li>Haptics through <code>WKInterfaceDevice.current().play(_:)</code>: W1 <code>.success</code>, W2 <code>.directionUp</code>, W3 <code>.click</code> (visible, active, not dimmed; coalesce within 2 s), W4 <code>.click</code>. At least 250 ms between plays.</li>
+<li>Never move rows under a touch or scroll: defer arrivals, adjust the offset silently above the viewport.</li>
+<li>Stale after 10 minutes without a successful sync (IMP-58). Pending glyph per row until acknowledged.</li></ul></section>
+<section><h3>Widget and complications</h3><ul>
+<li>WidgetKit accessory families: <code>accessoryInline</code>, <code>accessoryCircular</code>, <code>accessoryCorner</code>, <code>accessoryRectangular</code>. The Smart Stack uses the rectangular family on current watchOS; confirm in Xcode previews.</li>
+<li>Entry: list id, name, emoji, colour name, unchecked count, total, last sync time. Colour name, not hex (IMP-14). <code>widgetURL</code> opens the picker.</li>
+<li>Use <code>widgetRenderingMode</code> to switch full colour and tinted; in tinted mode draw with <code>.widgetAccentable()</code> and no colour reliance.</li>
+<li>Test plan (IMP-12 round 2, TestFlight): 41, 45 and 49 mm; Crown scroll; Reduce Motion; System Haptics off; offline for 10 minutes; a row arriving from another person while the list is longer than the screen.</li>
+<li>Text version of these decisions is on the Notion Designs page beside the PDF. Source: <code>designs/imp-20/index.html</code>.</li></ul></section>
+</div></div>`);
+
+document.body.innerHTML = out.join('');
+
+</script>
+</body>
+</html>
