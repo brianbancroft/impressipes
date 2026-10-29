@@ -8,9 +8,10 @@ import (
 )
 
 type options struct {
-	mailer  mail.Mailer
-	to      string
-	baseURL string
+	mailer    mail.Mailer
+	to        string
+	baseURL   string
+	appleTeam string
 }
 
 // Option configures New.
@@ -34,4 +35,10 @@ func (o options) mailBootstrap(path string) {
 		return
 	}
 	log.Printf("bootstrap invite emailed to %s", o.to)
+}
+
+// WithAppleTeam serves /.well-known/apple-app-site-association so the emailed
+// sign-in link opens the iOS app. team is the Apple Developer Team ID.
+func WithAppleTeam(team string) Option {
+	return func(o *options) { o.appleTeam = team }
 }

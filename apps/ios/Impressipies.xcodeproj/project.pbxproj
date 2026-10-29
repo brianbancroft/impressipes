@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		1342248AA236DA5640431E45 /* AuthLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5DE46F53E8F0029CE92263CE /* AuthLinkTests.swift */; };
 		25178DC58A99F591E436D249 /* FormatTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */; };
 		2E0B62AB52842643F80BCBE5 /* ImpressipiesWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		4BA15CA20CD48DEB5EFDE0EE /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = 210A0003844F8B00D35E50D5 /* ApiClient */; };
@@ -50,6 +51,7 @@
 		170A2EA0959C5404973A7613 /* OfflineStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OfflineStoreTests.swift; sourceTree = "<group>"; };
 		1E1E0BE6B0E6B50C39A2F02D /* ImpressipiesTests.xctest */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.cfbundle; path = ImpressipiesTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormatTests.swift; sourceTree = "<group>"; };
+		5DE46F53E8F0029CE92263CE /* AuthLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthLinkTests.swift; sourceTree = "<group>"; };
 		6AE2F0CDA4930086FC19CDD8 /* Impressipies.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Impressipies.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		80B8FBD67474D47D289A19C4 /* project.yml */ = {isa = PBXFileReference; lastKnownFileType = text.yaml; path = project.yml; sourceTree = "<group>"; };
 		D31D3179CDB3BC957C19D9B2 /* swift */ = {isa = PBXFileReference; lastKnownFileType = folder; name = swift; path = "../../libs/api-spec/swift"; sourceTree = SOURCE_ROOT; };
@@ -108,6 +110,7 @@
 		66847EA32EF4AF25F4113AC6 /* ImpressipiesTests */ = {
 			isa = PBXGroup;
 			children = (
+				5DE46F53E8F0029CE92263CE /* AuthLinkTests.swift */,
 				2D43EC49DA82E82AB6E40B92 /* FormatTests.swift */,
 				170A2EA0959C5404973A7613 /* OfflineStoreTests.swift */,
 			);
@@ -279,6 +282,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				1342248AA236DA5640431E45 /* AuthLinkTests.swift in Sources */,
 				25178DC58A99F591E436D249 /* FormatTests.swift in Sources */,
 				CECA5D71BF6B0A718E94AC0C /* OfflineStoreTests.swift in Sources */,
 			);
@@ -490,6 +494,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Impressipies.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
@@ -513,6 +518,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = Impressipies.entitlements;
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;

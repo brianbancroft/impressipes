@@ -7,6 +7,8 @@ struct SessionMiddleware: ClientMiddleware {
     let token: @Sendable () -> String?
     let onUnauthorized: @Sendable () -> Void
 
+    private static let signInOperations: Set<String> = ["acceptInvite", "login", "requestMagicLink", "verifyMagicLink"]
+
     func intercept(
         _ request: HTTPRequest,
         body: HTTPBody?,
@@ -21,7 +23,8 @@ struct SessionMiddleware: ClientMiddleware {
             request.headerFields[.cookie] = "\(APIConfig.sessionCookie)=\(token)"
         }
         let (response, responseBody) = try await next(request, body, baseURL)
-        if response.status == .unauthorized, operationID != "acceptInvite" {
+        // Sign-in calls answer 401 for a wrong password or code; that is not a lapsed session.
+        if response.status == .unauthorized, !Self.signInOperations.contains(operationID) {
             onUnauthorized()
         }
         // Turn error bodies into an APIError carrying the server's message, so

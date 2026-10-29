@@ -226,3 +226,14 @@ func TestAuthRateLimits(t *testing.T) {
 		t.Fatalf("over the limit: got %d, want 429", rec.Code)
 	}
 }
+
+func TestAppSiteAssociation(t *testing.T) {
+	if rec := do(NewWithStore(t.Context(), family.NewStore(), nil), "GET", "/.well-known/apple-app-site-association", ""); rec.Code != http.StatusNotFound {
+		t.Fatalf("without a team: got %d, want 404", rec.Code)
+	}
+	h := NewWithStore(t.Context(), family.NewStore(), nil, WithAppleTeam("TEAM123"))
+	rec := do(h, "GET", "/.well-known/apple-app-site-association", "")
+	if rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), `"TEAM123.ca.brianbancroft.impressipies"`) || !strings.Contains(rec.Body.String(), `"/auth/verify"`) {
+		t.Fatalf("got %d %s", rec.Code, rec.Body)
+	}
+}

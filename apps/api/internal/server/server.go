@@ -89,6 +89,9 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 	// does not fit the generated request/response handlers.
 	mux.HandleFunc("GET /events", s.events)
 	mux.HandleFunc("GET /images/{id}/{variant}", s.serveImage)
+	if o.appleTeam != "" {
+		mux.HandleFunc("GET /.well-known/apple-app-site-association", appSiteAssociation(o.appleTeam))
+	}
 	if pool != nil {
 		mux.Handle("/mcp", s.mcpHandler())
 		s.mountOAuth(mux)

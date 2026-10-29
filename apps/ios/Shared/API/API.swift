@@ -41,15 +41,55 @@ struct API: Sendable {
         }
     }
 
-    /// Accepts an invite and returns the member plus the new session token.
-    func acceptInvite(token: String, name: String, color: String, credentialId: String) async throws -> (Member, String?) {
+    /// Accepts an invite and returns the member plus the new session token. A given
+    /// email is confirmed afterwards with the link or code the server mails.
+    func acceptInvite(token: String, name: String, color: String, credentialId: String, email: String? = nil, password: String? = nil) async throws -> (Member, String?) {
         try await call {
             let created = try await client.acceptInvite(
                 path: .init(token: token),
-                body: .json(.init(name: name, color: color, credentialId: credentialId))
+                body: .json(.init(name: name, color: color, credentialId: credentialId, email: email, password: password))
             ).created
             return (try created.body.json, created.headers.Set_hyphen_Cookie.flatMap(Self.sessionToken))
         }
+    }
+
+    /// Signs in with a confirmed email and a password.
+    func login(email: String, password: String) async throws -> (Member, String?) {
+        try await call {
+            let ok = try await client.login(body: .json(.init(email: email, password: password))).ok
+            return (try ok.body.json, ok.headers.Set_hyphen_Cookie.flatMap(Self.sessionToken))
+        }
+    }
+
+    /// Emails a link and six-digit code. The server answers the same for any address.
+    func requestMagicLink(email: String) async throws {
+        try await call { _ = try await client.requestMagicLink(body: .json(.init(email: email))).accepted }
+    }
+
+    /// Redeems the token from an emailed link.
+    func verify(linkToken: String) async throws -> (Member, String?) {
+        try await verify(.init(token: linkToken))
+    }
+
+    /// Redeems the six-digit code from the latest email to this address.
+    func verify(email: String, code: String) async throws -> (Member, String?) {
+        try await verify(.init(email: email, code: code))
+    }
+
+    private func verify(_ body: Operations.verifyMagicLink.Input.Body.jsonPayload) async throws -> (Member, String?) {
+        try await call {
+            let ok = try await client.verifyMagicLink(body: .json(body)).ok
+            return (try ok.body.json, ok.headers.Set_hyphen_Cookie.flatMap(Self.sessionToken))
+        }
+    }
+
+    /// Emails a confirmation link and code to a new address.
+    func setEmail(_ email: String) async throws {
+        try await call { _ = try await client.setEmail(body: .json(.init(email: email))).accepted }
+    }
+
+    func setPassword(_ password: String) async throws {
+        try await call { _ = try await client.setPassword(body: .json(.init(password: password))).noContent }
     }
 
     /// Pulls the session value out of a Set-Cookie header.

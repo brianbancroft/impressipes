@@ -43,6 +43,21 @@ The Postgres 17 database is `impressipies-db` in the Impressipies project on Coo
 
 Live changes stream from `GET /api/events` (server-sent events, fed by Postgres `LISTEN/NOTIFY`). Behind a proxy, leave response buffering off for that path.
 
+## Email sign-in
+
+Members sign in with an email and password, or with a link and six-digit code that is emailed to them (the link also covers new phones and forgotten passwords). Email confirmation uses the same mail. Set these on the `impressipes` application in Coolify:
+
+| Variable | Purpose |
+| --- | --- |
+| `RESEND_API_KEY` | Sends the mail through Resend (production). Locally `SMTP_ADDR` points at Mailpit instead. |
+| `MAIL_FROM` | Sender, e.g. `Impressipes <noreply@your-domain>`. Required with `RESEND_API_KEY`; the domain must be verified in Resend. |
+| `APP_URL` | Public origin the emailed links point at: `https://impressipes.bancroft.io`. |
+| `APPLE_TEAM_ID` | Optional. Serves `/.well-known/apple-app-site-association` so tapping the emailed link opens the iOS app (the app declares `applinks:impressipes.bancroft.io`). Without it the link opens the web app and the code still works in the app. |
+
+Without a mail sender the API logs each link and code instead of sending it, which is for local development only. Links and codes work once, expire after 15 minutes, and a code locks after five wrong tries. Requests are rate limited per address and per client IP.
+
+Passwords are stored as argon2id hashes and need at least 10 characters. A member's email only becomes usable for sign-in once confirmed.
+
 ## Recipe photos
 
 Uploads are resized to a 360px thumbnail and a 1280px large variant, encoded as lossless WebP, and written under `IMAGE_DIR` (`/data/images` in the image, `data/images` when unset). Files are only on that disk, so **mount a persistent volume at `/data`** in Coolify (Storages → Add → destination path `/data`), or photos vanish on every deploy. Back it up with the database.

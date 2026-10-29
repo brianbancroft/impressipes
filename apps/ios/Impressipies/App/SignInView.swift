@@ -1,9 +1,22 @@
 import SwiftUI
 
-/// Sign in with an invite link from the web app (Settings → Family on the web,
-/// or "Invite again" for yourself to add this phone).
+/// Signed out: sign in with email, or join the family with an invite link.
 struct SignInView: View {
+    @State private var joining = false
+
+    var body: some View {
+        if joining {
+            JoinView { joining = false }
+        } else {
+            EmailSignInView { joining = true }
+        }
+    }
+}
+
+/// Join with an invite link from the web app (Settings → Family on the web).
+struct JoinView: View {
     @Environment(Session.self) private var session
+    let onBack: () -> Void
 
     @State private var serverText = ""
     @State private var link = ""
@@ -11,6 +24,8 @@ struct SignInView: View {
     @State private var token = ""
     @State private var name = ""
     @State private var color = Palette.memberColours[0]
+    @State private var email = ""
+    @State private var password = ""
     @State private var busy = false
     @State private var error: String?
     @State private var scanning = false
@@ -114,6 +129,10 @@ struct SignInView: View {
             }
             .buttonStyle(PopButtonStyle())
             .disabled(busy || link.trimmingCharacters(in: .whitespaces).isEmpty)
+
+            Button("I already have an account", action: onBack)
+                .font(.footnote.weight(.bold))
+                .frame(maxWidth: .infinity)
         }
     }
 
@@ -146,11 +165,33 @@ struct SignInView: View {
                     .accessibilityAddTraits(c == color ? .isSelected : [])
                 }
             }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Email (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                TextField("you@example.com", text: $email)
+                    .textContentType(.emailAddress)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 52)
+                    .sticker(radius: 16, shadow: 3)
+                Text("We'll email a code to confirm it. Then you can sign in with an emailed link.")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkMuted)
+            }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Password (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                SecureField("At least 10 characters", text: $password)
+                    .textContentType(.newPassword)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 52)
+                    .sticker(radius: 16, shadow: 3)
+            }
             Button(action: accept) {
                 if busy { ProgressView().tint(Palette.onAccent) } else { Text("Let's go") }
             }
             .buttonStyle(PopButtonStyle())
-            .disabled(busy || name.trimmingCharacters(in: .whitespaces).isEmpty)
+            .disabled(busy || name.trimmingCharacters(in: .whitespaces).isEmpty || (!password.isEmpty && password.count < 10))
             Button("Use a different link") { invite = nil; error = nil }
                 .font(.footnote.weight(.bold))
                 .frame(maxWidth: .infinity)
@@ -217,7 +258,11 @@ struct SignInView: View {
         Task {
             defer { busy = false }
             do {
-                try await session.acceptInvite(token: token, name: name.trimmingCharacters(in: .whitespaces), color: color)
+                let mail = email.trimmingCharacters(in: .whitespaces)
+                try await session.acceptInvite(
+                    token: token, name: name.trimmingCharacters(in: .whitespaces), color: color,
+                    email: mail.isEmpty ? nil : mail, password: password.isEmpty ? nil : password
+                )
             } catch {
                 self.error = APIError.from(error).message
             }

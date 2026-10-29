@@ -21,7 +21,11 @@ final class Session {
     /// The latest item change from the event stream; list screens reload on it.
     private(set) var lastEvent: ListEvent?
 
+    /// A message for the person that no screen asked for, such as a sign-in link that did not work.
+    var notice: String?
+
     @ObservationIgnored private let tokenBox = TokenBox()
+    @ObservationIgnored private var lastLinkToken: String?
     @ObservationIgnored private var eventsTask: Task<Void, Never>?
 
     private static let serverKey = "server"
@@ -70,12 +74,66 @@ final class Session {
     }
 
     /// Signs in by accepting an invite link from the web app. The server only
-    /// stores the credential id for now (passkey sign-in is still to come), so a
-    /// device id stands in for it.
-    func acceptInvite(token: String, name: String, color: String) async throws {
+    /// stores the credential id for now, so a device id stands in for it. An email,
+    /// when given, is confirmed afterwards with the code the server mails.
+    func acceptInvite(token: String, name: String, color: String, email: String? = nil, password: String? = nil) async throws {
         let device = "ios-" + UUID().uuidString.lowercased()
-        let (m, sessionToken) = try await api.acceptInvite(token: token, name: name, color: color, credentialId: device)
+        let (m, sessionToken) = try await api.acceptInvite(
+            token: token, name: name, color: color, credentialId: device, email: email, password: password
+        )
+        try adopt(m, token: sessionToken)
+    }
+
+    func signIn(email: String, password: String) async throws {
+        let (m, token) = try await api.login(email: email, password: password)
+        try adopt(m, token: token)
+    }
+
+    func requestLink(email: String) async throws {
+        try await api.requestMagicLink(email: email)
+    }
+
+    /// Signs in (or confirms an email) with the six-digit code.
+    func verify(email: String, code: String) async throws {
+        let (m, token) = try await api.verify(email: email, code: code)
+        try adopt(m, token: token)
+    }
+
+    func setEmail(_ email: String) async throws {
+        try await api.setEmail(email)
+    }
+
+    func setPassword(_ password: String) async throws {
+        try await api.setPassword(password)
+        member = try? await api.me()
+    }
+
+    /// Handles a tapped sign-in link. Returns false for URLs that are not one.
+    @discardableResult
+    func open(_ url: URL) async -> Bool {
+        guard let link = AuthLink(url) else { return false }
+        // The same link can arrive through two callbacks; a token only works once.
+        guard link.token != lastLinkToken else { return true }
+        lastLinkToken = link.token
+        // Only this app's own server may sign the phone in.
+        guard link.server == server || link.server == APIConfig.defaultServer else { return true }
+        if link.server != server { setServer(link.server) }
+        do {
+            let (m, token) = try await api.verify(linkToken: link.token)
+            try adopt(m, token: token)
+        } catch {
+            notice = APIError.from(error).message + ". Links work once and expire after 15 minutes."
+        }
+        return true
+    }
+
+    /// Takes a freshly issued session as the current one.
+    private func adopt(_ m: Member, token sessionToken: String?) throws {
         guard let sessionToken else { throw APIError(message: "The server didn't start a session") }
+        if let current = member, current.id != m.id {
+            stopEvents()
+            OfflineStore.shared.reset()
+        }
         tokenBox.value = sessionToken
         Keychain.write(sessionToken, for: Self.tokenKey)
         member = m

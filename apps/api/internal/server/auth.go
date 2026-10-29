@@ -220,3 +220,14 @@ func (s *server) SetPassword(ctx context.Context, req api.SetPasswordRequestObje
 	}
 	return api.SetPassword204Response{}, nil
 }
+
+const iosBundleID = "ca.brianbancroft.impressipies"
+
+// appSiteAssociation tells iOS that the app may open the emailed sign-in link.
+func appSiteAssociation(team string) http.HandlerFunc {
+	body := `{"applinks":{"details":[{"appIDs":["` + team + "." + iosBundleID + `"],"components":[{"/":"/auth/verify"}]}]}}`
+	return func(w http.ResponseWriter, _ *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.Write([]byte(body))
+	}
+}

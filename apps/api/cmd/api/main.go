@@ -53,6 +53,11 @@ func main() {
 		))
 	}
 
+	// APPLE_TEAM_ID lets the emailed sign-in link open the iOS app.
+	if team := os.Getenv("APPLE_TEAM_ID"); team != "" {
+		opts = append(opts, server.WithAppleTeam(team))
+	}
+
 	api := server.New(pool, opts...)
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))

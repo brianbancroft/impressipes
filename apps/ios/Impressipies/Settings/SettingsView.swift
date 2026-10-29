@@ -27,6 +27,7 @@ struct SettingsView: View {
                             }
                         }
                         .padding(.vertical, 4)
+                        NavigationLink("Email & password") { AccountSecurityView() }
                     }
                 }
 
@@ -66,7 +67,7 @@ struct SettingsView: View {
             .confirmationDialog("Sign out of Impressipes?", isPresented: $confirmSignOut, titleVisibility: .visible) {
                 Button("Sign out", role: .destructive) { session.signOut() }
             } message: {
-                Text("You'll need a new invite link to sign back in on this phone.")
+                Text("To sign back in you'll need your email and password, an emailed link, or a new invite link.")
             }
         }
     }
