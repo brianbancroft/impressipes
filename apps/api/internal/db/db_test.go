@@ -7,47 +7,13 @@ import (
 
 	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
-	"github.com/testcontainers/testcontainers-go"
-	"github.com/testcontainers/testcontainers-go/modules/postgres"
-	"github.com/testcontainers/testcontainers-go/wait"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/db"
 	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
+	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbtest"
 )
 
-// testPool starts a throwaway Postgres 17 and migrates it. Tests are skipped
-// with -short, or when Docker is unavailable.
-func testPool(t *testing.T) *pgxpool.Pool {
-	t.Helper()
-	if testing.Short() {
-		t.Skip("skipping Postgres integration test in -short mode")
-	}
-	testcontainers.SkipIfProviderIsNotHealthy(t)
-	ctx := context.Background()
-
-	ctr, err := postgres.Run(ctx, "postgres:17-alpine",
-		postgres.WithDatabase("impressipes"),
-		postgres.WithUsername("test"),
-		postgres.WithPassword("test"),
-		postgres.BasicWaitStrategies(),
-		testcontainers.WithWaitStrategy(wait.ForListeningPort("5432/tcp").WithStartupTimeout(time.Minute)),
-	)
-	if err != nil {
-		t.Fatalf("start postgres: %v", err)
-	}
-	testcontainers.CleanupContainer(t, ctr)
-
-	url, err := ctr.ConnectionString(ctx, "sslmode=disable")
-	if err != nil {
-		t.Fatal(err)
-	}
-	pool, err := db.Open(ctx, url)
-	if err != nil {
-		t.Fatalf("open: %v", err)
-	}
-	t.Cleanup(pool.Close)
-	return pool
-}
+func testPool(t *testing.T) *pgxpool.Pool { return dbtest.Pool(t) }
 
 func TestMigrateIsIdempotent(t *testing.T) {
 	pool := testPool(t)

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"strings"
 	"testing"
 
+	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbtest"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 )
 
@@ -48,10 +50,14 @@ func TestHealth(t *testing.T) {
 }
 
 func TestInviteOnboardingFlow(t *testing.T) {
-	store := family.NewStore()
+	t.Run("memory", func(t *testing.T) { inviteOnboardingFlow(t, family.NewStore()) })
+	t.Run("postgres", func(t *testing.T) { inviteOnboardingFlow(t, family.NewPG(dbtest.Pool(t))) })
+}
+
+func inviteOnboardingFlow(t *testing.T, store family.Directory) {
 	h := NewWithStore(store)
 
-	boot, _ := store.CreateInvite("")
+	boot, _ := store.CreateInvite(context.Background(), "")
 	accept := `{"name":"Mum","color":"#e11d48","credentialId":"cred-1"}`
 	rec := do(h, "POST", "/invites/"+boot.Token+"/accept", accept)
 	if rec.Code != http.StatusCreated {

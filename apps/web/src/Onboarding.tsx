@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { acceptInvite, getInvite, type InviteInfo } from './api';
-import { Shell } from './App';
+import { Shell } from './Shell';
 import { createPasskey, passkeysSupported } from './passkey';
 
 const COLORS = ['#e11d48', '#f97316', '#eab308', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777'];

@@ -2,6 +2,7 @@
 package family
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"errors"
@@ -67,16 +68,9 @@ func token() string {
 	return base64.RawURLEncoding.EncodeToString(b)
 }
 
-// Empty reports whether nobody has onboarded yet.
-func (s *Store) Empty() bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return len(s.members) == 0
-}
-
 // CreateInvite issues a single-use link. A non-empty memberID re-invites that
 // member (lost device), who keeps their identity and replaces their passkey.
-func (s *Store) CreateInvite(memberID string) (*Invite, error) {
+func (s *Store) CreateInvite(_ context.Context, memberID string) (*Invite, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if memberID != "" {
@@ -94,7 +88,7 @@ func (s *Store) CreateInvite(memberID string) (*Invite, error) {
 }
 
 // Invite looks up an invite and the member it re-invites, if any.
-func (s *Store) Invite(tok string) (*Invite, *Member, error) {
+func (s *Store) Invite(_ context.Context, tok string) (*Invite, *Member, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	inv, ok := s.invites[tok]
@@ -115,7 +109,7 @@ func (s *Store) Invite(tok string) (*Invite, *Member, error) {
 
 // Accept consumes an invite, creating (or updating) the member and a session.
 // The first member ever created becomes the admin.
-func (s *Store) Accept(tok, name, color, credentialID string) (*Member, string, error) {
+func (s *Store) Accept(_ context.Context, tok, name, color, credentialID string) (*Member, string, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	inv, ok := s.invites[tok]
@@ -153,7 +147,7 @@ func (s *Store) Accept(tok, name, color, credentialID string) (*Member, string, 
 }
 
 // Session resolves a session token to its member.
-func (s *Store) Session(sess string) (*Member, error) {
+func (s *Store) Session(_ context.Context, sess string) (*Member, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	id, ok := s.sessions[sess]
@@ -164,18 +158,18 @@ func (s *Store) Session(sess string) (*Member, error) {
 	return &cp, nil
 }
 
-func (s *Store) Members() []Member {
+func (s *Store) Members(_ context.Context) ([]Member, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	out := make([]Member, 0, len(s.members))
 	for _, m := range s.members {
 		out = append(out, *m)
 	}
-	return out
+	return out, nil
 }
 
 // SetStatus disables or re-enables a member; disabling also drops their sessions.
-func (s *Store) SetStatus(id, status string) error {
+func (s *Store) SetStatus(_ context.Context, id, status string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	m, ok := s.members[id]

@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/brianbancroft/impressipies/apps/api/internal/db"
 	"github.com/brianbancroft/impressipies/apps/api/internal/server"
 	"github.com/brianbancroft/impressipies/apps/api/internal/web"
@@ -17,18 +19,19 @@ func main() {
 		port = "8080"
 	}
 
-	// Migrations run on boot. Without DATABASE_URL the API still starts on its
-	// in-memory store, which is what local development and the tests use.
+	// With DATABASE_URL the API migrates on boot and persists to Postgres. Without
+	// it the API runs on its in-memory directory, as local development and tests do.
+	var pool *pgxpool.Pool
 	if url := os.Getenv("DATABASE_URL"); url != "" {
-		pool, err := db.Open(context.Background(), url)
-		if err != nil {
+		var err error
+		if pool, err = db.Open(context.Background(), url); err != nil {
 			log.Fatalf("database: %v", err)
 		}
 		defer pool.Close()
 		log.Print("database migrated")
 	}
 
-	api := server.New()
+	api := server.New(pool)
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))
 	mux.Handle("GET /healthz", api)

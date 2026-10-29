@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
+
 	"github.com/brianbancroft/impressipies/apps/api/internal/api"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 )
@@ -17,21 +19,34 @@ const sessionCookie = "impressipies_session"
 type ctxKey struct{}
 
 type server struct {
-	store *family.Store
+	store family.Directory
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
 
-// New returns the API's root handler, with a fresh store and a bootstrap admin invite.
-func New() http.Handler {
-	store := family.NewStore()
-	if inv, err := store.CreateInvite(""); err == nil {
-		log.Printf("first run: open /invite/%s to create the admin account", inv.Token)
+// New returns the API's root handler. A nil pool runs on the in-memory directory
+// (local development and tests); otherwise everything is persisted to Postgres.
+// Until the first member exists it logs a bootstrap admin invite link.
+func New(pool *pgxpool.Pool) http.Handler {
+	var dir family.Directory = family.NewStore()
+	first := true
+	if pool != nil {
+		pg := family.NewPG(pool)
+		dir = pg
+		var err error
+		if first, err = pg.ReadyForBootstrap(context.Background()); err != nil {
+			log.Fatalf("database: %v", err)
+		}
 	}
-	return NewWithStore(store)
+	if first {
+		if inv, err := dir.CreateInvite(context.Background(), ""); err == nil {
+			log.Printf("first run: open /invite/%s to create the admin account", inv.Token)
+		}
+	}
+	return NewWithStore(dir)
 }
 
-func NewWithStore(store *family.Store) http.Handler {
+func NewWithStore(store family.Directory) http.Handler {
 	s := &server{store: store}
 	return api.HandlerWithOptions(api.NewStrictHandler(s, nil), api.StdHTTPServerOptions{
 		Middlewares: []api.MiddlewareFunc{sessionMiddleware},
@@ -63,7 +78,7 @@ func (s *server) current(ctx context.Context) (*family.Member, *authFail) {
 	if sess == "" {
 		return nil, &authFail{http.StatusUnauthorized, "unauthenticated"}
 	}
-	m, err := s.store.Session(sess)
+	m, err := s.store.Session(ctx, sess)
 	if err != nil {
 		return nil, &authFail{http.StatusUnauthorized, "unauthenticated"}
 	}
@@ -114,7 +129,10 @@ func (s *server) ListMembers(ctx context.Context, _ api.ListMembersRequestObject
 		}
 		return api.ListMembers401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
-	members := s.store.Members()
+	members, err := s.store.Members(ctx)
+	if err != nil {
+		return nil, err
+	}
 	out := make(api.ListMembers200JSONResponse, 0, len(members))
 	for _, m := range members {
 		out = append(out, toMember(m))
@@ -129,7 +147,7 @@ func (s *server) DisableMember(ctx context.Context, req api.DisableMemberRequest
 		}
 		return api.DisableMember401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
-	if err := s.store.SetStatus(req.Id, family.StatusDisabled); err != nil {
+	if err := s.store.SetStatus(ctx, req.Id, family.StatusDisabled); err != nil {
 		return api.DisableMember404JSONResponse(errBody("member not found")), nil
 	}
 	return api.DisableMember204Response{}, nil
@@ -142,7 +160,7 @@ func (s *server) EnableMember(ctx context.Context, req api.EnableMemberRequestOb
 		}
 		return api.EnableMember401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
-	if err := s.store.SetStatus(req.Id, family.StatusActive); err != nil {
+	if err := s.store.SetStatus(ctx, req.Id, family.StatusActive); err != nil {
 		return api.EnableMember404JSONResponse(errBody("member not found")), nil
 	}
 	return api.EnableMember204Response{}, nil
@@ -159,7 +177,7 @@ func (s *server) CreateInvite(ctx context.Context, req api.CreateInviteRequestOb
 	if req.Body != nil && req.Body.MemberId != nil {
 		memberID = *req.Body.MemberId
 	}
-	inv, err := s.store.CreateInvite(memberID)
+	inv, err := s.store.CreateInvite(ctx, memberID)
 	switch {
 	case errors.Is(err, family.ErrNotFound):
 		return api.CreateInvite404JSONResponse(errBody("member not found")), nil
@@ -171,8 +189,8 @@ func (s *server) CreateInvite(ctx context.Context, req api.CreateInviteRequestOb
 	return api.CreateInvite201JSONResponse{Token: inv.Token, Path: "/invite/" + inv.Token}, nil
 }
 
-func (s *server) GetInvite(_ context.Context, req api.GetInviteRequestObject) (api.GetInviteResponseObject, error) {
-	inv, m, err := s.store.Invite(req.Token)
+func (s *server) GetInvite(ctx context.Context, req api.GetInviteRequestObject) (api.GetInviteResponseObject, error) {
+	inv, m, err := s.store.Invite(ctx, req.Token)
 	if err != nil {
 		return api.GetInvite404JSONResponse{State: api.InviteInfoStateInvalid}, nil
 	}
@@ -193,7 +211,7 @@ func (s *server) GetInvite(_ context.Context, req api.GetInviteRequestObject) (a
 	return resp, nil
 }
 
-func (s *server) AcceptInvite(_ context.Context, req api.AcceptInviteRequestObject) (api.AcceptInviteResponseObject, error) {
+func (s *server) AcceptInvite(ctx context.Context, req api.AcceptInviteRequestObject) (api.AcceptInviteResponseObject, error) {
 	if req.Body == nil {
 		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody("invalid body"))}, nil
 	}
@@ -201,7 +219,7 @@ func (s *server) AcceptInvite(_ context.Context, req api.AcceptInviteRequestObje
 	if name == "" || req.Body.Color == "" || req.Body.CredentialId == "" {
 		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody("name, color and credentialId are required"))}, nil
 	}
-	m, sess, err := s.store.Accept(req.Token, name, req.Body.Color, req.Body.CredentialId)
+	m, sess, err := s.store.Accept(ctx, req.Token, name, req.Body.Color, req.Body.CredentialId)
 	switch {
 	case errors.Is(err, family.ErrNotFound):
 		return api.AcceptInvite404JSONResponse(errBody("invite not found")), nil

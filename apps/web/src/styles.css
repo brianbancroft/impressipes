@@ -1,40 +1,137 @@
-:root {
-  --bg: #f6f7fb;
-  --card: #fff;
-  --ink: #14151a;
-  --muted: #666b7a;
-  --line: #e4e6ee;
-  --accent: #5b5bd6;
-  --danger: #b91c1c;
+@import 'tailwindcss';
+@import '@fontsource/nunito/700.css';
+@import '@fontsource/nunito/800.css';
+
+/* Tokens from Design tokens (IMP-14); names are shared with the Swift Color Sets. */
+@theme {
+  --color-bg: #fff8f0;
+  --color-surface: #ffffff;
+  --color-surface-2: #fbefe2;
+  --color-line: #eadbcb;
+  --color-ink: #2b2118;
+  --color-ink-muted: #6b5d50;
+  --color-accent: #c62f55;
+  --color-on-accent: #ffffff;
+  --color-accent-soft: #fce4ea;
+  --color-success: #1f6b45;
+  --color-warning: #8a5a00;
+  --color-danger: #b3261e;
+  --color-info: #2455b0;
+  --color-cat-tomato: #b83a2b;
+  --color-cat-sky: #3c8de0;
+  --color-cat-leaf: #5e9626;
+  --color-cat-violet: #8e4cc0;
+  --color-cat-tangerine: #e0701a;
+  --color-cat-teal: #0e7c86;
+  --color-cat-berry: #c42a7b;
+  --color-cat-mustard: #8a6a00;
+  --color-cat-indigo: #3d3fa8;
+  --color-cat-cocoa: #7a4a2e;
+  --color-cat-forest: #1f6b45;
+  --color-cat-slate: #7e8896;
+  --font-display: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
+  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --breakpoint-sm: 640px;
+  --breakpoint-lg: 1025px;
 }
-@media (prefers-color-scheme: dark) {
-  :root { --bg: #101116; --card: #1a1b22; --ink: #f1f2f6; --muted: #9a9fb0; --line: #2a2c36; --accent: #8b8bf0; }
+
+@layer base {
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme='light']) {
+      --color-bg: #1a1512;
+      --color-surface: #2a221d;
+      --color-surface-2: #342b24;
+      --color-line: #43372e;
+      --color-ink: #f7eee4;
+      --color-ink-muted: #bdae9f;
+      --color-accent: #ff8da5;
+      --color-on-accent: #2b0a12;
+      --color-accent-soft: #4a2230;
+      --color-success: #5bd39a;
+      --color-warning: #e5b93c;
+      --color-danger: #ff8a80;
+      --color-info: #8fb4ff;
+      --color-cat-tomato: #ff7a66;
+      --color-cat-sky: #7db8ff;
+      --color-cat-leaf: #9bd65f;
+      --color-cat-violet: #c79bf2;
+      --color-cat-tangerine: #ffa24f;
+      --color-cat-teal: #4fd0d6;
+      --color-cat-berry: #ff7db8;
+      --color-cat-mustard: #cfa52e;
+      --color-cat-indigo: #8f94f5;
+      --color-cat-cocoa: #b58059;
+      --color-cat-forest: #5bd39a;
+      --color-cat-slate: #a5b0bd;
+    }
+  }
+  :root[data-theme='dark'] {
+    --color-bg: #1a1512;
+    --color-surface: #2a221d;
+    --color-surface-2: #342b24;
+    --color-line: #43372e;
+    --color-ink: #f7eee4;
+    --color-ink-muted: #bdae9f;
+    --color-accent: #ff8da5;
+    --color-on-accent: #2b0a12;
+    --color-accent-soft: #4a2230;
+    --color-success: #5bd39a;
+    --color-warning: #e5b93c;
+    --color-danger: #ff8a80;
+    --color-info: #8fb4ff;
+    --color-cat-tomato: #ff7a66;
+    --color-cat-sky: #7db8ff;
+    --color-cat-leaf: #9bd65f;
+    --color-cat-violet: #c79bf2;
+    --color-cat-tangerine: #ffa24f;
+    --color-cat-teal: #4fd0d6;
+    --color-cat-berry: #ff7db8;
+    --color-cat-mustard: #cfa52e;
+    --color-cat-indigo: #8f94f5;
+    --color-cat-cocoa: #b58059;
+    --color-cat-forest: #5bd39a;
+    --color-cat-slate: #a5b0bd;
+  }
+  :root { color-scheme: light dark; }
+  :root[data-theme='light'] { color-scheme: light; }
+  :root[data-theme='dark'] { color-scheme: dark; }
+  body { @apply bg-bg font-sans text-ink antialiased; margin: 0; }
+  h1, h2, h3 { @apply font-display font-extrabold; }
+  button { cursor: pointer; }
+  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
 }
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font-family: system-ui, sans-serif; }
-.shell { min-height: 100vh; display: grid; place-items: start center; padding: 10vh 16px 32px; }
-.stack { width: 100%; max-width: 420px; text-align: center; }
-.stack.wide { max-width: 640px; text-align: left; }
-.mark { width: 40px; height: 40px; margin: 0 auto 16px; border-radius: 12px; background: var(--accent); color: #fff; display: grid; place-items: center; font-weight: 700; }
-h1 { font-size: 1.4rem; margin: 0 0 6px; }
-.sub { color: var(--muted); margin: 0 0 20px; }
-.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; text-align: left; }
-label, legend { display: block; font-size: .8rem; font-weight: 600; margin-bottom: 6px; }
-input { width: 100%; padding: 10px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); font: inherit; }
-input:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-fieldset { border: 0; padding: 0; margin: 16px 0; }
-.swatches { display: flex; flex-wrap: wrap; gap: 8px; }
-.swatch { width: 32px; height: 32px; border-radius: 50%; border: 3px solid transparent; cursor: pointer; padding: 0; }
-.swatch[aria-pressed='true'] { border-color: var(--ink); }
-button { font: inherit; cursor: pointer; border-radius: 8px; padding: 9px 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); }
-button.primary { width: 100%; background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600; }
-button.primary:disabled { opacity: .5; cursor: not-allowed; }
-.err { color: var(--danger); font-size: .9rem; }
-.row { display: flex; align-items: center; gap: 10px; padding: 12px 0; border-top: 1px solid var(--line); }
-.row:first-of-type { border-top: 0; }
-.dot { width: 28px; height: 28px; border-radius: 50%; flex: none; }
-.grow { flex: 1; min-width: 0; }
-.pill { font-size: .72rem; padding: 2px 8px; border-radius: 999px; background: #dcfce7; color: #166534; }
-.pill.off { background: #fef3c7; color: #92400e; }
-.linkbox { display: flex; gap: 8px; margin-top: 8px; }
-.toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: #111; color: #fff; padding: 10px 16px; border-radius: 10px; }
+
+/* Shared component classes. Admin and onboarding use these; no raw hex here. */
+@layer components {
+  .shell { @apply grid min-h-screen place-items-start justify-center px-4 pt-[10vh] pb-8; }
+  .stack { @apply w-full max-w-105 text-center; }
+  .stack.wide { @apply max-w-160 text-left; }
+  .mark { @apply mx-auto mb-4 grid size-10 place-items-center rounded-md bg-accent font-display font-extrabold text-on-accent; }
+  .sub { @apply mb-5 text-ink-muted; }
+  .card { @apply rounded-md border border-line bg-surface p-5 text-left; }
+  label, legend { @apply mb-1.5 block text-xs font-semibold; }
+  input, textarea, select { @apply min-h-11 w-full rounded-sm border border-line bg-bg px-3 py-2 text-ink; font: inherit; }
+  fieldset { @apply my-4 border-0 p-0; }
+  .swatches { @apply flex flex-wrap gap-2; }
+  .swatch { @apply size-8 cursor-pointer rounded-full border-[3px] border-transparent p-0; }
+  .swatch[aria-pressed='true'] { @apply border-ink; }
+  button { @apply min-h-11 rounded-sm border border-line bg-surface px-3.5 py-2 text-ink; font: inherit; }
+  button.primary { @apply w-full border-accent bg-accent font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-50; }
+  .err { @apply text-sm text-danger; }
+  .row { @apply flex items-center gap-2.5 border-t border-line py-3 first-of-type:border-t-0; }
+  .dot { @apply size-7 flex-none rounded-full; }
+  .grow { @apply min-w-0 flex-1; }
+  .pill { @apply rounded-full bg-accent-soft px-2 py-0.5 text-xs text-success; }
+  .pill.off { @apply text-warning; }
+  .linkbox { @apply mt-2 flex gap-2; }
+  .toast { @apply fixed bottom-5 left-1/2 -translate-x-1/2 rounded-md bg-ink px-4 py-2.5 text-bg; }
+  a { @apply text-accent; }
+
+  .nav-link { @apply inline-flex min-h-11 items-center rounded-sm px-3 font-semibold text-ink-muted no-underline hover:bg-surface-2; }
+  .nav-link[aria-current='page'] { @apply bg-accent-soft text-ink; }
+  .page-title { @apply mb-1 text-3xl; }
+  .empty { @apply mx-auto grid max-w-md place-items-center gap-2 rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center; }
+}

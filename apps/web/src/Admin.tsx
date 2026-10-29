@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createInvite, listMembers, setMemberStatus, type Member } from './api';
-import { Shell } from './App';
 
 export function Admin() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -34,8 +33,8 @@ export function Admin() {
   }
 
   return (
-    <Shell wide>
-      <h1>Family</h1>
+    <div className="max-w-160">
+      <h1 className="page-title">Family</h1>
       <p className="sub">Invite people, re-invite after a lost phone, or disable access.</p>
       <div className="card" style={{ marginBottom: 16 }}>
         <button className="primary" onClick={() => invite()}>Create invite link</button>
@@ -65,8 +64,7 @@ export function Admin() {
           </div>
         ))}
       </div>
-      <p><a href="/">← Back to lists</a></p>
       {toast && <div className="toast" role="status">{toast}</div>}
-    </Shell>
+    </div>
   );
 }

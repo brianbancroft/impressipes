@@ -11,6 +11,63 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const addPasskey = `-- name: AddPasskey :exec
+INSERT INTO passkeys (credential_id, user_id, public_key, sign_count, transports)
+VALUES ($1, $2, $3, $4, $5)
+`
+
+type AddPasskeyParams struct {
+	CredentialID []byte      `json:"credential_id"`
+	UserID       pgtype.UUID `json:"user_id"`
+	PublicKey    []byte      `json:"public_key"`
+	SignCount    int64       `json:"sign_count"`
+	Transports   []string    `json:"transports"`
+}
+
+func (q *Queries) AddPasskey(ctx context.Context, arg AddPasskeyParams) error {
+	_, err := q.db.Exec(ctx, addPasskey,
+		arg.CredentialID,
+		arg.UserID,
+		arg.PublicKey,
+		arg.SignCount,
+		arg.Transports,
+	)
+	return err
+}
+
+const countUsers = `-- name: CountUsers :one
+SELECT count(*) FROM users
+`
+
+func (q *Queries) CountUsers(ctx context.Context) (int64, error) {
+	row := q.db.QueryRow(ctx, countUsers)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
+const createInvite = `-- name: CreateInvite :exec
+INSERT INTO invites (token_hash, created_by, member_id, expires_at)
+VALUES ($1, $2, $3, $4)
+`
+
+type CreateInviteParams struct {
+	TokenHash string             `json:"token_hash"`
+	CreatedBy pgtype.UUID        `json:"created_by"`
+	MemberID  pgtype.UUID        `json:"member_id"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) error {
+	_, err := q.db.Exec(ctx, createInvite,
+		arg.TokenHash,
+		arg.CreatedBy,
+		arg.MemberID,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)
 `
@@ -59,6 +116,42 @@ DELETE FROM sessions WHERE user_id = $1
 func (q *Queries) DeleteUserSessions(ctx context.Context, userID pgtype.UUID) error {
 	_, err := q.db.Exec(ctx, deleteUserSessions, userID)
 	return err
+}
+
+const getInvite = `-- name: GetInvite :one
+SELECT token_hash, created_by, member_id, expires_at, used_by, created_at FROM invites WHERE token_hash = $1
+`
+
+func (q *Queries) GetInvite(ctx context.Context, tokenHash string) (Invite, error) {
+	row := q.db.QueryRow(ctx, getInvite, tokenHash)
+	var i Invite
+	err := row.Scan(
+		&i.TokenHash,
+		&i.CreatedBy,
+		&i.MemberID,
+		&i.ExpiresAt,
+		&i.UsedBy,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getInviteForUpdate = `-- name: GetInviteForUpdate :one
+SELECT token_hash, created_by, member_id, expires_at, used_by, created_at FROM invites WHERE token_hash = $1 FOR UPDATE
+`
+
+func (q *Queries) GetInviteForUpdate(ctx context.Context, tokenHash string) (Invite, error) {
+	row := q.db.QueryRow(ctx, getInviteForUpdate, tokenHash)
+	var i Invite
+	err := row.Scan(
+		&i.TokenHash,
+		&i.CreatedBy,
+		&i.MemberID,
+		&i.ExpiresAt,
+		&i.UsedBy,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getSessionUser = `-- name: GetSessionUser :one
@@ -129,6 +222,29 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 	return items, nil
 }
 
+const markInviteUsed = `-- name: MarkInviteUsed :exec
+UPDATE invites SET used_by = $2 WHERE token_hash = $1
+`
+
+type MarkInviteUsedParams struct {
+	TokenHash string      `json:"token_hash"`
+	UsedBy    pgtype.UUID `json:"used_by"`
+}
+
+func (q *Queries) MarkInviteUsed(ctx context.Context, arg MarkInviteUsedParams) error {
+	_, err := q.db.Exec(ctx, markInviteUsed, arg.TokenHash, arg.UsedBy)
+	return err
+}
+
+const replacePasskeys = `-- name: ReplacePasskeys :exec
+DELETE FROM passkeys WHERE user_id = $1
+`
+
+func (q *Queries) ReplacePasskeys(ctx context.Context, userID pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, replacePasskeys, userID)
+	return err
+}
+
 const setUserDisabled = `-- name: SetUserDisabled :exec
 UPDATE users SET disabled_at = CASE WHEN $2::boolean THEN now() END WHERE id = $1
 `
@@ -140,5 +256,20 @@ type SetUserDisabledParams struct {
 
 func (q *Queries) SetUserDisabled(ctx context.Context, arg SetUserDisabledParams) error {
 	_, err := q.db.Exec(ctx, setUserDisabled, arg.ID, arg.Disabled)
+	return err
+}
+
+const setUserProfile = `-- name: SetUserProfile :exec
+UPDATE users SET display_name = $2, avatar_color = $3 WHERE id = $1
+`
+
+type SetUserProfileParams struct {
+	ID          pgtype.UUID `json:"id"`
+	DisplayName string      `json:"display_name"`
+	AvatarColor string      `json:"avatar_color"`
+}
+
+func (q *Queries) SetUserProfile(ctx context.Context, arg SetUserProfileParams) error {
+	_, err := q.db.Exec(ctx, setUserProfile, arg.ID, arg.DisplayName, arg.AvatarColor)
 	return err
 }
