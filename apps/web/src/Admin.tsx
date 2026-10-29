@@ -1,5 +1,10 @@
 import { useCallback, useEffect, useState } from 'react';
+import { Copy, UserPlus } from 'lucide-react';
 import { createInvite, listMembers, setMemberStatus, type Member } from './api';
+import { Avatar } from './Nav';
+import { Button } from './ui/button';
+import { Blob, Sticker } from './ui/sticker';
+import { Toast } from './ui/toast';
 
 export function Admin() {
   const [members, setMembers] = useState<Member[]>([]);
@@ -33,38 +38,41 @@ export function Admin() {
   }
 
   return (
-    <div className="max-w-160">
-      <h1 className="page-title">Family</h1>
-      <p className="sub">Invite people, re-invite after a lost phone, or disable access.</p>
-      <div className="card" style={{ marginBottom: 16 }}>
-        <button className="primary" onClick={() => invite()}>Create invite link</button>
+    <div className="relative isolate max-w-180">
+      <Blob shape="blob-b" className="-top-24 -right-20 size-64 bg-lilac" />
+      <div className="relative mb-6">
+        <p className="scribble md:text-[26px]">the whole crew</p>
+        <h1 className="text-[34px] leading-none md:text-[46px]">Family</h1>
+        <p className="mt-2 text-ink-muted">Invite people, re-invite after a lost phone, or turn off access.</p>
+      </div>
+      <div className="card relative mb-6 flex flex-col gap-3 p-5">
+        <Button variant="primary" className="self-start" onClick={() => invite()}><UserPlus />Create invite link</Button>
         {error && <p role="alert" className="err">{error}</p>}
         {link && (
           <>
-            <p className="sub" style={{ margin: '14px 0 0' }}>{link.label} · single use · expires in 7 days</p>
-            <div className="linkbox">
-              <input readOnly value={link.url} aria-label="Invite link" onFocus={(e) => e.target.select()} />
-              <button onClick={() => copy(link.url)}>Copy</button>
+            <p className="text-sm font-medium text-ink-muted">{link.label} · single use · expires in 7 days</p>
+            <div className="flex gap-2">
+              <input readOnly className="field" value={link.url} aria-label="Invite link" onFocus={(e) => e.target.select()} />
+              <Button variant="sticker" onClick={() => copy(link.url)}><Copy />Copy</Button>
             </div>
           </>
         )}
       </div>
-      <div className="card">
+      <ul className="card relative m-0 list-none px-5 py-1">
         {members.map((m) => (
-          <div className="row" key={m.id}>
-            <span className="dot" style={{ background: m.color }} />
-            <div className="grow">
-              {m.name} {m.role === 'admin' && <span className="sub">· admin</span>}
+          <li className="dashed-row flex flex-wrap items-center gap-3 py-3.5" key={m.id}>
+            <Avatar member={m} />
+            <div className="min-w-0 flex-1">
+              <span className="font-bold">{m.name}</span>
+              {m.role === 'admin' && <Sticker tilt={-2} className="ml-2 bg-lilac py-0 text-xs">admin</Sticker>}
             </div>
-            <span className={m.status === 'active' ? 'pill' : 'pill off'}>
-              {m.status === 'active' ? 'Active' : 'Disabled'}
-            </span>
-            {m.status === 'active' && <button onClick={() => invite(m)}>Re-invite</button>}
-            {m.role !== 'admin' && <button onClick={() => toggle(m)}>{m.status === 'active' ? 'Disable' : 'Enable'}</button>}
-          </div>
+            <Sticker className={m.status === 'active' ? 'bg-mint' : 'bg-rose'}>{m.status === 'active' ? 'Active' : 'Disabled'}</Sticker>
+            {m.status === 'active' && <Button size="sm" variant="flat" onClick={() => invite(m)}>Re-invite</Button>}
+            {m.role !== 'admin' && <Button size="sm" variant="flat" onClick={() => toggle(m)}>{m.status === 'active' ? 'Disable' : 'Enable'}</Button>}
+          </li>
         ))}
-      </div>
-      {toast && <div className="toast" role="status">{toast}</div>}
+      </ul>
+      {toast && <Toast>{toast}</Toast>}
     </div>
   );
 }

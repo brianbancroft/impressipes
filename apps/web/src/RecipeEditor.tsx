@@ -2,7 +2,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { getRecipe, saveRecipe, type Ingredient, type RecipeInput, type Step } from './api';
+import { ArrowDown, ArrowUp, Check, Plus, Timer, X } from 'lucide-react';
 import { ErrorState, Loading } from './states';
+import { Button } from './ui/button';
+import { cn } from './ui/cn';
+import { Blob } from './ui/sticker';
 
 type Draft = {
   title: string; summary: string; servings: string; prep: string; cook: string;
@@ -68,59 +72,95 @@ export function RecipeEditor({ recipeId }: { recipeId?: string }) {
   const move = <T,>(arr: T[], n: number, to: number) => { const a = [...arr]; const [x] = a.splice(n, 1); a.splice(to, 0, x); return a; };
 
   return (
-    <form className="max-w-3xl" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
-      <p className="mb-2"><Link to={recipeId ? '/recipes/$recipeId' : '/recipes'} params={recipeId ? { recipeId } : undefined}>← Cancel</Link></p>
-      <h1 className="page-title">{recipeId ? 'Edit recipe' : 'New recipe'}</h1>
-
-      <div className="my-4"><label htmlFor="r-title">Title</label><input id="r-title" required value={d.title} onChange={(e) => set('title', e.target.value)} /></div>
-      <div className="mb-4"><label htmlFor="r-sum">Summary</label><textarea id="r-sum" rows={2} value={d.summary} onChange={(e) => set('summary', e.target.value)} /></div>
-      <div className="mb-4 grid grid-cols-3 gap-3">
-        <div><label htmlFor="r-serv">Servings</label><input id="r-serv" type="number" min={0} step="any" value={d.servings} onChange={(e) => set('servings', e.target.value)} /></div>
-        <div><label htmlFor="r-prep">Prep (min)</label><input id="r-prep" type="number" min={0} value={d.prep} onChange={(e) => set('prep', e.target.value)} /></div>
-        <div><label htmlFor="r-cook">Cook (min)</label><input id="r-cook" type="number" min={0} value={d.cook} onChange={(e) => set('cook', e.target.value)} /></div>
+    <form className="relative isolate mx-auto max-w-3xl" onSubmit={(e) => { e.preventDefault(); save.mutate(); }}>
+      <Blob shape="blob-b" className="-top-20 -right-24 size-56 bg-lilac" />
+      <div className="relative mb-6 flex items-center gap-3">
+        <Button asChild size="icon" aria-label="Cancel" className="shadow-none">
+          <Link to={recipeId ? '/recipes/$recipeId' : '/recipes'} params={recipeId ? { recipeId } : undefined}><X strokeWidth={2.8} /></Link>
+        </Button>
       </div>
-      <div className="mb-4"><label htmlFor="r-tags">Tags (comma separated)</label><input id="r-tags" value={d.tags} onChange={(e) => set('tags', e.target.value)} placeholder="dinner, vegetarian" /></div>
+      <div className="relative mb-6">
+        <p className="scribble text-[26px]">{recipeId ? 'a little tweak' : 'ooh, something new!'}</p>
+        <h1 className="text-[38px] leading-none md:text-5xl">{recipeId ? 'Edit recipe' : 'New recipe'}</h1>
+      </div>
 
-      <h2 className="mb-2 text-xl">Ingredients</h2>
-      <div className="grid gap-2">
-        {d.ingredients.map((i, n) => (
-          <div key={n} className="grid grid-cols-[4.5rem_5rem_1fr] gap-2 rounded-sm border border-line bg-surface p-2 sm:grid-cols-[4.5rem_5rem_1fr_1fr_auto]">
-            <input aria-label={`Ingredient ${n + 1} quantity`} placeholder="Qty" inputMode="decimal" value={i.quantity} onChange={(e) => setIng(n, 'quantity', e.target.value)} />
-            <input aria-label={`Ingredient ${n + 1} unit`} placeholder="Unit" value={i.unit} onChange={(e) => setIng(n, 'unit', e.target.value)} />
-            <input aria-label={`Ingredient ${n + 1} name`} placeholder="Ingredient" value={i.item} onChange={(e) => setIng(n, 'item', e.target.value)} />
-            <input aria-label={`Ingredient ${n + 1} note`} placeholder="Note (chopped)" className="col-span-2 sm:col-span-1" value={i.prepNote} onChange={(e) => setIng(n, 'prepNote', e.target.value)} />
-            <span className="col-span-1 flex gap-1">
-              <button type="button" aria-label={`Move ingredient ${n + 1} up`} disabled={n === 0} onClick={() => set('ingredients', move(d.ingredients, n, n - 1))}>↑</button>
-              <button type="button" aria-label={`Remove ingredient ${n + 1}`} onClick={() => set('ingredients', d.ingredients.filter((_, k) => k !== n))}>✕</button>
-            </span>
+      <div className="relative flex flex-col gap-6">
+        <Section n={1} title="The basics" fill="bg-accent-fill text-white">
+          <div><label htmlFor="r-title" className="field-label">Title</label><input id="r-title" className="field text-lg font-bold" required value={d.title} onChange={(e) => set('title', e.target.value)} placeholder="Lemon ricotta pancakes" /></div>
+          <div><label htmlFor="r-sum" className="field-label">Summary</label><textarea id="r-sum" className="field" rows={2} value={d.summary} onChange={(e) => set('summary', e.target.value)} placeholder="What makes it good?" /></div>
+          <div className="grid grid-cols-3 gap-3">
+            <div><label htmlFor="r-serv" className="field-label">Serves</label><input id="r-serv" className="field" type="number" min={0} step="any" value={d.servings} onChange={(e) => set('servings', e.target.value)} /></div>
+            <div><label htmlFor="r-prep" className="field-label">Prep (min)</label><input id="r-prep" className="field" type="number" min={0} value={d.prep} onChange={(e) => set('prep', e.target.value)} /></div>
+            <div><label htmlFor="r-cook" className="field-label">Cook (min)</label><input id="r-cook" className="field" type="number" min={0} value={d.cook} onChange={(e) => set('cook', e.target.value)} /></div>
           </div>
-        ))}
-      </div>
-      <button type="button" className="mt-2" onClick={() => set('ingredients', [...d.ingredients, { ...blankIng }])}>+ Add ingredient</button>
+          <div><label htmlFor="r-tags" className="field-label">Tags <span className="font-medium text-ink-muted">(comma separated)</span></label><input id="r-tags" className="field" value={d.tags} onChange={(e) => set('tags', e.target.value)} placeholder="dinner, vegetarian" /></div>
+        </Section>
 
-      <h2 className="mb-2 mt-8 text-xl">Steps</h2>
-      <div className="grid gap-2">
-        {d.steps.map((s, n) => (
-          <div key={n} className="grid grid-cols-[1fr_5rem] gap-2 rounded-sm border border-line bg-surface p-2">
-            <textarea aria-label={`Step ${n + 1}`} rows={2} placeholder={`Step ${n + 1}`} value={s.text} onChange={(e) => setStep(n, 'text', e.target.value)} />
-            <input aria-label={`Step ${n + 1} timer in minutes`} placeholder="Timer min" inputMode="decimal" value={s.minutes} onChange={(e) => setStep(n, 'minutes', e.target.value)} />
-            <span className="col-span-2 flex gap-1">
-              <button type="button" aria-label={`Move step ${n + 1} up`} disabled={n === 0} onClick={() => set('steps', move(d.steps, n, n - 1))}>↑</button>
-              <button type="button" aria-label={`Move step ${n + 1} down`} disabled={n === d.steps.length - 1} onClick={() => set('steps', move(d.steps, n, n + 1))}>↓</button>
-              <button type="button" aria-label={`Remove step ${n + 1}`} onClick={() => set('steps', d.steps.filter((_, k) => k !== n))}>✕</button>
-            </span>
+        <Section n={2} title="Ingredients" fill="bg-butter">
+          <div className="grid gap-3">
+            {d.ingredients.map((i, n) => (
+              <div key={n} className="grid grid-cols-[4.5rem_5rem_1fr] gap-2 rounded-md border-2 border-dashed border-line p-2 sm:grid-cols-[4.5rem_5rem_1fr_1fr_auto]">
+                <input aria-label={`Ingredient ${n + 1} quantity`} className="field bg-butter px-2 text-center font-display font-extrabold text-sticker-ink" placeholder="Qty" inputMode="decimal" value={i.quantity} onChange={(e) => setIng(n, 'quantity', e.target.value)} />
+                <input aria-label={`Ingredient ${n + 1} unit`} className="field px-3" placeholder="Unit" value={i.unit} onChange={(e) => setIng(n, 'unit', e.target.value)} />
+                <input aria-label={`Ingredient ${n + 1} name`} className="field px-3 font-bold" placeholder="Ingredient" value={i.item} onChange={(e) => setIng(n, 'item', e.target.value)} />
+                <input aria-label={`Ingredient ${n + 1} note`} className="field col-span-2 px-3 sm:col-span-1" placeholder="Note (chopped)" value={i.prepNote} onChange={(e) => setIng(n, 'prepNote', e.target.value)} />
+                <span className="flex items-center gap-1">
+                  <Button size="icon-sm" variant="ghost" aria-label={`Move ingredient ${n + 1} up`} disabled={n === 0} onClick={() => set('ingredients', move(d.ingredients, n, n - 1))}><ArrowUp /></Button>
+                  <Button size="icon-sm" variant="ghost" aria-label={`Remove ingredient ${n + 1}`} onClick={() => set('ingredients', d.ingredients.filter((_, k) => k !== n))}><X /></Button>
+                </span>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <button type="button" className="mt-2" onClick={() => set('steps', [...d.steps, { text: '', minutes: '' }])}>+ Add step</button>
+          <Button variant="dashed" className="self-start" onClick={() => set('ingredients', [...d.ingredients, { ...blankIng }])}><Plus />Add ingredient</Button>
+        </Section>
 
-      <div className="my-8 grid gap-4">
-        <div><label htmlFor="r-src">Source URL</label><input id="r-src" type="url" value={d.sourceUrl} onChange={(e) => set('sourceUrl', e.target.value)} /></div>
-        <div><label htmlFor="r-notes">Notes</label><textarea id="r-notes" rows={3} value={d.notes} onChange={(e) => set('notes', e.target.value)} /></div>
-      </div>
+        <Section n={3} title="Steps" fill="bg-mint">
+          <div className="grid gap-3">
+            {d.steps.map((s, n) => (
+              <div key={n} className="flex gap-3">
+                <span className="blob-d mt-1 grid size-10 flex-none place-items-center border-[2.5px] border-outline bg-sky font-display text-lg font-extrabold text-sticker-ink" aria-hidden>{n + 1}</span>
+                <div className="grid min-w-0 flex-1 grid-cols-[1fr_6rem] gap-2">
+                  <textarea aria-label={`Step ${n + 1}`} className="field" rows={2} placeholder={`Step ${n + 1}`} value={s.text} onChange={(e) => setStep(n, 'text', e.target.value)} />
+                  <label className="relative">
+                    <span className="sr-only">Step {n + 1} timer in minutes</span>
+                    <Timer className="pointer-events-none absolute top-3.5 left-2.5 size-4.5 text-sticker-ink" aria-hidden />
+                    <input className="field bg-butter pl-8 font-bold text-sticker-ink" placeholder="min" inputMode="decimal" value={s.minutes} onChange={(e) => setStep(n, 'minutes', e.target.value)} />
+                  </label>
+                  <span className="col-span-2 flex gap-1">
+                    <Button size="icon-sm" variant="ghost" aria-label={`Move step ${n + 1} up`} disabled={n === 0} onClick={() => set('steps', move(d.steps, n, n - 1))}><ArrowUp /></Button>
+                    <Button size="icon-sm" variant="ghost" aria-label={`Move step ${n + 1} down`} disabled={n === d.steps.length - 1} onClick={() => set('steps', move(d.steps, n, n + 1))}><ArrowDown /></Button>
+                    <Button size="icon-sm" variant="ghost" aria-label={`Remove step ${n + 1}`} onClick={() => set('steps', d.steps.filter((_, k) => k !== n))}><X /></Button>
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+          <Button variant="dashed" className="self-start" onClick={() => set('steps', [...d.steps, { text: '', minutes: '' }])}><Plus />Add step</Button>
+        </Section>
 
-      {save.isError && <p className="err" role="alert">{(save.error as Error).message}</p>}
-      <button className="primary max-w-xs" disabled={!d.title.trim() || save.isPending}>{save.isPending ? 'Saving…' : 'Save recipe'}</button>
+        <Section n={4} title="Extras" fill="bg-sky">
+          <div><label htmlFor="r-src" className="field-label">Source URL</label><input id="r-src" className="field" type="url" value={d.sourceUrl} onChange={(e) => set('sourceUrl', e.target.value)} placeholder="https://" /></div>
+          <div><label htmlFor="r-notes" className="field-label">Notes</label><textarea id="r-notes" className="field" rows={3} value={d.notes} onChange={(e) => set('notes', e.target.value)} placeholder="Tips, swaps, who loved it" /></div>
+        </Section>
+
+        {save.isError && <p className="err" role="alert">{(save.error as Error).message}</p>}
+        <div className="flex items-center justify-end gap-3">
+          <p className="mr-auto -rotate-1 font-hand text-xl text-ink-muted max-sm:hidden">nothing's set in stone, edit any time</p>
+          <Button type="submit" variant="primary" size="lg" disabled={!d.title.trim() || save.isPending}><Check strokeWidth={2.8} />{save.isPending ? 'Saving…' : 'Save recipe'}</Button>
+        </div>
+      </div>
     </form>
+  );
+}
+
+function Section({ n, title, fill, children }: { n: number; title: string; fill: string; children: React.ReactNode }) {
+  return (
+    <section className="card flex flex-col gap-4 p-5 md:p-6">
+      <h2 className="flex items-center gap-3 text-2xl">
+        <span className={cn('blob-d grid size-9 flex-none -rotate-6 place-items-center border-[2.5px] border-outline text-base text-sticker-ink', fill)} aria-hidden>{n}</span>
+        {title}
+      </h2>
+      {children}
+    </section>
   );
 }

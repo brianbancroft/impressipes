@@ -1,22 +1,43 @@
 @import 'tailwindcss';
-@import '@fontsource/nunito/700.css';
-@import '@fontsource/nunito/800.css';
+@import '@fontsource-variable/bricolage-grotesque';
+@import '@fontsource-variable/dm-sans';
+@import '@fontsource/caveat/700.css';
 
-/* Tokens from Design tokens (IMP-14); names are shared with the Swift Color Sets. */
+/*
+ * "Sticker-book kitchen" tokens (Impressipes redesign canvas).
+ * Shared names (bg, surface, ink, accent…) still line up with the Swift Color Sets.
+ * Rules: 2–2.5px outlines, solid offset shadows (no blur), radii 16–24px,
+ * sticker fills always carry sticker-ink text, tilt small stickers only.
+ */
 @theme {
-  --color-bg: #fff8f0;
+  --color-bg: #fff4f8;
   --color-surface: #ffffff;
-  --color-surface-2: #fbefe2;
-  --color-line: #eadbcb;
-  --color-ink: #2b2118;
-  --color-ink-muted: #6b5d50;
-  --color-accent: #c62f55;
+  --color-surface-2: #ffe9f1;
+  --color-line: #e6d3de;
+  --color-outline: #2a1630;
+  --color-ink: #2a1630;
+  --color-ink-muted: #6e5672;
+  --color-accent: #c42a63;
+  --color-accent-hover: #9a1d4c;
   --color-on-accent: #ffffff;
-  --color-accent-soft: #fce4ea;
+  --color-accent-fill: #e8407a;
+  --color-accent-soft: #ffc7da;
+  --color-rail: #2a1630;
+  --color-on-rail: #fff4f8;
   --color-success: #1f6b45;
   --color-warning: #8a5a00;
   --color-danger: #b3261e;
   --color-info: #2455b0;
+
+  /* Sticker fills: always paired with sticker-ink, in both themes. */
+  --color-sticker-ink: #2a1630;
+  --color-butter: #ffe27a;
+  --color-mint: #a6ebcf;
+  --color-lilac: #cdbbff;
+  --color-tangerine: #ffb27d;
+  --color-sky: #a9dbff;
+  --color-rose: #ffc7da;
+
   --color-cat-tomato: #b83a2b;
   --color-cat-sky: #3c8de0;
   --color-cat-leaf: #5e9626;
@@ -29,121 +50,95 @@
   --color-cat-cocoa: #7a4a2e;
   --color-cat-forest: #1f6b45;
   --color-cat-slate: #7e8896;
-  --font-display: 'Nunito', ui-rounded, 'SF Pro Rounded', system-ui, sans-serif;
-  --font-sans: system-ui, -apple-system, 'Segoe UI', sans-serif;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
+
+  --font-display: 'Bricolage Grotesque Variable', 'Bricolage Grotesque', system-ui, sans-serif;
+  --font-sans: 'DM Sans Variable', 'DM Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-hand: 'Caveat', 'Comic Sans MS', cursive;
+
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 22px;
+  --radius-xl: 28px;
+
+  --shadow-pop-sm: 3px 3px 0 var(--color-outline);
+  --shadow-pop: 4px 4px 0 var(--color-outline);
+  --shadow-pop-lg: 6px 6px 0 var(--color-outline);
+
   --breakpoint-sm: 640px;
-  --breakpoint-lg: 1025px;
+  --breakpoint-md: 768px;
+  --breakpoint-lg: 1024px;
 }
 
 @layer base {
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme='light']) {
-      --color-bg: #1a1512;
-      --color-surface: #2a221d;
-      --color-surface-2: #342b24;
-      --color-line: #43372e;
-      --color-ink: #f7eee4;
-      --color-ink-muted: #bdae9f;
-      --color-accent: #ff8da5;
-      --color-on-accent: #2b0a12;
-      --color-accent-soft: #4a2230;
+      --color-bg: #1e1124;
+      --color-surface: #2d1a34;
+      --color-surface-2: #3a2442;
+      --color-line: #4d3555;
+      --color-outline: #0b040d;
+      --color-ink: #fff4f8;
+      --color-ink-muted: #cbb3cf;
+      --color-accent: #ff7aa8;
+      --color-accent-hover: #ffa3c3;
+      --color-on-accent: #2a0a18;
+      --color-accent-fill: #e8407a;
+      --color-accent-soft: #4f2340;
+      --color-rail: #120814;
       --color-success: #5bd39a;
       --color-warning: #e5b93c;
       --color-danger: #ff8a80;
       --color-info: #8fb4ff;
-      --color-cat-tomato: #ff7a66;
-      --color-cat-sky: #7db8ff;
-      --color-cat-leaf: #9bd65f;
-      --color-cat-violet: #c79bf2;
-      --color-cat-tangerine: #ffa24f;
-      --color-cat-teal: #4fd0d6;
-      --color-cat-berry: #ff7db8;
-      --color-cat-mustard: #cfa52e;
-      --color-cat-indigo: #8f94f5;
-      --color-cat-cocoa: #b58059;
-      --color-cat-forest: #5bd39a;
-      --color-cat-slate: #a5b0bd;
     }
   }
   :root[data-theme='dark'] {
-    --color-bg: #1a1512;
-    --color-surface: #2a221d;
-    --color-surface-2: #342b24;
-    --color-line: #43372e;
-    --color-ink: #f7eee4;
-    --color-ink-muted: #bdae9f;
-    --color-accent: #ff8da5;
-    --color-on-accent: #2b0a12;
-    --color-accent-soft: #4a2230;
+    --color-bg: #1e1124;
+    --color-surface: #2d1a34;
+    --color-surface-2: #3a2442;
+    --color-line: #4d3555;
+    --color-outline: #0b040d;
+    --color-ink: #fff4f8;
+    --color-ink-muted: #cbb3cf;
+    --color-accent: #ff7aa8;
+    --color-accent-hover: #ffa3c3;
+    --color-on-accent: #2a0a18;
+    --color-accent-fill: #e8407a;
+    --color-accent-soft: #4f2340;
+    --color-rail: #120814;
     --color-success: #5bd39a;
     --color-warning: #e5b93c;
     --color-danger: #ff8a80;
     --color-info: #8fb4ff;
-    --color-cat-tomato: #ff7a66;
-    --color-cat-sky: #7db8ff;
-    --color-cat-leaf: #9bd65f;
-    --color-cat-violet: #c79bf2;
-    --color-cat-tangerine: #ffa24f;
-    --color-cat-teal: #4fd0d6;
-    --color-cat-berry: #ff7db8;
-    --color-cat-mustard: #cfa52e;
-    --color-cat-indigo: #8f94f5;
-    --color-cat-cocoa: #b58059;
-    --color-cat-forest: #5bd39a;
-    --color-cat-slate: #a5b0bd;
   }
   :root { color-scheme: light dark; }
   :root[data-theme='light'] { color-scheme: light; }
   :root[data-theme='dark'] { color-scheme: dark; }
   body { @apply bg-bg font-sans text-ink antialiased; margin: 0; }
-  h1, h2, h3 { @apply font-display font-extrabold; }
-  button { cursor: pointer; }
-  :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-}
-
-/* Shared component classes. Admin and onboarding use these; no raw hex here. */
-@layer components {
-  .shell { @apply grid min-h-screen place-items-start justify-center px-4 pt-[10vh] pb-8; }
-  .stack { @apply w-full max-w-105 text-center; }
-  .stack.wide { @apply max-w-160 text-left; }
-  .mark { @apply mx-auto mb-4 grid size-10 place-items-center rounded-md bg-accent font-display font-extrabold text-on-accent; }
-  .sub { @apply mb-5 text-ink-muted; }
-  .card { @apply rounded-md border border-line bg-surface p-5 text-left; }
-  label, legend { @apply mb-1.5 block text-xs font-semibold; }
-  input, textarea, select { @apply min-h-11 w-full rounded-sm border border-line bg-bg px-3 py-2 text-ink; font: inherit; }
-  fieldset { @apply my-4 border-0 p-0; }
-  .swatches { @apply flex flex-wrap gap-2; }
-  .swatch { @apply size-8 cursor-pointer rounded-full border-[3px] border-transparent p-0; }
-  .swatch[aria-pressed='true'] { @apply border-ink; }
-  button { @apply min-h-11 rounded-sm border border-line bg-surface px-3.5 py-2 text-ink; font: inherit; }
-  button.primary { @apply w-full border-accent bg-accent font-semibold text-on-accent disabled:cursor-not-allowed disabled:opacity-50; }
-  .err { @apply text-sm text-danger; }
-  .row { @apply flex items-center gap-2.5 border-t border-line py-3 first-of-type:border-t-0; }
-  .dot { @apply size-7 flex-none rounded-full; }
-  .grow { @apply min-w-0 flex-1; }
-  .pill { @apply rounded-full bg-accent-soft px-2 py-0.5 text-xs text-success; }
-  .pill.off { @apply text-warning; }
-  .linkbox { @apply mt-2 flex gap-2; }
-  .toast { @apply fixed bottom-5 left-1/2 -translate-x-1/2 rounded-md bg-ink px-4 py-2.5 text-bg; }
-  a { @apply text-accent; }
-
-  .nav-link { @apply inline-flex min-h-11 items-center rounded-sm px-3 font-semibold text-ink-muted no-underline hover:bg-surface-2; }
-  .nav-link[aria-current='page'] { @apply bg-accent-soft text-ink; }
-  .page-title { @apply mb-1 text-3xl; }
-  .empty { @apply mx-auto grid max-w-md place-items-center gap-2 rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center; }
+  h1, h2, h3 { @apply m-0 font-display font-extrabold tracking-tight; }
+  button { cursor: pointer; font: inherit; }
+  :focus-visible { outline: 3px solid var(--color-accent-fill); outline-offset: 2px; }
+  a { @apply text-accent hover:text-accent-hover; }
 }
 
 @layer components {
-  input[type='search'] { @apply rounded-full px-4; }
-  .btn-primary { @apply inline-flex min-h-11 items-center rounded-sm bg-accent px-4 font-semibold text-on-accent no-underline; }
-  .chip { @apply min-h-9 rounded-full px-3 py-1 text-sm; }
-  .chip[aria-pressed='true'] { @apply border-accent bg-accent-soft font-semibold; }
-  .icon-btn { @apply grid size-9 min-h-0 place-items-center rounded-full border-0 bg-surface/90 p-0 text-lg; }
-  .select-badge { @apply absolute right-2 top-2 grid size-7 place-items-center rounded-full border-2 border-line bg-surface text-sm; }
-  .select-badge.on { @apply border-accent bg-accent text-on-accent; }
-  .dialog { @apply m-auto w-[min(92vw,26rem)] rounded-lg border border-line bg-surface p-6 text-ink backdrop:bg-black/50; }
-  .choice { @apply mb-0 flex min-h-11 cursor-pointer items-center gap-2 rounded-sm border border-line px-3 text-sm font-normal; }
+  /* Outlined form field. Inputs inside .field-shell sit borderless inside it. */
+  .field {
+    @apply min-h-12 w-full rounded-md border-[2.5px] border-outline bg-surface px-4 py-2 text-base text-ink outline-none placeholder:text-ink-muted/80 focus-visible:shadow-pop-sm;
+    font: inherit;
+  }
+  .field-label { @apply mb-1.5 block text-sm font-bold; }
+  .eyebrow { @apply text-xs font-bold uppercase tracking-[0.12em] text-ink-muted; }
+  .scribble { @apply inline-block origin-left -rotate-2 font-hand text-2xl leading-none text-accent; }
+  .card { @apply rounded-lg border-[2.5px] border-outline bg-surface shadow-pop; }
+  .dashed-row { @apply border-b-[1.5px] border-dashed border-line last:border-b-0; }
+  .blob-a { border-radius: 58% 42% 63% 37% / 45% 55% 45% 55%; }
+  .blob-b { border-radius: 40% 60% 35% 65% / 60% 40% 60% 40%; }
+  .blob-c { border-radius: 52% 48% 55% 45% / 50% 55% 45% 50%; }
+  .blob-d { border-radius: 45% 55% 50% 50% / 55% 45% 55% 45%; }
+  .err { @apply text-sm font-medium text-danger; }
+  kbd { @apply inline-block min-w-5.5 rounded-[6px] border-[1.5px] border-b-[3px] border-outline bg-surface px-1.5 text-center text-xs font-bold text-ink; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { transition: none !important; animation: none !important; }
 }

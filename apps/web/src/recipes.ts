@@ -44,3 +44,17 @@ export function sourceLine(r: Recipe, memberName?: (id: string) => string | unde
     .filter(Boolean)
     .join(', ');
 }
+
+/** Splits an ingredient for the quantity badge: { qty: "1 ½", unit: "cup", text: "flour, sifted" }. */
+export function ingredientParts(i: Ingredient, factor: number): { qty?: string; unit?: string; text: string } {
+  if (i.quantity == null) return { text: i.rawText ?? i.item };
+  return { qty: formatQuantity(i.quantity * factor), unit: i.unit || undefined, text: i.item + (i.prepNote ? `, ${i.prepNote}` : '') };
+}
+
+/** "2 L" -> { qty: "2", unit: "L" }; "a few" -> { qty: "a few" }. Items with no quantity read as 1. */
+export function splitQuantity(text: string): { qty: string; unit?: string } {
+  const t = text.trim();
+  if (!t) return { qty: '1' };
+  const m = /^x?(\d+(?:[.,/]\d+)?)\s*(.*)$/i.exec(t);
+  return m ? { qty: m[1], unit: m[2] || undefined } : { qty: t };
+}

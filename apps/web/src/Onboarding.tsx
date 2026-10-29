@@ -1,6 +1,11 @@
 import { useEffect, useState } from 'react';
 import { acceptInvite, getInvite, type InviteInfo } from './api';
+import { KeyRound } from 'lucide-react';
+import { Avatar } from './Nav';
 import { Shell } from './Shell';
+import { Loading } from './states';
+import { Button } from './ui/button';
+import { cn } from './ui/cn';
 import { createPasskey, passkeysSupported } from './passkey';
 
 const COLORS = ['#e11d48', '#f97316', '#eab308', '#16a34a', '#0891b2', '#2563eb', '#7c3aed', '#db2777'];
@@ -27,21 +32,21 @@ export function Onboarding({ token }: { token: string }) {
     });
   }, [token]);
 
-  if (!invite) return <Shell><p className="sub">Loading…</p></Shell>;
+  if (!invite) return <Shell><Loading /></Shell>;
   if (invite.state !== 'valid') {
     const b = blocked[invite.state];
     return (
       <Shell>
-        <h1>{b.title}</h1>
-        <p className="sub" role="alert">{b.body}</p>
+        <h1 className="text-4xl">{b.title}</h1>
+        <p className="mt-2 text-ink-muted" role="alert">{b.body}</p>
       </Shell>
     );
   }
   if (!passkeysSupported()) {
     return (
       <Shell>
-        <h1>Passkeys aren’t available here</h1>
-        <p className="sub" role="alert">Open this link in a recent Safari, Chrome or Edge on a device with Face ID, Touch ID or a screen lock.</p>
+        <h1 className="text-4xl">Passkeys aren’t available here</h1>
+        <p className="mt-2 text-ink-muted" role="alert">Open this link in a recent Safari, Chrome or Edge on a device with Face ID, Touch ID or a screen lock.</p>
       </Shell>
     );
   }
@@ -71,23 +76,29 @@ export function Onboarding({ token }: { token: string }) {
 
   return (
     <Shell>
-      <h1>{invite.reinvite ? `Welcome back, ${invite.name}` : 'Join the family'}</h1>
-      <p className="sub">
+      <p className="scribble">{invite.reinvite ? 'good to see you' : 'pull up a chair'}</p>
+      <h1 className="mt-1 text-4xl leading-none">{invite.reinvite ? `Welcome back, ${invite.name}` : 'Join the family'}</h1>
+      <p className="mt-2 mb-6 text-ink-muted">
         {invite.reinvite
           ? 'Save a new passkey on this device. Your lists and history stay as they were.'
           : 'Pick a name and colour, then save a passkey. No password needed.'}
       </p>
-      <div className="card">
-        <label htmlFor="name">Name</label>
-        <input id="name" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoFocus />
-        <fieldset>
-          <legend>Colour</legend>
-          <div className="swatches">
+      <div className="card flex flex-col gap-5 p-5">
+        <div className="flex items-center gap-3">
+          <Avatar member={{ name: name || '?', color }} className="size-14 text-2xl" />
+          <div className="min-w-0 flex-1">
+            <label htmlFor="name" className="field-label">Name</label>
+            <input id="name" className="field" value={name} onChange={(e) => setName(e.target.value)} maxLength={40} autoFocus />
+          </div>
+        </div>
+        <fieldset className="m-0 border-0 p-0">
+          <legend className="field-label">Colour</legend>
+          <div className="flex flex-wrap gap-2.5">
             {COLORS.map((c) => (
               <button
                 key={c}
                 type="button"
-                className="swatch"
+                className={cn('size-10 cursor-pointer rounded-full border-[2.5px] border-outline p-0 transition-transform', c === color && 'scale-110 shadow-pop-sm ring-4 ring-accent-soft')}
                 aria-label={c}
                 aria-pressed={c === color}
                 onClick={() => setColor(c)}
@@ -97,9 +108,9 @@ export function Onboarding({ token }: { token: string }) {
           </div>
         </fieldset>
         {error && <p role="alert" className="err">{error}</p>}
-        <button className="primary" disabled={busy || !name.trim()} onClick={save}>
-          {busy ? 'Waiting for passkey…' : 'Save passkey & continue'}
-        </button>
+        <Button variant="primary" size="lg" className="w-full" disabled={busy || !name.trim()} onClick={save}>
+          <KeyRound />{busy ? 'Waiting for passkey…' : 'Save passkey & continue'}
+        </Button>
       </div>
     </Shell>
   );

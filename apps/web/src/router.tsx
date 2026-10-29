@@ -7,10 +7,10 @@ import {
   Outlet,
   redirect,
   useParams,
+  useRouterState,
 } from '@tanstack/react-router';
-import { useState } from 'react';
 import { Admin } from './Admin';
-import { getMe, type Me } from './api';
+import { getMe, type Me, type RecipeMark } from './api';
 import { CookMode } from './CookMode';
 import { ListPage } from './ListPage';
 import { ListsPage } from './ListsPage';
@@ -19,8 +19,11 @@ import { RecipeEditor } from './RecipeEditor';
 import { RecipePage } from './RecipePage';
 import { RecipesPage } from './RecipesPage';
 import { EmptyState, ErrorState, Loading } from './states';
+import { Lock } from 'lucide-react';
 import { Shell } from './Shell';
-import { applyTheme, getTheme, type Theme } from './theme';
+import { LogoMark, Wordmark } from './ui/logo';
+import { cn } from './ui/cn';
+import { ProfileMenu, SideRail, TabBar } from './Nav';
 
 const meQuery = { queryKey: ['me'], queryFn: getMe, staleTime: 60_000 } as const;
 
@@ -28,8 +31,8 @@ const rootRoute = createRootRoute({
   component: Outlet,
   notFoundComponent: () => (
     <Shell>
-      <h1>Page not found</h1>
-      <p className="sub"><Link to="/recipes">Back to recipes</Link></p>
+      <h1 className="text-4xl">Page not found</h1>
+      <p className="mt-2 text-ink-muted"><Link to="/recipes">Back to recipes</Link></p>
     </Shell>
   ),
 });
@@ -57,16 +60,17 @@ function AuthedLayout() {
   if (me.kind === 'disabled') {
     return (
       <Shell>
-        <h1>Your account is disabled</h1>
-        <p className="sub" role="alert">Ask the family admin to re-enable it.</p>
+        <h1 className="text-4xl">Your account is disabled</h1>
+        <p className="mt-2 text-ink-muted" role="alert">Ask the family admin to re-enable it.</p>
       </Shell>
     );
   }
   if (me.kind === 'anonymous') {
     return (
       <Shell>
-        <h1>Impressipes</h1>
-        <p className="sub">You need an invite link from the family admin to get in.</p>
+        <p className="scribble">recipes worth showing off</p>
+        <h1 className="mt-1 text-4xl">You need an invite</h1>
+        <p className="mt-2 text-ink-muted">You need an invite link from the family admin to get in.</p>
       </Shell>
     );
   }
@@ -78,32 +82,23 @@ const shellRoute = createRoute({ getParentRoute: () => authedRoute, id: 'shell',
 function Layout() {
   const { data } = useQuery(meQuery);
   const me = data as Extract<Me, { kind: 'member' }>;
-  const [theme, setTheme] = useState<Theme>(getTheme);
-  const next: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
+  const path = useRouterState({ select: (st) => st.location.pathname });
+  // Detail screens bring their own header and actions, so phones drop the tab bar there.
+  const top = ['/recipes', '/lists', '/admin'].includes(path);
   return (
-    <div className="min-h-screen">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:left-2 focus:top-2">Skip to content</a>
-      <header className="border-b border-line bg-surface">
-        <nav aria-label="Main" className="mx-auto flex max-w-5xl flex-wrap items-center gap-1 px-4 py-2">
-          <Link to="/recipes" className="mr-3 font-display text-xl font-extrabold text-accent no-underline">
-            Impressipes
-          </Link>
-          <Link to="/recipes" className="nav-link">Recipes</Link>
-          <Link to="/lists" className="nav-link">Lists</Link>
-          {me.member.role === 'admin' && <Link to="/admin" className="nav-link">Family</Link>}
-          <span className="grow" />
-          <button
-            aria-label={`Theme: ${theme}. Switch to ${next[theme]}`}
-            onClick={() => { applyTheme(next[theme]); setTheme(next[theme]); }}
-          >
-            {{ system: 'Auto', light: 'Light', dark: 'Dark' }[theme]}
-          </button>
-          <span className="dot ml-2 size-8!" style={{ background: me.member.color }} title={me.member.name} />
-        </nav>
-      </header>
-      <main id="main" className="mx-auto max-w-5xl px-4 py-8">
+    <div className="relative isolate min-h-dvh md:pl-24 lg:pl-62">
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
+      <SideRail me={me.member} />
+      {top && (
+        <header className="relative z-10 flex items-center justify-between px-4 pt-4 md:hidden">
+          <Link to="/recipes" className="flex items-center gap-2 text-ink no-underline hover:text-ink"><LogoMark /><Wordmark /></Link>
+          <ProfileMenu me={me.member} />
+        </header>
+      )}
+      <main id="main" className={cn('mx-auto w-full max-w-6xl px-4 pt-4 md:px-8 md:pt-8', top ? 'pb-32 md:pb-12' : 'pb-12')}>
         <Outlet />
       </main>
+      {top && <TabBar admin={me.member.role === 'admin'} />}
     </div>
   );
 }
@@ -114,7 +109,13 @@ const indexRoute = createRoute({
   beforeLoad: () => { throw redirect({ to: '/recipes' }); },
 });
 
-const recipesRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes', component: RecipesPage });
+const recipesRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/recipes',
+  component: RecipesPage,
+  validateSearch: (s: Record<string, unknown>): { mark?: RecipeMark } =>
+    s.mark === 'favourite' || s.mark === 'want_to_make' ? { mark: s.mark } : {},
+});
 const newRecipeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes/new', component: () => <RecipeEditor /> });
 const recipeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes/$recipeId', component: RecipePage });
 const editRecipeRoute = createRoute({
@@ -136,7 +137,7 @@ const adminRoute = createRoute({
   component: function AdminRoute() {
     const { data } = useQuery(meQuery);
     if (data?.kind === 'member' && data.member.role !== 'admin') {
-      return <EmptyState emoji="🔒" title="Admins only" body="Ask the family admin if you need something changed." />;
+      return <EmptyState icon={Lock} title="Admins only" body="Ask the family admin if you need something changed." />;
     }
     return <Admin />;
   },

@@ -2,7 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from '@tanstack/react-router';
 import { useEffect, useRef, useState } from 'react';
 import { getRecipe } from './api';
-import { formatTimer, scaleIngredient } from './recipes';
+import { ArrowLeft, ArrowRight, Timer, X } from 'lucide-react';
+import { formatTimer, ingredientParts } from './recipes';
+import { Button } from './ui/button';
+import { cn } from './ui/cn';
+import { Dialog, DialogContent } from './ui/dialog';
+import { Blob, QtyBadge, Tick } from './ui/sticker';
 import { ErrorState, Loading } from './states';
 
 type Progress = { step: number; done: number[]; timers: { id: string; label: string; endsAt: number }[]; all: boolean };
@@ -49,7 +54,15 @@ export function CookMode() {
   const patch = (x: Partial<Progress>) => setP((s) => ({ ...s, ...x }));
   const ingredients = (
     <ul className="m-0 list-none p-0">
-      {r.ingredients.map((i, n) => <li key={n} className="border-t border-line py-2 first:border-t-0">{scaleIngredient(i, 1)}</li>)}
+      {r.ingredients.map((i, n) => {
+        const q = ingredientParts(i, 1);
+        return (
+          <li key={n} className="dashed-row flex min-h-12 items-center gap-3 py-1.5">
+            {q.qty ? <QtyBadge qty={q.qty} unit={q.unit} /> : null}
+            <span className="flex-1">{q.text}</span>
+          </li>
+        );
+      })}
     </ul>
   );
   const addTimer = (label: string, seconds: number) =>
@@ -57,13 +70,16 @@ export function CookMode() {
 
   if (resume) {
     return (
-      <main className="grid min-h-screen place-items-center p-6 text-center">
-        <div>
-          <h1 className="mb-2 text-2xl">Pick up where you left off?</h1>
-          <p className="sub">{r.title}: step {p.step + 1} of {r.steps.length}</p>
-          <div className="flex justify-center gap-2">
-            <button onClick={() => { setP(empty); setResume(false); }}>Start over</button>
-            <button className="primary w-auto!" onClick={() => setResume(false)}>Resume</button>
+      <main className="relative isolate grid min-h-dvh place-items-center overflow-hidden p-6 text-center">
+        <Blob className="-top-20 -right-16 size-72 bg-butter" />
+        <Blob shape="blob-b" className="-bottom-24 -left-16 size-64 bg-mint" />
+        <div className="card relative max-w-md p-8">
+          <p className="scribble">welcome back, chef</p>
+          <h1 className="mt-1 mb-2 text-3xl">Pick up where you left off?</h1>
+          <p className="mb-6 text-ink-muted">{r.title}: step {p.step + 1} of {r.steps.length}</p>
+          <div className="flex justify-center gap-3">
+            <Button onClick={() => { setP(empty); setResume(false); }}>Start over</Button>
+            <Button variant="primary" onClick={() => setResume(false)}>Resume</Button>
           </div>
         </div>
       </main>
@@ -71,41 +87,52 @@ export function CookMode() {
   }
 
   return (
-    <main className="flex min-h-screen flex-col">
-      <header className="flex items-center gap-2 border-b border-line bg-surface px-4 py-2">
-        <Link to="/recipes/$recipeId" params={{ recipeId }} className="btn-primary" aria-label="Close cook mode">✕ Close</Link>
-        <h1 className="m-0 mr-auto truncate text-base">{r.title}</h1>
-        <button aria-pressed={p.all} onClick={() => patch({ all: !p.all })}>{p.all ? 'One step' : 'All steps'}</button>
-        <button className="lg:hidden" onClick={() => setPanel(true)}>Ingredients</button>
+    <main className="flex min-h-dvh flex-col">
+      <header className="flex items-center gap-2.5 bg-rail px-4 py-3 text-on-rail">
+        <Button asChild size="icon" aria-label="Close cook mode" className="border-on-rail shadow-none"><Link to="/recipes/$recipeId" params={{ recipeId }}><X strokeWidth={2.8} /></Link></Button>
+        <h1 className="mr-auto min-w-0 truncate text-lg">{r.title}</h1>
+        <Button size="sm" variant="sticker" className="shadow-none" aria-pressed={p.all} onClick={() => patch({ all: !p.all })}>{p.all ? 'One step' : 'All steps'}</Button>
+        <Button size="sm" className="shadow-none lg:hidden" onClick={() => setPanel(true)}>Ingredients</Button>
       </header>
 
       {p.timers.length > 0 && (
-        <div className="flex flex-wrap gap-2 border-b border-line bg-accent-soft px-4 py-2" aria-label="Timers">
+        <div className="flex flex-wrap gap-2 border-b-[2.5px] border-outline bg-surface-2 px-4 py-2.5" aria-label="Timers">
           {p.timers.map((t) => {
             const left = Math.max(0, Math.ceil((t.endsAt - now) / 1000));
             return (
-              <button key={t.id} className={left === 0 ? 'chip border-danger! font-bold' : 'chip'} onClick={() => patch({ timers: p.timers.filter((x) => x.id !== t.id) })}
-                aria-label={left === 0 ? `${t.label} timer finished. Dismiss` : `${t.label}: ${formatTimer(left)} left. Cancel`}>
-                ⏱ {t.label} {left === 0 ? 'Done!' : formatTimer(left)}
+              <button
+                key={t.id}
+                type="button"
+                className={cn('inline-flex min-h-11 cursor-pointer items-center gap-2 rounded-full border-[2.5px] border-outline px-4 font-bold text-sticker-ink', left === 0 ? 'animate-pulse bg-accent-fill text-white' : 'bg-butter')}
+                onClick={() => patch({ timers: p.timers.filter((x) => x.id !== t.id) })}
+                aria-label={left === 0 ? `${t.label} timer finished. Dismiss` : `${t.label}: ${formatTimer(left)} left. Cancel`}
+              >
+                <Timer className="size-4.5" strokeWidth={2.6} />{t.label} <span className="font-display text-lg font-extrabold tabular-nums">{left === 0 ? 'Done!' : formatTimer(left)}</span>
               </button>
             );
           })}
         </div>
       )}
 
-      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-8 p-4 sm:p-8">
+      <div className="mx-auto flex w-full max-w-6xl flex-1 gap-10 p-4 sm:p-8">
         <section className="flex min-w-0 flex-1 flex-col" aria-live="polite">
-          {r.steps.length === 0 && <p className="sub">This recipe has no steps yet.</p>}
+          {r.steps.length === 0 && <p className="text-ink-muted">This recipe has no steps yet.</p>}
           {!p.all && step && (
             <>
-              <p className="text-ink-muted">Step {p.step + 1} of {r.steps.length}</p>
-              <p className="my-4 flex-1 text-[1.75rem]/[2.375rem] sm:text-4xl/snug">{step.text}</p>
+              <div className="flex items-center gap-3">
+                <span className="blob-d grid size-14 -rotate-6 place-items-center border-[2.5px] border-outline bg-butter font-display text-2xl font-extrabold text-sticker-ink shadow-pop-sm" aria-hidden>{p.step + 1}</span>
+                <span className="font-bold text-ink-muted">Step {p.step + 1} of {r.steps.length}</span>
+              </div>
+              <div className="mt-4 flex gap-1.5" aria-hidden>
+                {r.steps.map((_, n) => <span key={n} className={cn('h-2 flex-1 rounded-full border-[1.5px] border-outline', n <= p.step ? 'bg-accent-fill' : 'bg-surface')} />)}
+              </div>
+              <p className="my-8 flex-1 text-[1.75rem]/[2.4rem] font-medium sm:text-4xl/snug">{step.text}</p>
               {step.timerSeconds && (
-                <p><button className="chip text-base!" onClick={() => addTimer(`Step ${p.step + 1}`, step.timerSeconds!)}>⏱ Start {formatTimer(step.timerSeconds)} timer</button></p>
+                <p><Button variant="sticker" size="lg" onClick={() => addTimer(`Step ${p.step + 1}`, step.timerSeconds!)}><Timer strokeWidth={2.6} />Start {formatTimer(step.timerSeconds)} timer</Button></p>
               )}
-              <div className="mt-6 grid grid-cols-2 gap-3">
-                <button className="min-h-16! text-xl" disabled={p.step === 0} onClick={() => patch({ step: p.step - 1 })}>← Previous</button>
-                <button className="primary min-h-16! text-xl" disabled={p.step >= last} onClick={() => patch({ step: p.step + 1 })}>Next →</button>
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <Button size="lg" className="min-h-16 text-xl" disabled={p.step === 0} onClick={() => patch({ step: p.step - 1 })}><ArrowLeft />Previous</Button>
+                <Button variant="primary" size="lg" className="min-h-16 text-xl" disabled={p.step >= last} onClick={() => patch({ step: p.step + 1 })}>Next<ArrowRight /></Button>
               </div>
             </>
           )}
@@ -114,33 +141,28 @@ export function CookMode() {
               {r.steps.map((s, n) => {
                 const done = p.done.includes(n);
                 return (
-                  <li key={n}>
-                    <button className={`w-full text-left text-xl ${done ? 'opacity-40' : ''}`} aria-pressed={done}
+                  <li key={n} className={cn('card flex flex-col gap-2 p-4', done && 'opacity-50 shadow-none')}>
+                    <button type="button" className="flex cursor-pointer items-start gap-3 border-0 bg-transparent p-0 text-left text-xl text-ink" aria-pressed={done}
                       onClick={() => patch({ done: done ? p.done.filter((d) => d !== n) : [...p.done, n] })}>
-                      <b>{n + 1}.</b> {s.text}
-                      {s.timerSeconds && <span className="pill ml-2">⏱ {formatTimer(s.timerSeconds)}</span>}
+                      <Tick checked={done} className="mt-0.5" />
+                      <span><b className="font-display">{n + 1}.</b> {s.text}</span>
                     </button>
-                    {s.timerSeconds && <button className="chip mt-1" onClick={() => addTimer(`Step ${n + 1}`, s.timerSeconds!)}>Start timer</button>}
+                    {s.timerSeconds && <Button size="sm" variant="sticker" className="ml-10 self-start shadow-none" onClick={() => addTimer(`Step ${n + 1}`, s.timerSeconds!)}><Timer />Start {formatTimer(s.timerSeconds)} timer</Button>}
                   </li>
                 );
               })}
             </ol>
           )}
         </section>
-        <aside className="hidden w-72 flex-none lg:block" aria-label="Ingredients">
-          <h2 className="mb-2 text-lg">Ingredients</h2>
+        <aside className="card hidden w-80 flex-none self-start px-5 pt-4 pb-2 lg:block" aria-label="Ingredients">
+          <h2 className="mb-1 text-2xl">Ingredients</h2>
           {ingredients}
         </aside>
       </div>
 
-      {panel && (
-        <div className="fixed inset-0 z-20 grid items-end bg-black/50" onClick={() => setPanel(false)}>
-          <div className="max-h-[70vh] overflow-auto rounded-t-lg bg-surface p-5" onClick={(e) => e.stopPropagation()} role="dialog" aria-label="Ingredients">
-            <div className="mb-2 flex items-center justify-between"><h2 className="text-lg">Ingredients</h2><button onClick={() => setPanel(false)}>Close</button></div>
-            {ingredients}
-          </div>
-        </div>
-      )}
+      <Dialog open={panel} onOpenChange={setPanel}>
+        <DialogContent title="Ingredients">{ingredients}</DialogContent>
+      </Dialog>
     </main>
   );
 }
