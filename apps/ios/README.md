@@ -6,7 +6,17 @@ SwiftUI app for iPhone (iOS 18+). It reads recipes and runs shopping lists:
 - **Recipes**: browse, search, filter by faves, want to make, under 30 minutes and tags; read ingredients and steps with a servings scaler; mark favourites or want to make; add a recipe's ingredients to a list, scaled.
 - No recipe authoring: that stays on the web.
 
-The watch target is still a placeholder (IMP-20).
+## Watch
+
+The watch app (`ImpressipiesWatch`, IMP-20 designs in `designs/imp-20`) is always dark and does two things: pick a list, then cross items off and put them back from "Got it". There is no adding, editing or sign-in on the watch. The phone hands its server and session token over WatchConnectivity whenever it signs in or out, and the watch waits on "Sign in on your iPhone" until then. Lists refresh on open, on wake and every 30 s while a list is open.
+
+The API layer in `Shared/` is compiled into both apps; the watch tags its requests as `watch`.
+
+To run the watch on its own in the simulator (Debug builds only), pass a server and a session id as launch arguments:
+
+```bash
+xcrun simctl launch <watch-udid> ca.brianbancroft.impressipies.watchkitapp -debugServer http://localhost:8080 -debugToken <session id>
+```
 
 ## Running
 
@@ -17,7 +27,7 @@ xcodebuild -project apps/ios/Impressipies.xcodeproj -scheme Impressipies \
   -destination "platform=iOS Simulator,name=iPhone 17" -derivedDataPath apps/ios/build build
 ```
 
-The project uses synced folders, so new files under `Impressipies/` are picked up without editing the project. API calls go through the generated client in `libs/api-spec/swift` (`ApiClient`), so regenerate it with `mise run codegen` after changing `openapi.yaml`.
+The project uses synced folders, so new files under `Impressipies/` are picked up without editing the project. API calls (in `Shared/API`) go through the generated client in `libs/api-spec/swift` (`ApiClient`), so regenerate it with `mise run codegen` after changing `openapi.yaml`.
 
 ## Signing in
 

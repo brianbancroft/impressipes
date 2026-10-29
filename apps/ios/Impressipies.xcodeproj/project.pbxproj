@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		2E0B62AB52842643F80BCBE5 /* ImpressipiesWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1C0000000000000000000B1 /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0000000000000000000A2 /* ApiClient */; };
+		A1C0000000000000000000B2 /* ApiClient in Frameworks */ = {isa = PBXBuildFile; productRef = A1C0000000000000000000A3 /* ApiClient */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,11 @@
 			path = ImpressipiesWatch;
 			sourceTree = "<group>";
 		};
+		A1C0000000000000000000E1 /* Shared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = Shared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -62,6 +68,14 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A1C0000000000000000000C2 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				A1C0000000000000000000B2 /* ApiClient in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -70,6 +84,7 @@
 			children = (
 				3B3082E0B725C94D42EE8B88 /* Impressipies */,
 				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
+				A1C0000000000000000000E1 /* Shared */,
 				E7412ED47A1A57AD530407EB /* Products */,
 			);
 			sourceTree = "<group>";
@@ -102,6 +117,7 @@
 			);
 			fileSystemSynchronizedGroups = (
 				3B3082E0B725C94D42EE8B88 /* Impressipies */,
+				A1C0000000000000000000E1 /* Shared */,
 			);
 			name = Impressipies;
 			packageProductDependencies = (
@@ -116,6 +132,7 @@
 			buildConfigurationList = FF1CB1191D83AAA3773248FE /* Build configuration list for PBXNativeTarget "ImpressipiesWatch" */;
 			buildPhases = (
 				C1D6F81A8433A4FA9EC59C4C /* Sources */,
+				A1C0000000000000000000C2 /* Frameworks */,
 				A1C0000000000000000000D2 /* Resources */,
 			);
 			buildRules = (
@@ -124,9 +141,11 @@
 			);
 			fileSystemSynchronizedGroups = (
 				CAD5AD9B1E6BA15509B3675C /* ImpressipiesWatch */,
+				A1C0000000000000000000E1 /* Shared */,
 			);
 			name = ImpressipiesWatch;
 			packageProductDependencies = (
+				A1C0000000000000000000A3 /* ApiClient */,
 			);
 			productName = ImpressipiesWatch;
 			productReference = 0324E307B6E5F8B119141B54 /* ImpressipiesWatch.app */;
@@ -239,6 +258,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.brianbancroft.impressipies;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.watchkitapp;
 				SDKROOT = watchos;
@@ -282,6 +302,7 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
+				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_WKCompanionAppBundleIdentifier = ca.brianbancroft.impressipies;
 				PRODUCT_BUNDLE_IDENTIFIER = ca.brianbancroft.impressipies.watchkitapp;
 				SDKROOT = watchos;
@@ -373,6 +394,10 @@
 
 /* Begin XCSwiftPackageProductDependency section */
 		A1C0000000000000000000A2 /* ApiClient */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ApiClient;
+		};
+		A1C0000000000000000000A3 /* ApiClient */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = ApiClient;
 		};

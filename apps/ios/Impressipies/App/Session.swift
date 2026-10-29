@@ -34,6 +34,7 @@ final class Session {
         tokenBox.value = Keychain.read(Self.tokenKey)
         api = Self.makeAPI(server: server, box: tokenBox)
         tokenBox.onUnauthorized = { Task { @MainActor [weak self] in self?.expire() } }
+        WatchLink.shared.start()
     }
 
     private static func makeAPI(server: URL, box: TokenBox) -> API {
@@ -51,11 +52,13 @@ final class Session {
             member = try await api.me()
             state = .signedIn
             startEvents()
+            shareWithWatch()
         } catch let e as APIError where e.message == "unauthenticated" || e.message == "disabled" {
             signOut()
         } catch {
             // Offline or the server is down: stay signed in and let screens retry.
             state = .signedIn
+            shareWithWatch()
         }
     }
 
@@ -63,6 +66,7 @@ final class Session {
         server = url
         UserDefaults.standard.set(url.absoluteString, forKey: Self.serverKey)
         api = Self.makeAPI(server: url, box: tokenBox)
+        shareWithWatch()
     }
 
     /// Signs in by accepting an invite link from the web app. The server only
@@ -77,6 +81,7 @@ final class Session {
         member = m
         state = .signedIn
         startEvents()
+        shareWithWatch()
     }
 
     func signOut() {
@@ -85,6 +90,12 @@ final class Session {
         Keychain.write(nil, for: Self.tokenKey)
         member = nil
         state = .signedOut
+        shareWithWatch()
+    }
+
+    /// The watch signs in and out with the phone.
+    private func shareWithWatch() {
+        WatchLink.shared.share(server: server, token: tokenBox.value)
     }
 
     private func expire() {
@@ -117,7 +128,7 @@ final class Session {
                     var req = URLRequest(url: url)
                     req.timeoutInterval = 60 * 60
                     req.setValue("text/event-stream", forHTTPHeaderField: "Accept")
-                    req.setValue("ios", forHTTPHeaderField: "X-Impressipies-Client")
+                    req.setValue(APIConfig.clientTag, forHTTPHeaderField: "X-Impressipies-Client")
                     if let token { req.setValue("\(APIConfig.sessionCookie)=\(token)", forHTTPHeaderField: "Cookie") }
                     let (bytes, resp) = try await URLSession.shared.bytes(for: req)
                     guard (resp as? HTTPURLResponse)?.statusCode == 200 else { throw URLError(.badServerResponse) }

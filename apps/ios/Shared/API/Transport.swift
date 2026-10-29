@@ -15,8 +15,8 @@ struct SessionMiddleware: ClientMiddleware {
         next: (HTTPRequest, HTTPBody?, URL) async throws -> (HTTPResponse, HTTPBody?)
     ) async throws -> (HTTPResponse, HTTPBody?) {
         var request = request
-        // Recorded as "ios" in the household activity feed.
-        request.headerFields[HTTPField.Name("X-Impressipies-Client")!] = "ios"
+        // Recorded as "ios" or "watch" in the household activity feed.
+        request.headerFields[HTTPField.Name("X-Impressipies-Client")!] = APIConfig.clientTag
         if let token = token() {
             request.headerFields[.cookie] = "\(APIConfig.sessionCookie)=\(token)"
         }
@@ -61,6 +61,11 @@ struct FlexibleDateTranscoder: DateTranscoder {
 enum APIConfig {
     static let sessionCookie = "impressipies_session"
     static let defaultServer = URL(string: "https://impressipes.bancroft.io")!
+    #if os(watchOS)
+    static let clientTag = "watch"
+    #else
+    static let clientTag = "ios"
+    #endif
 
     /// The API lives under /api on the same origin as the web app.
     static func apiRoot(for server: URL) -> URL {
