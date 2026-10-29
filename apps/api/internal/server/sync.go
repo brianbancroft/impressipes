@@ -125,12 +125,19 @@ func (s *server) applySyncOp(ctx context.Context, m *family.Member, user pgtype.
 					}
 				}
 			}
-			if _, err := q.UpdateItem(ctx, p); err != nil {
+			item, err := q.UpdateItem(ctx, p)
+			if err != nil {
 				return err
 			}
-			return s.record(ctx, q, m, "item_updated", listID, pgtype.UUID{}, map[string]any{"item": name, "itemId": op.ItemId})
+			return s.record(ctx, q, m, "item_updated", listID, pgtype.UUID{}, itemDetail(item, cur))
 		case api.Check, api.Uncheck:
 			checked := op.Type == api.Check
+			cur, err := q.GetItem(ctx, id)
+			if err == pgx.ErrNoRows {
+				return errOpNotFound
+			} else if err != nil {
+				return err
+			}
 			item, err := q.SetItemChecked(ctx, dbgen.SetItemCheckedParams{ID: id, Checked: checked, UserID: user})
 			if err == pgx.ErrNoRows {
 				return errOpNotFound
@@ -141,7 +148,7 @@ func (s *server) applySyncOp(ctx context.Context, m *family.Member, user pgtype.
 			if checked {
 				action = "item_checked"
 			}
-			return s.record(ctx, q, m, action, item.ListID, pgtype.UUID{}, map[string]any{"item": item.Name, "itemId": op.ItemId})
+			return s.record(ctx, q, m, action, item.ListID, pgtype.UUID{}, itemDetail(item, cur))
 		case api.Delete:
 			item, err := q.SoftDeleteItem(ctx, id)
 			if err == pgx.ErrNoRows {

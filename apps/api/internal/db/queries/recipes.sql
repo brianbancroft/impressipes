@@ -80,3 +80,33 @@ INSERT INTO recipe_favourites (recipe_id, user_id, kind) VALUES ($1, $2, $3) ON 
 
 -- name: UnmarkRecipe :exec
 DELETE FROM recipe_favourites WHERE recipe_id = $1 AND user_id = $2 AND kind = $3;
+
+-- name: RestoreRecipe :execrows
+UPDATE recipes SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL;
+
+-- name: InsertRecipeImage :one
+INSERT INTO recipe_images (id, recipe_id, position)
+VALUES ($1, $2, (SELECT COALESCE(max(position) + 1, 0) FROM recipe_images WHERE recipe_id = $2))
+RETURNING *;
+
+-- name: ListRecipeImages :many
+SELECT * FROM recipe_images WHERE recipe_id = $1 ORDER BY position, created_at;
+
+-- name: CountRecipeImages :one
+SELECT count(*) FROM recipe_images WHERE recipe_id = $1;
+
+-- name: DeleteRecipeImage :execrows
+DELETE FROM recipe_images WHERE id = $1 AND recipe_id = $2;
+
+-- name: GetLiveRecipeImage :one
+SELECT i.* FROM recipe_images i
+JOIN recipes r ON r.id = i.recipe_id
+WHERE i.id = $1 AND r.deleted_at IS NULL;
+
+-- name: RecipeCovers :many
+SELECT DISTINCT ON (recipe_id) * FROM recipe_images
+WHERE recipe_id = ANY($1::uuid[])
+ORDER BY recipe_id, position, created_at;
+
+-- name: LockRecipe :one
+SELECT id FROM recipes WHERE id = $1 AND deleted_at IS NULL FOR UPDATE;

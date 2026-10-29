@@ -76,6 +76,17 @@ func (q *Queries) AddRecipeTag(ctx context.Context, arg AddRecipeTagParams) erro
 	return err
 }
 
+const countRecipeImages = `-- name: CountRecipeImages :one
+SELECT count(*) FROM recipe_images WHERE recipe_id = $1
+`
+
+func (q *Queries) CountRecipeImages(ctx context.Context, recipeID pgtype.UUID) (int64, error) {
+	row := q.db.QueryRow(ctx, countRecipeImages, recipeID)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const createRecipe = `-- name: CreateRecipe :one
 INSERT INTO recipes (title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
@@ -125,6 +136,23 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Rec
 	return i, err
 }
 
+const deleteRecipeImage = `-- name: DeleteRecipeImage :execrows
+DELETE FROM recipe_images WHERE id = $1 AND recipe_id = $2
+`
+
+type DeleteRecipeImageParams struct {
+	ID       pgtype.UUID `json:"id"`
+	RecipeID pgtype.UUID `json:"recipe_id"`
+}
+
+func (q *Queries) DeleteRecipeImage(ctx context.Context, arg DeleteRecipeImageParams) (int64, error) {
+	result, err := q.db.Exec(ctx, deleteRecipeImage, arg.ID, arg.RecipeID)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const deleteRecipeIngredients = `-- name: DeleteRecipeIngredients :exec
 DELETE FROM recipe_ingredients WHERE recipe_id = $1
 `
@@ -152,6 +180,24 @@ func (q *Queries) DeleteRecipeTags(ctx context.Context, recipeID pgtype.UUID) er
 	return err
 }
 
+const getLiveRecipeImage = `-- name: GetLiveRecipeImage :one
+SELECT i.id, i.recipe_id, i.position, i.created_at FROM recipe_images i
+JOIN recipes r ON r.id = i.recipe_id
+WHERE i.id = $1 AND r.deleted_at IS NULL
+`
+
+func (q *Queries) GetLiveRecipeImage(ctx context.Context, id pgtype.UUID) (RecipeImage, error) {
+	row := q.db.QueryRow(ctx, getLiveRecipeImage, id)
+	var i RecipeImage
+	err := row.Scan(
+		&i.ID,
+		&i.RecipeID,
+		&i.Position,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getRecipe = `-- name: GetRecipe :one
 SELECT id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at FROM recipes WHERE id = $1 AND deleted_at IS NULL
 `
@@ -175,6 +221,58 @@ func (q *Queries) GetRecipe(ctx context.Context, id pgtype.UUID) (Recipe, error)
 		&i.DeletedAt,
 	)
 	return i, err
+}
+
+const insertRecipeImage = `-- name: InsertRecipeImage :one
+INSERT INTO recipe_images (id, recipe_id, position)
+VALUES ($1, $2, (SELECT COALESCE(max(position) + 1, 0) FROM recipe_images WHERE recipe_id = $2))
+RETURNING id, recipe_id, position, created_at
+`
+
+type InsertRecipeImageParams struct {
+	ID       pgtype.UUID `json:"id"`
+	RecipeID pgtype.UUID `json:"recipe_id"`
+}
+
+func (q *Queries) InsertRecipeImage(ctx context.Context, arg InsertRecipeImageParams) (RecipeImage, error) {
+	row := q.db.QueryRow(ctx, insertRecipeImage, arg.ID, arg.RecipeID)
+	var i RecipeImage
+	err := row.Scan(
+		&i.ID,
+		&i.RecipeID,
+		&i.Position,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const listRecipeImages = `-- name: ListRecipeImages :many
+SELECT id, recipe_id, position, created_at FROM recipe_images WHERE recipe_id = $1 ORDER BY position, created_at
+`
+
+func (q *Queries) ListRecipeImages(ctx context.Context, recipeID pgtype.UUID) ([]RecipeImage, error) {
+	rows, err := q.db.Query(ctx, listRecipeImages, recipeID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RecipeImage{}
+	for rows.Next() {
+		var i RecipeImage
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecipeID,
+			&i.Position,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
 }
 
 const listTags = `-- name: ListTags :many
@@ -202,6 +300,16 @@ func (q *Queries) ListTags(ctx context.Context) ([]string, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const lockRecipe = `-- name: LockRecipe :one
+SELECT id FROM recipes WHERE id = $1 AND deleted_at IS NULL FOR UPDATE
+`
+
+func (q *Queries) LockRecipe(ctx context.Context, id pgtype.UUID) (pgtype.UUID, error) {
+	row := q.db.QueryRow(ctx, lockRecipe, id)
+	err := row.Scan(&id)
+	return id, err
 }
 
 const markRecipe = `-- name: MarkRecipe :exec
@@ -244,6 +352,37 @@ func (q *Queries) MarksForRecipes(ctx context.Context, arg MarksForRecipesParams
 	for rows.Next() {
 		var i MarksForRecipesRow
 		if err := rows.Scan(&i.RecipeID, &i.Kind); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const recipeCovers = `-- name: RecipeCovers :many
+SELECT DISTINCT ON (recipe_id) id, recipe_id, position, created_at FROM recipe_images
+WHERE recipe_id = ANY($1::uuid[])
+ORDER BY recipe_id, position, created_at
+`
+
+func (q *Queries) RecipeCovers(ctx context.Context, dollar_1 []pgtype.UUID) ([]RecipeImage, error) {
+	rows, err := q.db.Query(ctx, recipeCovers, dollar_1)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []RecipeImage{}
+	for rows.Next() {
+		var i RecipeImage
+		if err := rows.Scan(
+			&i.ID,
+			&i.RecipeID,
+			&i.Position,
+			&i.CreatedAt,
+		); err != nil {
 			return nil, err
 		}
 		items = append(items, i)
@@ -316,6 +455,18 @@ func (q *Queries) RecipeSteps(ctx context.Context, recipeID pgtype.UUID) ([]Reci
 		return nil, err
 	}
 	return items, nil
+}
+
+const restoreRecipe = `-- name: RestoreRecipe :execrows
+UPDATE recipes SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL
+`
+
+func (q *Queries) RestoreRecipe(ctx context.Context, id pgtype.UUID) (int64, error) {
+	result, err := q.db.Exec(ctx, restoreRecipe, id)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
 }
 
 const searchRecipes = `-- name: SearchRecipes :many

@@ -9,11 +9,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"mime/multipart"
 	"net/http"
 	"time"
 
 	"github.com/oapi-codegen/runtime"
 	strictnethttp "github.com/oapi-codegen/runtime/strictmiddleware/nethttp"
+	openapi_types "github.com/oapi-codegen/runtime/types"
 )
 
 const (
@@ -77,14 +79,34 @@ const (
 
 // Activity defines model for Activity.
 type Activity struct {
-	Action    string                 `json:"action"`
-	CreatedAt time.Time              `json:"createdAt"`
-	Detail    map[string]interface{} `json:"detail"`
-	Id        int64                  `json:"id"`
-	RecipeId  *string                `json:"recipeId,omitempty"`
-	UserId    *string                `json:"userId,omitempty"`
-	Via       string                 `json:"via"`
+	Action string `json:"action"`
+
+	// BatchId One AI request; rows sharing it undo together
+	BatchId   *string   `json:"batchId,omitempty"`
+	CreatedAt time.Time `json:"createdAt"`
+
+	// Detail Includes before (and after, for edits) so the feed can show what changed
+	Detail   map[string]interface{} `json:"detail"`
+	Id       int64                  `json:"id"`
+	ListId   *string                `json:"listId,omitempty"`
+	RecipeId *string                `json:"recipeId,omitempty"`
+
+	// RestorableUntil When the undo window closes
+	RestorableUntil *time.Time `json:"restorableUntil,omitempty"`
+
+	// UndoOf Set on the row an undo created
+	UndoOf *int64 `json:"undoOf,omitempty"`
+
+	// Undoable Can still be undone
+	Undoable bool       `json:"undoable"`
+	UndoneAt *time.Time `json:"undoneAt,omitempty"`
+	UndoneBy *string    `json:"undoneBy,omitempty"`
+	UserId   *string    `json:"userId,omitempty"`
+	Via      string     `json:"via"`
 }
+
+// ActivityFeed defines model for ActivityFeed.
+type ActivityFeed = []Activity
 
 // AddRecipeResult defines model for AddRecipeResult.
 type AddRecipeResult struct {
@@ -129,6 +151,15 @@ type Health struct {
 
 // HealthStatus defines model for Health.Status.
 type HealthStatus string
+
+// Image defines model for Image.
+type Image struct {
+	Id       string `json:"id"`
+	LargeUrl string `json:"largeUrl"`
+
+	// ThumbUrl Relative to the API root, e.g. /images/{id}/thumb
+	ThumbUrl string `json:"thumbUrl"`
+}
 
 // Ingredient defines model for Ingredient.
 type Ingredient struct {
@@ -244,9 +275,13 @@ type MemberStatus string
 
 // Recipe defines model for Recipe.
 type Recipe struct {
-	CookMinutes *int         `json:"cookMinutes,omitempty"`
+	CookMinutes *int `json:"cookMinutes,omitempty"`
+
+	// CoverUrl Thumbnail of the first photo, relative to the API root
+	CoverUrl    *string      `json:"coverUrl,omitempty"`
 	CreatedBy   string       `json:"createdBy"`
 	Id          string       `json:"id"`
+	Images      []Image      `json:"images"`
 	Ingredients []Ingredient `json:"ingredients"`
 
 	// Marks The signed-in member's marks.
@@ -286,9 +321,12 @@ type RecipeMark string
 
 // RecipeSummary defines model for RecipeSummary.
 type RecipeSummary struct {
-	CookMinutes *int   `json:"cookMinutes,omitempty"`
-	CreatedBy   string `json:"createdBy"`
-	Id          string `json:"id"`
+	CookMinutes *int `json:"cookMinutes,omitempty"`
+
+	// CoverUrl Thumbnail of the first photo, relative to the API root
+	CoverUrl  *string `json:"coverUrl,omitempty"`
+	CreatedBy string  `json:"createdBy"`
+	Id        string  `json:"id"`
 
 	// Marks The signed-in member's marks.
 	Marks       []RecipeMark `json:"marks"`
@@ -345,6 +383,15 @@ type SyncResult struct {
 // SyncResultResultsStatus defines model for SyncResult.Results.Status.
 type SyncResultResultsStatus string
 
+// UndoInput defines model for UndoInput.
+type UndoInput struct {
+	// Force Overwrite a later change to the same record
+	Force *bool `json:"force,omitempty"`
+}
+
+// ActivityId defines model for ActivityId.
+type ActivityId = int64
+
 // CategoryId defines model for CategoryId.
 type CategoryId = string
 
@@ -362,6 +409,16 @@ type MemberId = string
 
 // RecipeId defines model for RecipeId.
 type RecipeId = string
+
+// ListAllActivityParams defines parameters for ListAllActivity.
+type ListAllActivityParams struct {
+	Limit  *int       `form:"limit,omitempty" json:"limit,omitempty"`
+	UserId *string    `form:"userId,omitempty" json:"userId,omitempty"`
+	Via    *string    `form:"via,omitempty" json:"via,omitempty"`
+	Action *string    `form:"action,omitempty" json:"action,omitempty"`
+	Since  *time.Time `form:"since,omitempty" json:"since,omitempty"`
+	Until  *time.Time `form:"until,omitempty" json:"until,omitempty"`
+}
 
 // CreateInviteJSONBody defines parameters for CreateInvite.
 type CreateInviteJSONBody struct {
@@ -401,6 +458,11 @@ type ListRecipesParams struct {
 	Mark *RecipeMark `form:"mark,omitempty" json:"mark,omitempty"`
 }
 
+// UploadRecipeImageMultipartBody defines parameters for UploadRecipeImage.
+type UploadRecipeImageMultipartBody struct {
+	File openapi_types.File `json:"file"`
+}
+
 // PullSyncParams defines parameters for PullSync.
 type PullSyncParams struct {
 	Since int64 `form:"since" json:"since"`
@@ -410,6 +472,12 @@ type PullSyncParams struct {
 type PushSyncJSONBody struct {
 	Ops []SyncOp `json:"ops"`
 }
+
+// UndoActivityBatchJSONRequestBody defines body for UndoActivityBatch for application/json ContentType.
+type UndoActivityBatchJSONRequestBody = UndoInput
+
+// UndoActivityJSONRequestBody defines body for UndoActivity for application/json ContentType.
+type UndoActivityJSONRequestBody = UndoInput
 
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody CreateInviteJSONBody
@@ -444,11 +512,23 @@ type CreateRecipeJSONRequestBody = RecipeInput
 // ReplaceRecipeJSONRequestBody defines body for ReplaceRecipe for application/json ContentType.
 type ReplaceRecipeJSONRequestBody = RecipeInput
 
+// UploadRecipeImageMultipartRequestBody defines body for UploadRecipeImage for multipart/form-data ContentType.
+type UploadRecipeImageMultipartRequestBody UploadRecipeImageMultipartBody
+
 // PushSyncJSONRequestBody defines body for PushSync for application/json ContentType.
 type PushSyncJSONRequestBody PushSyncJSONBody
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Household activity feed, newest first
+	// (GET /activity)
+	ListAllActivity(w http.ResponseWriter, r *http.Request, params ListAllActivityParams)
+	// Undo every change one AI request made
+	// (POST /activity/batches/{batchId}/undo)
+	UndoActivityBatch(w http.ResponseWriter, r *http.Request, batchId string)
+	// Undo one change
+	// (POST /activity/{activityId}/undo)
+	UndoActivity(w http.ResponseWriter, r *http.Request, activityId ActivityId)
 
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -530,6 +610,12 @@ type ServerInterface interface {
 
 	// (PUT /recipes/{recipeId})
 	ReplaceRecipe(w http.ResponseWriter, r *http.Request, recipeId RecipeId)
+	// Add a photo to a recipe
+	// (POST /recipes/{recipeId}/images)
+	UploadRecipeImage(w http.ResponseWriter, r *http.Request, recipeId RecipeId)
+
+	// (DELETE /recipes/{recipeId}/images/{imageId})
+	DeleteRecipeImage(w http.ResponseWriter, r *http.Request, recipeId RecipeId, imageId string)
 
 	// (DELETE /recipes/{recipeId}/marks/{mark})
 	UnmarkRecipe(w http.ResponseWriter, r *http.Request, recipeId RecipeId, mark RecipeMark)
@@ -555,6 +641,141 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// ListAllActivity operation middleware
+func (siw *ServerInterfaceWrapper) ListAllActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListAllActivityParams
+
+	// ------------- Optional query parameter "limit" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "limit", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "userId" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "userId", r.URL.Query(), &params.UserId)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "userId", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "via" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "via", r.URL.Query(), &params.Via)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "via", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "action" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "action", r.URL.Query(), &params.Action)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "action", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "since" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "since", r.URL.Query(), &params.Since)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "since", Err: err})
+		return
+	}
+
+	// ------------- Optional query parameter "until" -------------
+
+	err = runtime.BindQueryParameter("form", true, false, "until", r.URL.Query(), &params.Until)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "until", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListAllActivity(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UndoActivityBatch operation middleware
+func (siw *ServerInterfaceWrapper) UndoActivityBatch(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "batchId" -------------
+	var batchId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "batchId", r.PathValue("batchId"), &batchId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "batchId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UndoActivityBatch(w, r, batchId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UndoActivity operation middleware
+func (siw *ServerInterfaceWrapper) UndoActivity(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "activityId" -------------
+	var activityId ActivityId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "activityId", r.PathValue("activityId"), &activityId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "activityId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UndoActivity(w, r, activityId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
 
 // GetHealth operation middleware
 func (siw *ServerInterfaceWrapper) GetHealth(w http.ResponseWriter, r *http.Request) {
@@ -1363,6 +1584,77 @@ func (siw *ServerInterfaceWrapper) ReplaceRecipe(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
+// UploadRecipeImage operation middleware
+func (siw *ServerInterfaceWrapper) UploadRecipeImage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipeId" -------------
+	var recipeId RecipeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipeId", r.PathValue("recipeId"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UploadRecipeImage(w, r, recipeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteRecipeImage operation middleware
+func (siw *ServerInterfaceWrapper) DeleteRecipeImage(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipeId" -------------
+	var recipeId RecipeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipeId", r.PathValue("recipeId"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipeId", Err: err})
+		return
+	}
+
+	// ------------- Path parameter "imageId" -------------
+	var imageId string
+
+	err = runtime.BindStyledParameterWithOptions("simple", "imageId", r.PathValue("imageId"), &imageId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "imageId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteRecipeImage(w, r, recipeId, imageId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // UnmarkRecipe operation middleware
 func (siw *ServerInterfaceWrapper) UnmarkRecipe(w http.ResponseWriter, r *http.Request) {
 
@@ -1643,6 +1935,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
+	m.HandleFunc("GET "+options.BaseURL+"/activity", wrapper.ListAllActivity)
+	m.HandleFunc("POST "+options.BaseURL+"/activity/batches/{batchId}/undo", wrapper.UndoActivityBatch)
+	m.HandleFunc("POST "+options.BaseURL+"/activity/{activityId}/undo", wrapper.UndoActivity)
 	m.HandleFunc("GET "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc("POST "+options.BaseURL+"/invites", wrapper.CreateInvite)
 	m.HandleFunc("GET "+options.BaseURL+"/invites/{token}", wrapper.GetInvite)
@@ -1670,6 +1965,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}", wrapper.DeleteRecipe)
 	m.HandleFunc("GET "+options.BaseURL+"/recipes/{recipeId}", wrapper.GetRecipe)
 	m.HandleFunc("PUT "+options.BaseURL+"/recipes/{recipeId}", wrapper.ReplaceRecipe)
+	m.HandleFunc("POST "+options.BaseURL+"/recipes/{recipeId}/images", wrapper.UploadRecipeImage)
+	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}/images/{imageId}", wrapper.DeleteRecipeImage)
 	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}/marks/{mark}", wrapper.UnmarkRecipe)
 	m.HandleFunc("PUT "+options.BaseURL+"/recipes/{recipeId}/marks/{mark}", wrapper.MarkRecipe)
 	m.HandleFunc("GET "+options.BaseURL+"/sync", wrapper.PullSync)
@@ -1680,6 +1977,167 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 }
 
 type ErrorJSONResponse Error
+
+type ListAllActivityRequestObject struct {
+	Params ListAllActivityParams
+}
+
+type ListAllActivityResponseObject interface {
+	VisitListAllActivityResponse(w http.ResponseWriter) error
+}
+
+type ListAllActivity200JSONResponse ActivityFeed
+
+func (response ListAllActivity200JSONResponse) VisitListAllActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListAllActivity400JSONResponse struct{ ErrorJSONResponse }
+
+func (response ListAllActivity400JSONResponse) VisitListAllActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListAllActivity401JSONResponse Error
+
+func (response ListAllActivity401JSONResponse) VisitListAllActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListAllActivity403JSONResponse Error
+
+func (response ListAllActivity403JSONResponse) VisitListAllActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityBatchRequestObject struct {
+	BatchId string `json:"batchId"`
+	Body    *UndoActivityBatchJSONRequestBody
+}
+
+type UndoActivityBatchResponseObject interface {
+	VisitUndoActivityBatchResponse(w http.ResponseWriter) error
+}
+
+type UndoActivityBatch200JSONResponse []Activity
+
+func (response UndoActivityBatch200JSONResponse) VisitUndoActivityBatchResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityBatch401JSONResponse struct{ ErrorJSONResponse }
+
+func (response UndoActivityBatch401JSONResponse) VisitUndoActivityBatchResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityBatch403JSONResponse Error
+
+func (response UndoActivityBatch403JSONResponse) VisitUndoActivityBatchResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityBatch404JSONResponse Error
+
+func (response UndoActivityBatch404JSONResponse) VisitUndoActivityBatchResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityBatch409JSONResponse Error
+
+func (response UndoActivityBatch409JSONResponse) VisitUndoActivityBatchResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivityRequestObject struct {
+	ActivityId ActivityId `json:"activityId"`
+	Body       *UndoActivityJSONRequestBody
+}
+
+type UndoActivityResponseObject interface {
+	VisitUndoActivityResponse(w http.ResponseWriter) error
+}
+
+type UndoActivity200JSONResponse Activity
+
+func (response UndoActivity200JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivity401JSONResponse struct{ ErrorJSONResponse }
+
+func (response UndoActivity401JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivity403JSONResponse Error
+
+func (response UndoActivity403JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivity404JSONResponse Error
+
+func (response UndoActivity404JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivity409JSONResponse Error
+
+func (response UndoActivity409JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UndoActivity422JSONResponse Error
+
+func (response UndoActivity422JSONResponse) VisitUndoActivityResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(422)
+
+	return json.NewEncoder(w).Encode(response)
+}
 
 type GetHealthRequestObject struct {
 }
@@ -2882,6 +3340,131 @@ func (response ReplaceRecipe404JSONResponse) VisitReplaceRecipeResponse(w http.R
 	return json.NewEncoder(w).Encode(response)
 }
 
+type UploadRecipeImageRequestObject struct {
+	RecipeId RecipeId `json:"recipeId"`
+	Body     *multipart.Reader
+}
+
+type UploadRecipeImageResponseObject interface {
+	VisitUploadRecipeImageResponse(w http.ResponseWriter) error
+}
+
+type UploadRecipeImage201JSONResponse Image
+
+func (response UploadRecipeImage201JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(201)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage400JSONResponse struct{ ErrorJSONResponse }
+
+func (response UploadRecipeImage400JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage401JSONResponse Error
+
+func (response UploadRecipeImage401JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage403JSONResponse Error
+
+func (response UploadRecipeImage403JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage404JSONResponse Error
+
+func (response UploadRecipeImage404JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage409JSONResponse Error
+
+func (response UploadRecipeImage409JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage413JSONResponse Error
+
+func (response UploadRecipeImage413JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(413)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UploadRecipeImage415JSONResponse Error
+
+func (response UploadRecipeImage415JSONResponse) VisitUploadRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(415)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRecipeImageRequestObject struct {
+	RecipeId RecipeId `json:"recipeId"`
+	ImageId  string   `json:"imageId"`
+}
+
+type DeleteRecipeImageResponseObject interface {
+	VisitDeleteRecipeImageResponse(w http.ResponseWriter) error
+}
+
+type DeleteRecipeImage204Response struct {
+}
+
+func (response DeleteRecipeImage204Response) VisitDeleteRecipeImageResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteRecipeImage401JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeleteRecipeImage401JSONResponse) VisitDeleteRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRecipeImage403JSONResponse Error
+
+func (response DeleteRecipeImage403JSONResponse) VisitDeleteRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteRecipeImage404JSONResponse Error
+
+func (response DeleteRecipeImage404JSONResponse) VisitDeleteRecipeImageResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type UnmarkRecipeRequestObject struct {
 	RecipeId RecipeId   `json:"recipeId"`
 	Mark     RecipeMark `json:"mark"`
@@ -3094,6 +3677,15 @@ func (response ListTags403JSONResponse) VisitListTagsResponse(w http.ResponseWri
 
 // StrictServerInterface represents all server handlers.
 type StrictServerInterface interface {
+	// Household activity feed, newest first
+	// (GET /activity)
+	ListAllActivity(ctx context.Context, request ListAllActivityRequestObject) (ListAllActivityResponseObject, error)
+	// Undo every change one AI request made
+	// (POST /activity/batches/{batchId}/undo)
+	UndoActivityBatch(ctx context.Context, request UndoActivityBatchRequestObject) (UndoActivityBatchResponseObject, error)
+	// Undo one change
+	// (POST /activity/{activityId}/undo)
+	UndoActivity(ctx context.Context, request UndoActivityRequestObject) (UndoActivityResponseObject, error)
 
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
@@ -3175,6 +3767,12 @@ type StrictServerInterface interface {
 
 	// (PUT /recipes/{recipeId})
 	ReplaceRecipe(ctx context.Context, request ReplaceRecipeRequestObject) (ReplaceRecipeResponseObject, error)
+	// Add a photo to a recipe
+	// (POST /recipes/{recipeId}/images)
+	UploadRecipeImage(ctx context.Context, request UploadRecipeImageRequestObject) (UploadRecipeImageResponseObject, error)
+
+	// (DELETE /recipes/{recipeId}/images/{imageId})
+	DeleteRecipeImage(ctx context.Context, request DeleteRecipeImageRequestObject) (DeleteRecipeImageResponseObject, error)
 
 	// (DELETE /recipes/{recipeId}/marks/{mark})
 	UnmarkRecipe(ctx context.Context, request UnmarkRecipeRequestObject) (UnmarkRecipeResponseObject, error)
@@ -3219,6 +3817,98 @@ type strictHandler struct {
 	ssi         StrictServerInterface
 	middlewares []StrictMiddlewareFunc
 	options     StrictHTTPServerOptions
+}
+
+// ListAllActivity operation middleware
+func (sh *strictHandler) ListAllActivity(w http.ResponseWriter, r *http.Request, params ListAllActivityParams) {
+	var request ListAllActivityRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListAllActivity(ctx, request.(ListAllActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListAllActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListAllActivityResponseObject); ok {
+		if err := validResponse.VisitListAllActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UndoActivityBatch operation middleware
+func (sh *strictHandler) UndoActivityBatch(w http.ResponseWriter, r *http.Request, batchId string) {
+	var request UndoActivityBatchRequestObject
+
+	request.BatchId = batchId
+
+	var body UndoActivityBatchJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UndoActivityBatch(ctx, request.(UndoActivityBatchRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UndoActivityBatch")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UndoActivityBatchResponseObject); ok {
+		if err := validResponse.VisitUndoActivityBatchResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UndoActivity operation middleware
+func (sh *strictHandler) UndoActivity(w http.ResponseWriter, r *http.Request, activityId ActivityId) {
+	var request UndoActivityRequestObject
+
+	request.ActivityId = activityId
+
+	var body UndoActivityJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UndoActivity(ctx, request.(UndoActivityRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UndoActivity")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UndoActivityResponseObject); ok {
+		if err := validResponse.VisitUndoActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
 }
 
 // GetHealth operation middleware
@@ -3983,6 +4673,66 @@ func (sh *strictHandler) ReplaceRecipe(w http.ResponseWriter, r *http.Request, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ReplaceRecipeResponseObject); ok {
 		if err := validResponse.VisitReplaceRecipeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UploadRecipeImage operation middleware
+func (sh *strictHandler) UploadRecipeImage(w http.ResponseWriter, r *http.Request, recipeId RecipeId) {
+	var request UploadRecipeImageRequestObject
+
+	request.RecipeId = recipeId
+
+	if reader, err := r.MultipartReader(); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode multipart body: %w", err))
+		return
+	} else {
+		request.Body = reader
+	}
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UploadRecipeImage(ctx, request.(UploadRecipeImageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UploadRecipeImage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UploadRecipeImageResponseObject); ok {
+		if err := validResponse.VisitUploadRecipeImageResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteRecipeImage operation middleware
+func (sh *strictHandler) DeleteRecipeImage(w http.ResponseWriter, r *http.Request, recipeId RecipeId, imageId string) {
+	var request DeleteRecipeImageRequestObject
+
+	request.RecipeId = recipeId
+	request.ImageId = imageId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteRecipeImage(ctx, request.(DeleteRecipeImageRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteRecipeImage")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteRecipeImageResponseObject); ok {
+		if err := validResponse.VisitDeleteRecipeImageResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -15,9 +15,13 @@ RUN go mod download
 COPY apps/api ./
 COPY --from=web /src/dist/apps/web internal/web/static
 RUN CGO_ENABLED=0 go build -trimpath -ldflags="-s -w" -o /out/api ./cmd/api
+# Recipe photos live here; mount a persistent volume at /data in production.
+RUN mkdir -p /out/data/images
 
 FROM gcr.io/distroless/static-debian12:nonroot
 COPY --from=api /out/api /api
+COPY --from=api --chown=nonroot:nonroot /out/data /data
 ENV PORT=8080
+ENV IMAGE_DIR=/data/images
 EXPOSE 8080
 ENTRYPOINT ["/api"]

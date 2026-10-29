@@ -146,5 +146,1126 @@ extension Components {
                 case color
             }
         }
+        /// - Remark: Generated from `#/components/schemas/List`.
+        public struct List: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/List/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/List/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/List/emoji`.
+            public var emoji: Swift.String
+            /// - Remark: Generated from `#/components/schemas/List/colour`.
+            public var colour: Swift.String
+            /// - Remark: Generated from `#/components/schemas/List/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// Creates a new `List`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - name:
+            ///   - emoji:
+            ///   - colour:
+            ///   - sortOrder:
+            public init(
+                id: Swift.String,
+                name: Swift.String,
+                emoji: Swift.String,
+                colour: Swift.String,
+                sortOrder: Swift.Int
+            ) {
+                self.id = id
+                self.name = name
+                self.emoji = emoji
+                self.colour = colour
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case emoji
+                case colour
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListInput`.
+        public struct ListInput: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListInput/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ListInput/emoji`.
+            public var emoji: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListInput/colour`.
+            public var colour: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ListInput/categories`.
+            public var categories: [Components.Schemas.CategoryInput]?
+            /// Creates a new `ListInput`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - emoji:
+            ///   - colour:
+            ///   - categories:
+            public init(
+                name: Swift.String,
+                emoji: Swift.String? = nil,
+                colour: Swift.String,
+                categories: [Components.Schemas.CategoryInput]? = nil
+            ) {
+                self.name = name
+                self.emoji = emoji
+                self.colour = colour
+                self.categories = categories
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case emoji
+                case colour
+                case categories
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListPatch`.
+        public struct ListPatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListPatch/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListPatch/emoji`.
+            public var emoji: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListPatch/colour`.
+            public var colour: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ListPatch/sortOrder`.
+            public var sortOrder: Swift.Int?
+            /// Creates a new `ListPatch`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - emoji:
+            ///   - colour:
+            ///   - sortOrder:
+            public init(
+                name: Swift.String? = nil,
+                emoji: Swift.String? = nil,
+                colour: Swift.String? = nil,
+                sortOrder: Swift.Int? = nil
+            ) {
+                self.name = name
+                self.emoji = emoji
+                self.colour = colour
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case emoji
+                case colour
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ListDetail`.
+        public struct ListDetail: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ListDetail/value1`.
+            public var value1: Components.Schemas.List
+            /// - Remark: Generated from `#/components/schemas/ListDetail/value2`.
+            public struct Value2Payload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/ListDetail/value2/categories`.
+                public var categories: [Components.Schemas.Category]
+                /// - Remark: Generated from `#/components/schemas/ListDetail/value2/items`.
+                public var items: [Components.Schemas.Item]
+                /// Creates a new `Value2Payload`.
+                ///
+                /// - Parameters:
+                ///   - categories:
+                ///   - items:
+                public init(
+                    categories: [Components.Schemas.Category],
+                    items: [Components.Schemas.Item]
+                ) {
+                    self.categories = categories
+                    self.items = items
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case categories
+                    case items
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/ListDetail/value2`.
+            public var value2: Components.Schemas.ListDetail.Value2Payload
+            /// Creates a new `ListDetail`.
+            ///
+            /// - Parameters:
+            ///   - value1:
+            ///   - value2:
+            public init(
+                value1: Components.Schemas.List,
+                value2: Components.Schemas.ListDetail.Value2Payload
+            ) {
+                self.value1 = value1
+                self.value2 = value2
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                self.value1 = try .init(from: decoder)
+                self.value2 = try .init(from: decoder)
+            }
+            public func encode(to encoder: any Swift.Encoder) throws {
+                try self.value1.encode(to: encoder)
+                try self.value2.encode(to: encoder)
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Category`.
+        public struct Category: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Category/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/listId`.
+            public var listId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/colour`.
+            public var colour: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/icon`.
+            public var icon: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Category/sortOrder`.
+            public var sortOrder: Swift.Int
+            /// Creates a new `Category`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - listId:
+            ///   - name:
+            ///   - colour:
+            ///   - icon:
+            ///   - sortOrder:
+            public init(
+                id: Swift.String,
+                listId: Swift.String,
+                name: Swift.String,
+                colour: Swift.String,
+                icon: Swift.String,
+                sortOrder: Swift.Int
+            ) {
+                self.id = id
+                self.listId = listId
+                self.name = name
+                self.colour = colour
+                self.icon = icon
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case listId
+                case name
+                case colour
+                case icon
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CategoryInput`.
+        public struct CategoryInput: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CategoryInput/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CategoryInput/colour`.
+            public var colour: Swift.String
+            /// - Remark: Generated from `#/components/schemas/CategoryInput/icon`.
+            public var icon: Swift.String?
+            /// Creates a new `CategoryInput`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - colour:
+            ///   - icon:
+            public init(
+                name: Swift.String,
+                colour: Swift.String,
+                icon: Swift.String? = nil
+            ) {
+                self.name = name
+                self.colour = colour
+                self.icon = icon
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case colour
+                case icon
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CategoryPatch`.
+        public struct CategoryPatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CategoryPatch/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CategoryPatch/colour`.
+            public var colour: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CategoryPatch/icon`.
+            public var icon: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/CategoryPatch/sortOrder`.
+            public var sortOrder: Swift.Int?
+            /// Creates a new `CategoryPatch`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - colour:
+            ///   - icon:
+            ///   - sortOrder:
+            public init(
+                name: Swift.String? = nil,
+                colour: Swift.String? = nil,
+                icon: Swift.String? = nil,
+                sortOrder: Swift.Int? = nil
+            ) {
+                self.name = name
+                self.colour = colour
+                self.icon = icon
+                self.sortOrder = sortOrder
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case colour
+                case icon
+                case sortOrder
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Item`.
+        public struct Item: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Item/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/listId`.
+            public var listId: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/categoryId`.
+            public var categoryId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Item/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/quantityText`.
+            public var quantityText: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/note`.
+            public var note: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/checked`.
+            public var checked: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/Item/checkedBy`.
+            public var checkedBy: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Item/addedBy`.
+            public var addedBy: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Item/sourceRecipeId`.
+            public var sourceRecipeId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Item/position`.
+            public var position: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/Item/version`.
+            public var version: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Item/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/Item/deleted`.
+            public var deleted: Swift.Bool
+            /// Creates a new `Item`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - listId:
+            ///   - categoryId:
+            ///   - name:
+            ///   - quantityText:
+            ///   - note:
+            ///   - checked:
+            ///   - checkedBy:
+            ///   - addedBy:
+            ///   - sourceRecipeId:
+            ///   - position:
+            ///   - version:
+            ///   - updatedAt:
+            ///   - deleted:
+            public init(
+                id: Swift.String,
+                listId: Swift.String,
+                categoryId: Swift.String? = nil,
+                name: Swift.String,
+                quantityText: Swift.String,
+                note: Swift.String,
+                checked: Swift.Bool,
+                checkedBy: Swift.String? = nil,
+                addedBy: Swift.String,
+                sourceRecipeId: Swift.String? = nil,
+                position: Swift.Int,
+                version: Swift.Int64,
+                updatedAt: Foundation.Date,
+                deleted: Swift.Bool
+            ) {
+                self.id = id
+                self.listId = listId
+                self.categoryId = categoryId
+                self.name = name
+                self.quantityText = quantityText
+                self.note = note
+                self.checked = checked
+                self.checkedBy = checkedBy
+                self.addedBy = addedBy
+                self.sourceRecipeId = sourceRecipeId
+                self.position = position
+                self.version = version
+                self.updatedAt = updatedAt
+                self.deleted = deleted
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case listId
+                case categoryId
+                case name
+                case quantityText
+                case note
+                case checked
+                case checkedBy
+                case addedBy
+                case sourceRecipeId
+                case position
+                case version
+                case updatedAt
+                case deleted
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ItemInput`.
+        public struct ItemInput: Codable, Hashable, Sendable {
+            /// Client-generated UUID.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ItemInput/id`.
+            public var id: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemInput/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/ItemInput/quantityText`.
+            public var quantityText: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemInput/note`.
+            public var note: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemInput/categoryId`.
+            public var categoryId: Swift.String?
+            /// Creates a new `ItemInput`.
+            ///
+            /// - Parameters:
+            ///   - id: Client-generated UUID.
+            ///   - name:
+            ///   - quantityText:
+            ///   - note:
+            ///   - categoryId:
+            public init(
+                id: Swift.String? = nil,
+                name: Swift.String,
+                quantityText: Swift.String? = nil,
+                note: Swift.String? = nil,
+                categoryId: Swift.String? = nil
+            ) {
+                self.id = id
+                self.name = name
+                self.quantityText = quantityText
+                self.note = note
+                self.categoryId = categoryId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case name
+                case quantityText
+                case note
+                case categoryId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ItemPatch`.
+        public struct ItemPatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/name`.
+            public var name: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/quantityText`.
+            public var quantityText: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/note`.
+            public var note: Swift.String?
+            /// Empty string clears the category.
+            ///
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/categoryId`.
+            public var categoryId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/checked`.
+            public var checked: Swift.Bool?
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/position`.
+            public var position: Swift.Int?
+            /// Creates a new `ItemPatch`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - quantityText:
+            ///   - note:
+            ///   - categoryId: Empty string clears the category.
+            ///   - checked:
+            ///   - position:
+            public init(
+                name: Swift.String? = nil,
+                quantityText: Swift.String? = nil,
+                note: Swift.String? = nil,
+                categoryId: Swift.String? = nil,
+                checked: Swift.Bool? = nil,
+                position: Swift.Int? = nil
+            ) {
+                self.name = name
+                self.quantityText = quantityText
+                self.note = note
+                self.categoryId = categoryId
+                self.checked = checked
+                self.position = position
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case quantityText
+                case note
+                case categoryId
+                case checked
+                case position
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Suggestion`.
+        public struct Suggestion: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Suggestion/name`.
+            public var name: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Suggestion/quantityText`.
+            public var quantityText: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Suggestion/categoryId`.
+            public var categoryId: Swift.String?
+            /// Creates a new `Suggestion`.
+            ///
+            /// - Parameters:
+            ///   - name:
+            ///   - quantityText:
+            ///   - categoryId:
+            public init(
+                name: Swift.String,
+                quantityText: Swift.String,
+                categoryId: Swift.String? = nil
+            ) {
+                self.name = name
+                self.quantityText = quantityText
+                self.categoryId = categoryId
+            }
+            public enum CodingKeys: String, CodingKey {
+                case name
+                case quantityText
+                case categoryId
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SyncChanges`.
+        public struct SyncChanges: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SyncChanges/version`.
+            public var version: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/SyncChanges/items`.
+            public var items: [Components.Schemas.Item]
+            /// Creates a new `SyncChanges`.
+            ///
+            /// - Parameters:
+            ///   - version:
+            ///   - items:
+            public init(
+                version: Swift.Int64,
+                items: [Components.Schemas.Item]
+            ) {
+                self.version = version
+                self.items = items
+            }
+            public enum CodingKeys: String, CodingKey {
+                case version
+                case items
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SyncOp`.
+        public struct SyncOp: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SyncOp/type`.
+            @frozen public enum _typePayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case upsert = "upsert"
+                case check = "check"
+                case uncheck = "uncheck"
+                case delete = "delete"
+            }
+            /// - Remark: Generated from `#/components/schemas/SyncOp/type`.
+            public var _type: Components.Schemas.SyncOp._typePayload
+            /// - Remark: Generated from `#/components/schemas/SyncOp/itemId`.
+            public var itemId: Swift.String
+            /// Required for upsert.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SyncOp/listId`.
+            public var listId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/SyncOp/item`.
+            public var item: Components.Schemas.ItemInput?
+            /// Creates a new `SyncOp`.
+            ///
+            /// - Parameters:
+            ///   - _type:
+            ///   - itemId:
+            ///   - listId: Required for upsert.
+            ///   - item:
+            public init(
+                _type: Components.Schemas.SyncOp._typePayload,
+                itemId: Swift.String,
+                listId: Swift.String? = nil,
+                item: Components.Schemas.ItemInput? = nil
+            ) {
+                self._type = _type
+                self.itemId = itemId
+                self.listId = listId
+                self.item = item
+            }
+            public enum CodingKeys: String, CodingKey {
+                case _type = "type"
+                case itemId
+                case listId
+                case item
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SyncResult`.
+        public struct SyncResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/SyncResult/version`.
+            public var version: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/SyncResult/resultsPayload`.
+            public struct resultsPayloadPayload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/SyncResult/resultsPayload/itemId`.
+                public var itemId: Swift.String
+                /// - Remark: Generated from `#/components/schemas/SyncResult/resultsPayload/status`.
+                @frozen public enum statusPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                    case applied = "applied"
+                    case not_found = "not_found"
+                    case invalid = "invalid"
+                }
+                /// - Remark: Generated from `#/components/schemas/SyncResult/resultsPayload/status`.
+                public var status: Components.Schemas.SyncResult.resultsPayloadPayload.statusPayload
+                /// Creates a new `resultsPayloadPayload`.
+                ///
+                /// - Parameters:
+                ///   - itemId:
+                ///   - status:
+                public init(
+                    itemId: Swift.String,
+                    status: Components.Schemas.SyncResult.resultsPayloadPayload.statusPayload
+                ) {
+                    self.itemId = itemId
+                    self.status = status
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case itemId
+                    case status
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/SyncResult/results`.
+            public typealias resultsPayload = [Components.Schemas.SyncResult.resultsPayloadPayload]
+            /// - Remark: Generated from `#/components/schemas/SyncResult/results`.
+            public var results: Components.Schemas.SyncResult.resultsPayload
+            /// Creates a new `SyncResult`.
+            ///
+            /// - Parameters:
+            ///   - version:
+            ///   - results:
+            public init(
+                version: Swift.Int64,
+                results: Components.Schemas.SyncResult.resultsPayload
+            ) {
+                self.version = version
+                self.results = results
+            }
+            public enum CodingKeys: String, CodingKey {
+                case version
+                case results
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecipeMark`.
+        @frozen public enum RecipeMark: String, Codable, Hashable, Sendable, CaseIterable {
+            case favourite = "favourite"
+            case want_to_make = "want_to_make"
+        }
+        /// - Remark: Generated from `#/components/schemas/Ingredient`.
+        public struct Ingredient: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Ingredient/section`.
+            public var section: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Ingredient/quantity`.
+            public var quantity: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/Ingredient/unit`.
+            public var unit: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Ingredient/item`.
+            public var item: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Ingredient/prepNote`.
+            public var prepNote: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Ingredient/rawText`.
+            public var rawText: Swift.String?
+            /// Creates a new `Ingredient`.
+            ///
+            /// - Parameters:
+            ///   - section:
+            ///   - quantity:
+            ///   - unit:
+            ///   - item:
+            ///   - prepNote:
+            ///   - rawText:
+            public init(
+                section: Swift.String? = nil,
+                quantity: Swift.Double? = nil,
+                unit: Swift.String? = nil,
+                item: Swift.String,
+                prepNote: Swift.String? = nil,
+                rawText: Swift.String? = nil
+            ) {
+                self.section = section
+                self.quantity = quantity
+                self.unit = unit
+                self.item = item
+                self.prepNote = prepNote
+                self.rawText = rawText
+            }
+            public enum CodingKeys: String, CodingKey {
+                case section
+                case quantity
+                case unit
+                case item
+                case prepNote
+                case rawText
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Step`.
+        public struct Step: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Step/text`.
+            public var text: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Step/timerSeconds`.
+            public var timerSeconds: Swift.Int?
+            /// Creates a new `Step`.
+            ///
+            /// - Parameters:
+            ///   - text:
+            ///   - timerSeconds:
+            public init(
+                text: Swift.String,
+                timerSeconds: Swift.Int? = nil
+            ) {
+                self.text = text
+                self.timerSeconds = timerSeconds
+            }
+            public enum CodingKeys: String, CodingKey {
+                case text
+                case timerSeconds
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecipeInput`.
+        public struct RecipeInput: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/summary`.
+            public var summary: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/servings`.
+            public var servings: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/prepMinutes`.
+            public var prepMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/cookMinutes`.
+            public var cookMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/sourceUrl`.
+            public var sourceUrl: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/sourceKind`.
+            @frozen public enum sourceKindPayload: String, Codable, Hashable, Sendable, CaseIterable {
+                case url = "url"
+                case photo = "photo"
+                case manual = "manual"
+                case ai = "ai"
+            }
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/sourceKind`.
+            public var sourceKind: Components.Schemas.RecipeInput.sourceKindPayload?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/notes`.
+            public var notes: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/tags`.
+            public var tags: [Swift.String]?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/ingredients`.
+            public var ingredients: [Components.Schemas.Ingredient]?
+            /// - Remark: Generated from `#/components/schemas/RecipeInput/steps`.
+            public var steps: [Components.Schemas.Step]?
+            /// Creates a new `RecipeInput`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - summary:
+            ///   - servings:
+            ///   - prepMinutes:
+            ///   - cookMinutes:
+            ///   - sourceUrl:
+            ///   - sourceKind:
+            ///   - notes:
+            ///   - tags:
+            ///   - ingredients:
+            ///   - steps:
+            public init(
+                title: Swift.String,
+                summary: Swift.String? = nil,
+                servings: Swift.Double? = nil,
+                prepMinutes: Swift.Int? = nil,
+                cookMinutes: Swift.Int? = nil,
+                sourceUrl: Swift.String? = nil,
+                sourceKind: Components.Schemas.RecipeInput.sourceKindPayload? = nil,
+                notes: Swift.String? = nil,
+                tags: [Swift.String]? = nil,
+                ingredients: [Components.Schemas.Ingredient]? = nil,
+                steps: [Components.Schemas.Step]? = nil
+            ) {
+                self.title = title
+                self.summary = summary
+                self.servings = servings
+                self.prepMinutes = prepMinutes
+                self.cookMinutes = cookMinutes
+                self.sourceUrl = sourceUrl
+                self.sourceKind = sourceKind
+                self.notes = notes
+                self.tags = tags
+                self.ingredients = ingredients
+                self.steps = steps
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case summary
+                case servings
+                case prepMinutes
+                case cookMinutes
+                case sourceUrl
+                case sourceKind
+                case notes
+                case tags
+                case ingredients
+                case steps
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/RecipeSummary`.
+        public struct RecipeSummary: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/title`.
+            public var title: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/summary`.
+            public var summary: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/servings`.
+            public var servings: Swift.Double?
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/prepMinutes`.
+            public var prepMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/cookMinutes`.
+            public var cookMinutes: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/sourceKind`.
+            public var sourceKind: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/tags`.
+            public var tags: [Swift.String]
+            /// The signed-in member's marks.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/marks`.
+            public var marks: [Components.Schemas.RecipeMark]
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/createdBy`.
+            public var createdBy: Swift.String
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Thumbnail of the first photo, relative to the API root
+            ///
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/coverUrl`.
+            public var coverUrl: Swift.String?
+            /// Creates a new `RecipeSummary`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            ///   - summary:
+            ///   - servings:
+            ///   - prepMinutes:
+            ///   - cookMinutes:
+            ///   - sourceKind:
+            ///   - tags:
+            ///   - marks: The signed-in member's marks.
+            ///   - createdBy:
+            ///   - updatedAt:
+            ///   - coverUrl: Thumbnail of the first photo, relative to the API root
+            public init(
+                id: Swift.String,
+                title: Swift.String,
+                summary: Swift.String,
+                servings: Swift.Double? = nil,
+                prepMinutes: Swift.Int? = nil,
+                cookMinutes: Swift.Int? = nil,
+                sourceKind: Swift.String,
+                tags: [Swift.String],
+                marks: [Components.Schemas.RecipeMark],
+                createdBy: Swift.String,
+                updatedAt: Foundation.Date,
+                coverUrl: Swift.String? = nil
+            ) {
+                self.id = id
+                self.title = title
+                self.summary = summary
+                self.servings = servings
+                self.prepMinutes = prepMinutes
+                self.cookMinutes = cookMinutes
+                self.sourceKind = sourceKind
+                self.tags = tags
+                self.marks = marks
+                self.createdBy = createdBy
+                self.updatedAt = updatedAt
+                self.coverUrl = coverUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+                case summary
+                case servings
+                case prepMinutes
+                case cookMinutes
+                case sourceKind
+                case tags
+                case marks
+                case createdBy
+                case updatedAt
+                case coverUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Recipe`.
+        public struct Recipe: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Recipe/value1`.
+            public var value1: Components.Schemas.RecipeSummary
+            /// - Remark: Generated from `#/components/schemas/Recipe/value2`.
+            public struct Value2Payload: Codable, Hashable, Sendable {
+                /// - Remark: Generated from `#/components/schemas/Recipe/value2/images`.
+                public var images: [Components.Schemas.Image]
+                /// - Remark: Generated from `#/components/schemas/Recipe/value2/sourceUrl`.
+                public var sourceUrl: Swift.String?
+                /// - Remark: Generated from `#/components/schemas/Recipe/value2/notes`.
+                public var notes: Swift.String
+                /// - Remark: Generated from `#/components/schemas/Recipe/value2/ingredients`.
+                public var ingredients: [Components.Schemas.Ingredient]
+                /// - Remark: Generated from `#/components/schemas/Recipe/value2/steps`.
+                public var steps: [Components.Schemas.Step]
+                /// Creates a new `Value2Payload`.
+                ///
+                /// - Parameters:
+                ///   - images:
+                ///   - sourceUrl:
+                ///   - notes:
+                ///   - ingredients:
+                ///   - steps:
+                public init(
+                    images: [Components.Schemas.Image],
+                    sourceUrl: Swift.String? = nil,
+                    notes: Swift.String,
+                    ingredients: [Components.Schemas.Ingredient],
+                    steps: [Components.Schemas.Step]
+                ) {
+                    self.images = images
+                    self.sourceUrl = sourceUrl
+                    self.notes = notes
+                    self.ingredients = ingredients
+                    self.steps = steps
+                }
+                public enum CodingKeys: String, CodingKey {
+                    case images
+                    case sourceUrl
+                    case notes
+                    case ingredients
+                    case steps
+                }
+            }
+            /// - Remark: Generated from `#/components/schemas/Recipe/value2`.
+            public var value2: Components.Schemas.Recipe.Value2Payload
+            /// Creates a new `Recipe`.
+            ///
+            /// - Parameters:
+            ///   - value1:
+            ///   - value2:
+            public init(
+                value1: Components.Schemas.RecipeSummary,
+                value2: Components.Schemas.Recipe.Value2Payload
+            ) {
+                self.value1 = value1
+                self.value2 = value2
+            }
+            public init(from decoder: any Swift.Decoder) throws {
+                self.value1 = try .init(from: decoder)
+                self.value2 = try .init(from: decoder)
+            }
+            public func encode(to encoder: any Swift.Encoder) throws {
+                try self.value1.encode(to: encoder)
+                try self.value2.encode(to: encoder)
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Image`.
+        public struct Image: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Image/id`.
+            public var id: Swift.String
+            /// Relative to the API root, e.g. /images/{id}/thumb
+            ///
+            /// - Remark: Generated from `#/components/schemas/Image/thumbUrl`.
+            public var thumbUrl: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Image/largeUrl`.
+            public var largeUrl: Swift.String
+            /// Creates a new `Image`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - thumbUrl: Relative to the API root, e.g. /images/{id}/thumb
+            ///   - largeUrl:
+            public init(
+                id: Swift.String,
+                thumbUrl: Swift.String,
+                largeUrl: Swift.String
+            ) {
+                self.id = id
+                self.thumbUrl = thumbUrl
+                self.largeUrl = largeUrl
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case thumbUrl
+                case largeUrl
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/AddRecipeResult`.
+        public struct AddRecipeResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/AddRecipeResult/added`.
+            public var added: [Components.Schemas.Item]
+            /// - Remark: Generated from `#/components/schemas/AddRecipeResult/merged`.
+            public var merged: [Components.Schemas.Item]
+            /// Creates a new `AddRecipeResult`.
+            ///
+            /// - Parameters:
+            ///   - added:
+            ///   - merged:
+            public init(
+                added: [Components.Schemas.Item],
+                merged: [Components.Schemas.Item]
+            ) {
+                self.added = added
+                self.merged = merged
+            }
+            public enum CodingKeys: String, CodingKey {
+                case added
+                case merged
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/Activity`.
+        public struct Activity: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/Activity/id`.
+            public var id: Swift.Int64
+            /// - Remark: Generated from `#/components/schemas/Activity/userId`.
+            public var userId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Activity/via`.
+            public var via: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Activity/action`.
+            public var action: Swift.String
+            /// - Remark: Generated from `#/components/schemas/Activity/listId`.
+            public var listId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Activity/recipeId`.
+            public var recipeId: Swift.String?
+            /// One AI request; rows sharing it undo together
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/batchId`.
+            public var batchId: Swift.String?
+            /// Includes before (and after, for edits) so the feed can show what changed
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/detail`.
+            public struct detailPayload: Codable, Hashable, Sendable {
+                /// A container of undocumented properties.
+                public var additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer
+                /// Creates a new `detailPayload`.
+                ///
+                /// - Parameters:
+                ///   - additionalProperties: A container of undocumented properties.
+                public init(additionalProperties: OpenAPIRuntime.OpenAPIObjectContainer = .init()) {
+                    self.additionalProperties = additionalProperties
+                }
+                public init(from decoder: any Swift.Decoder) throws {
+                    additionalProperties = try decoder.decodeAdditionalProperties(knownKeys: [])
+                }
+                public func encode(to encoder: any Swift.Encoder) throws {
+                    try encoder.encodeAdditionalProperties(additionalProperties)
+                }
+            }
+            /// Includes before (and after, for edits) so the feed can show what changed
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/detail`.
+            public var detail: Components.Schemas.Activity.detailPayload
+            /// - Remark: Generated from `#/components/schemas/Activity/createdAt`.
+            public var createdAt: Foundation.Date
+            /// Can still be undone
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/undoable`.
+            public var undoable: Swift.Bool
+            /// When the undo window closes
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/restorableUntil`.
+            public var restorableUntil: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/Activity/undoneAt`.
+            public var undoneAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/Activity/undoneBy`.
+            public var undoneBy: Swift.String?
+            /// Set on the row an undo created
+            ///
+            /// - Remark: Generated from `#/components/schemas/Activity/undoOf`.
+            public var undoOf: Swift.Int64?
+            /// Creates a new `Activity`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - userId:
+            ///   - via:
+            ///   - action:
+            ///   - listId:
+            ///   - recipeId:
+            ///   - batchId: One AI request; rows sharing it undo together
+            ///   - detail: Includes before (and after, for edits) so the feed can show what changed
+            ///   - createdAt:
+            ///   - undoable: Can still be undone
+            ///   - restorableUntil: When the undo window closes
+            ///   - undoneAt:
+            ///   - undoneBy:
+            ///   - undoOf: Set on the row an undo created
+            public init(
+                id: Swift.Int64,
+                userId: Swift.String? = nil,
+                via: Swift.String,
+                action: Swift.String,
+                listId: Swift.String? = nil,
+                recipeId: Swift.String? = nil,
+                batchId: Swift.String? = nil,
+                detail: Components.Schemas.Activity.detailPayload,
+                createdAt: Foundation.Date,
+                undoable: Swift.Bool,
+                restorableUntil: Foundation.Date? = nil,
+                undoneAt: Foundation.Date? = nil,
+                undoneBy: Swift.String? = nil,
+                undoOf: Swift.Int64? = nil
+            ) {
+                self.id = id
+                self.userId = userId
+                self.via = via
+                self.action = action
+                self.listId = listId
+                self.recipeId = recipeId
+                self.batchId = batchId
+                self.detail = detail
+                self.createdAt = createdAt
+                self.undoable = undoable
+                self.restorableUntil = restorableUntil
+                self.undoneAt = undoneAt
+                self.undoneBy = undoneBy
+                self.undoOf = undoOf
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case userId
+                case via
+                case action
+                case listId
+                case recipeId
+                case batchId
+                case detail
+                case createdAt
+                case undoable
+                case restorableUntil
+                case undoneAt
+                case undoneBy
+                case undoOf
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/ActivityFeed`.
+        public typealias ActivityFeed = [Components.Schemas.Activity]
+        /// - Remark: Generated from `#/components/schemas/UndoInput`.
+        public struct UndoInput: Codable, Hashable, Sendable {
+            /// Overwrite a later change to the same record
+            ///
+            /// - Remark: Generated from `#/components/schemas/UndoInput/force`.
+            public var force: Swift.Bool?
+            /// Creates a new `UndoInput`.
+            ///
+            /// - Parameters:
+            ///   - force: Overwrite a later change to the same record
+            public init(force: Swift.Bool? = nil) {
+                self.force = force
+            }
+            public enum CodingKeys: String, CodingKey {
+                case force
+            }
+        }
     }
 }

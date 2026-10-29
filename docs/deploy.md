@@ -42,3 +42,9 @@ The Postgres 17 database is `impressipies-db` in the Impressipies project on Coo
 3. `mise run deploy`. The log shows `database migrated`, and, while no member exists, a `first run: open /invite/...` link for the admin account.
 
 Live changes stream from `GET /api/events` (server-sent events, fed by Postgres `LISTEN/NOTIFY`). Behind a proxy, leave response buffering off for that path.
+
+## Recipe photos
+
+Uploads are resized to a 360px thumbnail and a 1280px large variant, encoded as lossless WebP, and written under `IMAGE_DIR` (`/data/images` in the image, `data/images` when unset). Files are only on that disk, so **mount a persistent volume at `/data`** in Coolify (Storages → Add → destination path `/data`), or photos vanish on every deploy. Back it up with the database.
+
+Photos are served by `GET /api/images/{id}/{thumb|large}` to signed-in members only, with `Cache-Control: private, max-age=31536000, immutable` and an ETag.

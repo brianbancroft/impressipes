@@ -13,6 +13,8 @@ import (
 	"github.com/brianbancroft/impressipies/apps/api/internal/api"
 	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
+	"github.com/brianbancroft/impressipies/apps/api/internal/images"
+	"github.com/brianbancroft/impressipies/apps/api/internal/uuidx"
 )
 
 const sessionCookie = "impressipies_session"
@@ -20,10 +22,11 @@ const sessionCookie = "impressipies_session"
 type ctxKey struct{}
 
 type server struct {
-	store family.Directory
-	pool  *pgxpool.Pool // nil in memory mode, where only the household endpoints work
-	q     *dbgen.Queries
-	hub   *hub
+	store  family.Directory
+	pool   *pgxpool.Pool // nil in memory mode, where only the household endpoints work
+	q      *dbgen.Queries
+	hub    *hub
+	images images.Store
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -53,7 +56,7 @@ func New(pool *pgxpool.Pool) http.Handler {
 // NewWithStore builds the handler on a directory and, optionally, a database pool.
 // ctx ends the background listener that feeds the event stream.
 func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Pool) http.Handler {
-	s := &server{store: store, pool: pool}
+	s := &server{store: store, pool: pool, images: images.Store{Dir: imageDir()}}
 	if pool != nil {
 		s.q = dbgen.New(pool)
 		s.hub = newHub()
@@ -67,6 +70,7 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 	// The event stream is not part of the OpenAPI document: a long-lived response
 	// does not fit the generated request/response handlers.
 	mux.HandleFunc("GET /events", s.events)
+	mux.HandleFunc("GET /images/{id}/{variant}", s.serveImage)
 	rest := api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
 		ErrorHandlerFunc: requestError,
 	})
@@ -78,6 +82,9 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 func sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), viaKey{}, clientVia(r)))
+		if b, ok := uuidx.Parse(r.Header.Get("X-Impressipies-Batch")); ok {
+			r = r.WithContext(context.WithValue(r.Context(), batchKey{}, b))
+		}
 		if c, err := r.Cookie(sessionCookie); err == nil {
 			r = r.WithContext(context.WithValue(r.Context(), ctxKey{}, c.Value))
 		}

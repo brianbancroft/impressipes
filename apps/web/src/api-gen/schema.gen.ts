@@ -315,6 +315,47 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/recipes/{recipeId}/images": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Add a photo to a recipe
+         * @description Multipart upload with one `file` part: JPEG, PNG, GIF or WebP, up to 10 MB and 25 megapixels, at most 12 photos per recipe. The server stores a thumbnail and a large variant as WebP. The variants are fetched with `GET /images/{imageId}/thumb` and `/large` (not in this document: they return image bytes, are auth-checked by the session cookie and carry long-lived cache headers).
+         */
+        post: operations["uploadRecipeImage"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/recipes/{recipeId}/images/{imageId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+                imageId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteRecipeImage"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/recipes/{recipeId}/marks/{mark}": {
         parameters: {
             query?: never;
@@ -381,6 +422,70 @@ export interface paths {
         get: operations["listActivity"];
         put?: never;
         post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * Household activity feed, newest first
+         * @description Every audited change across lists and recipes. Filter by person, client (web, ios, watch, or mcp for any AI client), type of change and date.
+         */
+        get: operations["listAllActivity"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity/{activityId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo one change
+         * @description Restores the record to how it was before the change and records the undo as a new activity row. Answers 409 when a later change touched the same record, unless force is true.
+         */
+        post: operations["undoActivity"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/activity/batches/{batchId}/undo": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: string;
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * Undo every change one AI request made
+         * @description All-or-nothing: when any row in the batch conflicts with a later change (and force is not true) nothing is undone and the answer is 409.
+         */
+        post: operations["undoActivityBatch"];
         delete?: never;
         options?: never;
         head?: never;
@@ -563,12 +668,21 @@ export interface components {
             createdBy: string;
             /** Format: date-time */
             updatedAt: string;
+            /** @description Thumbnail of the first photo, relative to the API root */
+            coverUrl?: string;
         };
         Recipe: components["schemas"]["RecipeSummary"] & {
+            images: components["schemas"]["Image"][];
             sourceUrl?: string;
             notes: string;
             ingredients: components["schemas"]["Ingredient"][];
             steps: components["schemas"]["Step"][];
+        };
+        Image: {
+            id: string;
+            /** @description Relative to the API root, e.g. /images/{id}/thumb */
+            thumbUrl: string;
+            largeUrl: string;
         };
         AddRecipeResult: {
             added: components["schemas"]["Item"][];
@@ -580,12 +694,36 @@ export interface components {
             userId?: string;
             via: string;
             action: string;
+            listId?: string;
             recipeId?: string;
+            /** @description One AI request; rows sharing it undo together */
+            batchId?: string;
+            /** @description Includes before (and after, for edits) so the feed can show what changed */
             detail: {
                 [key: string]: unknown;
             };
             /** Format: date-time */
             createdAt: string;
+            /** @description Can still be undone */
+            undoable: boolean;
+            /**
+             * Format: date-time
+             * @description When the undo window closes
+             */
+            restorableUntil?: string;
+            /** Format: date-time */
+            undoneAt?: string;
+            undoneBy?: string;
+            /**
+             * Format: int64
+             * @description Set on the row an undo created
+             */
+            undoOf?: number;
+        };
+        ActivityFeed: components["schemas"]["Activity"][];
+        UndoInput: {
+            /** @description Overwrite a later change to the same record */
+            force?: boolean;
         };
     };
     responses: {
@@ -606,6 +744,7 @@ export interface components {
         CategoryId: string;
         ItemId: string;
         RecipeId: string;
+        ActivityId: number;
     };
     requestBodies: never;
     headers: never;
@@ -1331,6 +1470,66 @@ export interface operations {
             404: components["responses"]["Error"];
         };
     };
+    uploadRecipeImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "multipart/form-data": {
+                    /** Format: binary */
+                    file: string;
+                };
+            };
+        };
+        responses: {
+            /** @description The stored image */
+            201: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Image"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            413: components["responses"]["Error"];
+            415: components["responses"]["Error"];
+        };
+    };
+    deleteRecipeImage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+                imageId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
     markRecipe: {
         parameters: {
             query?: never;
@@ -1460,6 +1659,97 @@ export interface operations {
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];
+        };
+    };
+    listAllActivity: {
+        parameters: {
+            query?: {
+                limit?: number;
+                userId?: string;
+                via?: string;
+                action?: string;
+                since?: string;
+                until?: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Newest first */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ActivityFeed"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    undoActivity: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                activityId: components["parameters"]["ActivityId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoInput"];
+            };
+        };
+        responses: {
+            /** @description The new undo row */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"];
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
+            422: components["responses"]["Error"];
+        };
+    };
+    undoActivityBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                batchId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UndoInput"];
+            };
+        };
+        responses: {
+            /** @description The new undo rows */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["Activity"][];
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+            409: components["responses"]["Error"];
         };
     };
 }

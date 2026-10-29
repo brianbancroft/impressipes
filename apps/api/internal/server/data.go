@@ -71,6 +71,11 @@ func orNotFound(err error, what string) error {
 }
 
 func (s *server) record(ctx context.Context, q *dbgen.Queries, m *family.Member, action string, list, recipe pgtype.UUID, detail map[string]any) error {
+	_, err := s.recordRow(ctx, q, m, action, list, recipe, detail, batchOf(ctx), pgtype.Int8{})
+	return err
+}
+
+func (s *server) recordRow(ctx context.Context, q *dbgen.Queries, m *family.Member, action string, list, recipe pgtype.UUID, detail map[string]any, batch pgtype.UUID, undoOf pgtype.Int8) (dbgen.Activity, error) {
 	user, _ := uuidx.Parse(m.ID)
 	via, _ := ctx.Value(viaKey{}).(string)
 	if via == "" {
@@ -81,10 +86,11 @@ func (s *server) record(ctx context.Context, q *dbgen.Queries, m *family.Member,
 	}
 	b, err := json.Marshal(detail)
 	if err != nil {
-		return err
+		return dbgen.Activity{}, err
 	}
 	return q.RecordActivity(ctx, dbgen.RecordActivityParams{
 		UserID: user, Via: via, Action: action, ListID: list, RecipeID: recipe, Detail: b,
+		BatchID: batch, UndoOf: undoOf,
 	})
 }
 

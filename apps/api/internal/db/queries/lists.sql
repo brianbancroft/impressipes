@@ -125,3 +125,10 @@ LIMIT 1;
 
 -- name: GetItemMemory :one
 SELECT * FROM item_memory WHERE list_id = $1 AND normalized_name = $2;
+
+-- name: GetItemAny :one
+SELECT * FROM list_items WHERE id = $1;
+
+-- name: RestoreItem :one
+UPDATE list_items SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL
+RETURNING *;

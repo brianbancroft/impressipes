@@ -8,11 +8,13 @@ tool (
 )
 
 require (
+	github.com/HugoSmits86/nativewebp v1.2.1
 	github.com/jackc/pgx/v5 v5.7.4
 	github.com/oapi-codegen/runtime v1.8.0
 	github.com/pressly/goose/v3 v3.24.1
 	github.com/testcontainers/testcontainers-go v0.37.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.37.0
+	golang.org/x/image v0.47.0
 )
 
 require (

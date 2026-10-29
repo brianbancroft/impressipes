@@ -11,8 +11,175 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const activityByBatch = `-- name: ActivityByBatch :many
+SELECT id, user_id, via, action, list_id, recipe_id, detail, created_at, batch_id, undone_at, undone_by, undo_of FROM activity WHERE batch_id = $1 ORDER BY id DESC
+`
+
+func (q *Queries) ActivityByBatch(ctx context.Context, batchID pgtype.UUID) ([]Activity, error) {
+	rows, err := q.db.Query(ctx, activityByBatch, batchID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Activity{}
+	for rows.Next() {
+		var i Activity
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Via,
+			&i.Action,
+			&i.ListID,
+			&i.RecipeID,
+			&i.Detail,
+			&i.CreatedAt,
+			&i.BatchID,
+			&i.UndoneAt,
+			&i.UndoneBy,
+			&i.UndoOf,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const changedSince = `-- name: ChangedSince :one
+SELECT EXISTS (
+    SELECT 1 FROM activity
+    WHERE id > $1
+      AND undo_of IS NULL
+      AND undone_at IS NULL
+      AND action NOT IN ('recipe_added_to_list')
+      AND (($2::text <> '' AND detail->>'itemId' = $2)
+        OR ($3::uuid IS NOT NULL AND recipe_id = $3))
+)::boolean
+`
+
+type ChangedSinceParams struct {
+	AfterID  int64       `json:"after_id"`
+	ItemID   string      `json:"item_id"`
+	RecipeID pgtype.UUID `json:"recipe_id"`
+}
+
+// True when a later, still-standing change touched the same item or recipe.
+func (q *Queries) ChangedSince(ctx context.Context, arg ChangedSinceParams) (bool, error) {
+	row := q.db.QueryRow(ctx, changedSince, arg.AfterID, arg.ItemID, arg.RecipeID)
+	var column_1 bool
+	err := row.Scan(&column_1)
+	return column_1, err
+}
+
+const filterActivity = `-- name: FilterActivity :many
+SELECT id, user_id, via, action, list_id, recipe_id, detail, created_at, batch_id, undone_at, undone_by, undo_of FROM activity
+WHERE ($1::uuid IS NULL OR list_id = $1)
+  AND ($2::uuid IS NULL OR user_id = $2)
+  AND ($3::text IS NULL OR via = $3 OR ($3 = 'mcp' AND via LIKE 'mcp:%'))
+  AND ($4::text IS NULL OR action = $4)
+  AND ($5::timestamptz IS NULL OR created_at >= $5)
+  AND ($6::timestamptz IS NULL OR created_at < $6)
+ORDER BY created_at DESC, id DESC
+LIMIT $7
+`
+
+type FilterActivityParams struct {
+	ListID   pgtype.UUID        `json:"list_id"`
+	UserID   pgtype.UUID        `json:"user_id"`
+	Via      pgtype.Text        `json:"via"`
+	Action   pgtype.Text        `json:"action"`
+	Since    pgtype.Timestamptz `json:"since"`
+	Until    pgtype.Timestamptz `json:"until"`
+	RowLimit int32              `json:"row_limit"`
+}
+
+func (q *Queries) FilterActivity(ctx context.Context, arg FilterActivityParams) ([]Activity, error) {
+	rows, err := q.db.Query(ctx, filterActivity,
+		arg.ListID,
+		arg.UserID,
+		arg.Via,
+		arg.Action,
+		arg.Since,
+		arg.Until,
+		arg.RowLimit,
+	)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	items := []Activity{}
+	for rows.Next() {
+		var i Activity
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.Via,
+			&i.Action,
+			&i.ListID,
+			&i.RecipeID,
+			&i.Detail,
+			&i.CreatedAt,
+			&i.BatchID,
+			&i.UndoneAt,
+			&i.UndoneBy,
+			&i.UndoOf,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const getActivity = `-- name: GetActivity :one
+SELECT id, user_id, via, action, list_id, recipe_id, detail, created_at, batch_id, undone_at, undone_by, undo_of FROM activity WHERE id = $1
+`
+
+func (q *Queries) GetActivity(ctx context.Context, id int64) (Activity, error) {
+	row := q.db.QueryRow(ctx, getActivity, id)
+	var i Activity
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Via,
+		&i.Action,
+		&i.ListID,
+		&i.RecipeID,
+		&i.Detail,
+		&i.CreatedAt,
+		&i.BatchID,
+		&i.UndoneAt,
+		&i.UndoneBy,
+		&i.UndoOf,
+	)
+	return i, err
+}
+
+const markActivityUndone = `-- name: MarkActivityUndone :execrows
+UPDATE activity SET undone_at = now(), undone_by = $2 WHERE id = $1 AND undone_at IS NULL
+`
+
+type MarkActivityUndoneParams struct {
+	ID       int64       `json:"id"`
+	UndoneBy pgtype.UUID `json:"undone_by"`
+}
+
+func (q *Queries) MarkActivityUndone(ctx context.Context, arg MarkActivityUndoneParams) (int64, error) {
+	result, err := q.db.Exec(ctx, markActivityUndone, arg.ID, arg.UndoneBy)
+	if err != nil {
+		return 0, err
+	}
+	return result.RowsAffected(), nil
+}
+
 const recentActivity = `-- name: RecentActivity :many
-SELECT id, user_id, via, action, list_id, recipe_id, detail, created_at FROM activity WHERE list_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2
+SELECT id, user_id, via, action, list_id, recipe_id, detail, created_at, batch_id, undone_at, undone_by, undo_of FROM activity WHERE list_id = $1 ORDER BY created_at DESC, id DESC LIMIT $2
 `
 
 type RecentActivityParams struct {
@@ -38,6 +205,10 @@ func (q *Queries) RecentActivity(ctx context.Context, arg RecentActivityParams) 
 			&i.RecipeID,
 			&i.Detail,
 			&i.CreatedAt,
+			&i.BatchID,
+			&i.UndoneAt,
+			&i.UndoneBy,
+			&i.UndoOf,
 		); err != nil {
 			return nil, err
 		}
@@ -49,9 +220,10 @@ func (q *Queries) RecentActivity(ctx context.Context, arg RecentActivityParams) 
 	return items, nil
 }
 
-const recordActivity = `-- name: RecordActivity :exec
-INSERT INTO activity (user_id, via, action, list_id, recipe_id, detail)
-VALUES ($1, $2, $3, $4, $5, $6)
+const recordActivity = `-- name: RecordActivity :one
+INSERT INTO activity (user_id, via, action, list_id, recipe_id, detail, batch_id, undo_of)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, user_id, via, action, list_id, recipe_id, detail, created_at, batch_id, undone_at, undone_by, undo_of
 `
 
 type RecordActivityParams struct {
@@ -61,16 +233,35 @@ type RecordActivityParams struct {
 	ListID   pgtype.UUID `json:"list_id"`
 	RecipeID pgtype.UUID `json:"recipe_id"`
 	Detail   []byte      `json:"detail"`
+	BatchID  pgtype.UUID `json:"batch_id"`
+	UndoOf   pgtype.Int8 `json:"undo_of"`
 }
 
-func (q *Queries) RecordActivity(ctx context.Context, arg RecordActivityParams) error {
-	_, err := q.db.Exec(ctx, recordActivity,
+func (q *Queries) RecordActivity(ctx context.Context, arg RecordActivityParams) (Activity, error) {
+	row := q.db.QueryRow(ctx, recordActivity,
 		arg.UserID,
 		arg.Via,
 		arg.Action,
 		arg.ListID,
 		arg.RecipeID,
 		arg.Detail,
+		arg.BatchID,
+		arg.UndoOf,
 	)
-	return err
+	var i Activity
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Via,
+		&i.Action,
+		&i.ListID,
+		&i.RecipeID,
+		&i.Detail,
+		&i.CreatedAt,
+		&i.BatchID,
+		&i.UndoneAt,
+		&i.UndoneBy,
+		&i.UndoOf,
+	)
+	return i, err
 }

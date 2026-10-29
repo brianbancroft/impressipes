@@ -483,7 +483,7 @@ func (s *server) UpdateItem(ctx context.Context, req api.UpdateItemRequestObject
 				action = "item_checked"
 			}
 		}
-		return s.record(ctx, q, m, action, item.ListID, pgtype.UUID{}, map[string]any{"item": item.Name, "itemId": uuidx.String(item.ID)})
+		return s.record(ctx, q, m, action, item.ListID, pgtype.UUID{}, itemDetail(item, cur))
 	})
 	if err != nil {
 		return nil, err
@@ -511,35 +511,4 @@ func (s *server) DeleteItem(ctx context.Context, req api.DeleteItemRequestObject
 		return nil, err
 	}
 	return api.DeleteItem204Response{}, nil
-}
-
-func (s *server) ListActivity(ctx context.Context, req api.ListActivityRequestObject) (api.ListActivityResponseObject, error) {
-	if _, err := s.member(ctx); err != nil {
-		return nil, err
-	}
-	listID, err := idOf(req.ListId, "list")
-	if err != nil {
-		return nil, err
-	}
-	if _, err := s.q.GetList(ctx, listID); err != nil {
-		return nil, orNotFound(err, "list")
-	}
-	limit := int32(50)
-	if req.Params.Limit != nil {
-		limit = int32(*req.Params.Limit)
-	}
-	rows, err := s.q.RecentActivity(ctx, dbgen.RecentActivityParams{ListID: listID, Limit: limit})
-	if err != nil {
-		return nil, err
-	}
-	out := make(api.ListActivity200JSONResponse, 0, len(rows))
-	for _, a := range rows {
-		detail := map[string]any{}
-		_ = jsonUnmarshal(a.Detail, &detail)
-		out = append(out, api.Activity{
-			Id: a.ID, UserId: uuidx.Ptr(a.UserID), Via: a.Via, Action: a.Action,
-			RecipeId: uuidx.Ptr(a.RecipeID), Detail: detail, CreatedAt: a.CreatedAt.Time,
-		})
-	}
-	return out, nil
 }

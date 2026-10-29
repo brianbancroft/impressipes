@@ -14,7 +14,7 @@ import (
 	"github.com/brianbancroft/impressipies/apps/api/internal/uuidx"
 )
 
-func toSummary(r dbgen.Recipe, tags []string, marks []api.RecipeMark) api.RecipeSummary {
+func toSummary(r dbgen.Recipe, tags []string, marks []api.RecipeMark, cover *string) api.RecipeSummary {
 	if tags == nil {
 		tags = []string{}
 	}
@@ -25,6 +25,7 @@ func toSummary(r dbgen.Recipe, tags []string, marks []api.RecipeMark) api.Recipe
 		Id: uuidx.String(r.ID), Title: r.Title, Summary: r.Summary, Servings: floatOf(r.Servings),
 		PrepMinutes: intOf(r.PrepMinutes), CookMinutes: intOf(r.CookMinutes), SourceKind: r.SourceKind,
 		Tags: tags, Marks: marks, CreatedBy: uuidx.String(r.CreatedBy), UpdatedAt: r.UpdatedAt.Time,
+		CoverUrl: cover,
 	}
 }
 
@@ -66,14 +67,27 @@ func loadRecipe(ctx context.Context, q *dbgen.Queries, user pgtype.UUID, r dbgen
 	if err != nil {
 		return api.Recipe{}, err
 	}
+	imgs, err := q.ListRecipeImages(ctx, r.ID)
+	if err != nil {
+		return api.Recipe{}, err
+	}
 	k := uuidx.String(r.ID)
-	sum := toSummary(r, tags[k], marks[k])
+	var cover *string
+	if len(imgs) > 0 {
+		u := imageRef(imgs[0].ID).ThumbUrl
+		cover = &u
+	}
+	sum := toSummary(r, tags[k], marks[k], cover)
 	out := api.Recipe{
 		Id: sum.Id, Title: sum.Title, Summary: sum.Summary, Servings: sum.Servings,
 		PrepMinutes: sum.PrepMinutes, CookMinutes: sum.CookMinutes, SourceKind: sum.SourceKind,
 		Tags: sum.Tags, Marks: sum.Marks, CreatedBy: sum.CreatedBy, UpdatedAt: sum.UpdatedAt,
+		CoverUrl: sum.CoverUrl, Images: make([]api.Image, 0, len(imgs)),
 		SourceUrl: textOf(r.SourceUrl), Notes: r.Notes,
 		Ingredients: make([]api.Ingredient, 0, len(ings)), Steps: make([]api.Step, 0, len(steps)),
+	}
+	for _, im := range imgs {
+		out.Images = append(out.Images, imageRef(im.ID))
 	}
 	for _, i := range ings {
 		in := api.Ingredient{Item: i.Item, Quantity: floatOf(i.Quantity)}
@@ -121,10 +135,19 @@ func (s *server) ListRecipes(ctx context.Context, req api.ListRecipesRequestObje
 	if err != nil {
 		return nil, err
 	}
+	covers, err := s.q.RecipeCovers(ctx, ids)
+	if err != nil {
+		return nil, err
+	}
+	coverOf := map[string]*string{}
+	for _, c := range covers {
+		u := imageRef(c.ID).ThumbUrl
+		coverOf[uuidx.String(c.RecipeID)] = &u
+	}
 	out := make(api.ListRecipes200JSONResponse, 0, len(rows))
 	for _, r := range rows {
 		k := uuidx.String(r.ID)
-		out = append(out, toSummary(r, tags[k], marks[k]))
+		out = append(out, toSummary(r, tags[k], marks[k], coverOf[k]))
 	}
 	return out, nil
 }
@@ -408,6 +431,10 @@ func (s *server) AddRecipeToList(ctx context.Context, req api.AddRecipeToListReq
 	}
 	user, _ := uuidx.Parse(m.ID)
 	res := api.AddRecipeResult{Added: []api.Item{}, Merged: []api.Item{}}
+	// Everything this call changes shares one batch, so it can be undone as a group.
+	if !batchOf(ctx).Valid {
+		ctx = context.WithValue(ctx, batchKey{}, uuidx.New())
+	}
 	err = s.withTx(ctx, func(q *dbgen.Queries) error {
 		if _, err := q.GetList(ctx, listID); err != nil {
 			return orNotFound(err, "list")
@@ -447,6 +474,9 @@ func (s *server) AddRecipeToList(ctx context.Context, req api.AddRecipeToListReq
 				if err != nil {
 					return err
 				}
+				if err := s.record(ctx, q, m, "item_merged", listID, recipeID, itemDetail(item, open)); err != nil {
+					return err
+				}
 				k := uuidx.String(item.ID)
 				if i, ok := addedAt[k]; ok {
 					res.Added[i] = toItem(item)
@@ -462,6 +492,9 @@ func (s *server) AddRecipeToList(ctx context.Context, req api.AddRecipeToListReq
 			}
 			item, err := addItem(ctx, q, listID, user, uuidx.New(), name, qtyText, in.PrepNote, nil, recipeID)
 			if err != nil {
+				return err
+			}
+			if err := s.record(ctx, q, m, "item_added", listID, recipeID, map[string]any{"item": item.Name, "itemId": uuidx.String(item.ID)}); err != nil {
 				return err
 			}
 			addedAt[uuidx.String(item.ID)] = len(res.Added)

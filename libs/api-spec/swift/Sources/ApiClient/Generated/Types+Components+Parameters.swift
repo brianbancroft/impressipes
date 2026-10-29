@@ -22,5 +22,15 @@ extension Components {
         public typealias MemberId = Swift.String
         /// - Remark: Generated from `#/components/parameters/InviteToken`.
         public typealias InviteToken = Swift.String
+        /// - Remark: Generated from `#/components/parameters/ListId`.
+        public typealias ListId = Swift.String
+        /// - Remark: Generated from `#/components/parameters/CategoryId`.
+        public typealias CategoryId = Swift.String
+        /// - Remark: Generated from `#/components/parameters/ItemId`.
+        public typealias ItemId = Swift.String
+        /// - Remark: Generated from `#/components/parameters/RecipeId`.
+        public typealias RecipeId = Swift.String
+        /// - Remark: Generated from `#/components/parameters/ActivityId`.
+        public typealias ActivityId = Swift.Int64
     }
 }

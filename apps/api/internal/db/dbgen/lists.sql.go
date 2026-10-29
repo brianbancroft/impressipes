@@ -201,6 +201,32 @@ func (q *Queries) GetItem(ctx context.Context, id pgtype.UUID) (ListItem, error)
 	return i, err
 }
 
+const getItemAny = `-- name: GetItemAny :one
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE id = $1
+`
+
+func (q *Queries) GetItemAny(ctx context.Context, id pgtype.UUID) (ListItem, error) {
+	row := q.db.QueryRow(ctx, getItemAny, id)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
+}
+
 const getItemMemory = `-- name: GetItemMemory :one
 SELECT list_id, normalized_name, last_category_id, last_quantity, use_count FROM item_memory WHERE list_id = $1 AND normalized_name = $2
 `
@@ -491,6 +517,33 @@ func (q *Queries) RememberItem(ctx context.Context, arg RememberItemParams) erro
 		arg.LastQuantity,
 	)
 	return err
+}
+
+const restoreItem = `-- name: RestoreItem :one
+UPDATE list_items SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+`
+
+func (q *Queries) RestoreItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
+	row := q.db.QueryRow(ctx, restoreItem, id)
+	var i ListItem
+	err := row.Scan(
+		&i.ID,
+		&i.ListID,
+		&i.CategoryID,
+		&i.Name,
+		&i.QuantityText,
+		&i.Note,
+		&i.CheckedAt,
+		&i.CheckedBy,
+		&i.AddedBy,
+		&i.SourceRecipeID,
+		&i.Position,
+		&i.Version,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+	)
+	return i, err
 }
 
 const setItemChecked = `-- name: SetItemChecked :one

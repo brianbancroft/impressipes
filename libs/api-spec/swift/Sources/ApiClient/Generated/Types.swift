@@ -43,6 +43,133 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /invites/{token}/accept`.
     /// - Remark: Generated from `#/paths//invites/{token}/accept/post(acceptInvite)`.
     func acceptInvite(_ input: Operations.acceptInvite.Input) async throws -> Operations.acceptInvite.Output
+    /// - Remark: HTTP `GET /lists`.
+    /// - Remark: Generated from `#/paths//lists/get(listLists)`.
+    func listLists(_ input: Operations.listLists.Input) async throws -> Operations.listLists.Output
+    /// - Remark: HTTP `POST /lists`.
+    /// - Remark: Generated from `#/paths//lists/post(createList)`.
+    func createList(_ input: Operations.createList.Input) async throws -> Operations.createList.Output
+    /// - Remark: HTTP `GET /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/get(getList)`.
+    func getList(_ input: Operations.getList.Input) async throws -> Operations.getList.Output
+    /// - Remark: HTTP `PATCH /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/patch(updateList)`.
+    func updateList(_ input: Operations.updateList.Input) async throws -> Operations.updateList.Output
+    /// Archives the list; its items are kept.
+    ///
+    /// - Remark: HTTP `DELETE /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/delete(archiveList)`.
+    func archiveList(_ input: Operations.archiveList.Input) async throws -> Operations.archiveList.Output
+    /// - Remark: HTTP `POST /lists/{listId}/categories`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/post(createCategory)`.
+    func createCategory(_ input: Operations.createCategory.Input) async throws -> Operations.createCategory.Output
+    /// - Remark: HTTP `PATCH /lists/{listId}/categories/{categoryId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/{categoryId}/patch(updateCategory)`.
+    func updateCategory(_ input: Operations.updateCategory.Input) async throws -> Operations.updateCategory.Output
+    /// Deletes the category; its items become uncategorised.
+    ///
+    /// - Remark: HTTP `DELETE /lists/{listId}/categories/{categoryId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/{categoryId}/delete(deleteCategory)`.
+    func deleteCategory(_ input: Operations.deleteCategory.Input) async throws -> Operations.deleteCategory.Output
+    /// Adds an item. The client may supply the id so an offline retry is idempotent. A missing category or quantity is filled from the list's item memory.
+    ///
+    ///
+    /// - Remark: HTTP `POST /lists/{listId}/items`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/items/post(createItem)`.
+    func createItem(_ input: Operations.createItem.Input) async throws -> Operations.createItem.Output
+    /// Autocomplete from what the household has added to this list before.
+    ///
+    /// - Remark: HTTP `GET /lists/{listId}/suggestions`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/suggestions/get(suggestItems)`.
+    func suggestItems(_ input: Operations.suggestItems.Input) async throws -> Operations.suggestItems.Output
+    /// - Remark: HTTP `PATCH /items/{itemId}`.
+    /// - Remark: Generated from `#/paths//items/{itemId}/patch(updateItem)`.
+    func updateItem(_ input: Operations.updateItem.Input) async throws -> Operations.updateItem.Output
+    /// - Remark: HTTP `DELETE /items/{itemId}`.
+    /// - Remark: Generated from `#/paths//items/{itemId}/delete(deleteItem)`.
+    func deleteItem(_ input: Operations.deleteItem.Input) async throws -> Operations.deleteItem.Output
+    /// Item changes (including deletions) after a version. Start with since=0 and store the returned version for the next pull.
+    ///
+    ///
+    /// - Remark: HTTP `GET /sync`.
+    /// - Remark: Generated from `#/paths//sync/get(pullSync)`.
+    func pullSync(_ input: Operations.pullSync.Input) async throws -> Operations.pullSync.Output
+    /// Applies a batch of offline operations in order. Every operation is idempotent on its item id, so a retried batch is safe.
+    ///
+    ///
+    /// - Remark: HTTP `POST /sync`.
+    /// - Remark: Generated from `#/paths//sync/post(pushSync)`.
+    func pushSync(_ input: Operations.pushSync.Input) async throws -> Operations.pushSync.Output
+    /// - Remark: HTTP `GET /recipes`.
+    /// - Remark: Generated from `#/paths//recipes/get(listRecipes)`.
+    func listRecipes(_ input: Operations.listRecipes.Input) async throws -> Operations.listRecipes.Output
+    /// - Remark: HTTP `POST /recipes`.
+    /// - Remark: Generated from `#/paths//recipes/post(createRecipe)`.
+    func createRecipe(_ input: Operations.createRecipe.Input) async throws -> Operations.createRecipe.Output
+    /// - Remark: HTTP `GET /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/get(getRecipe)`.
+    func getRecipe(_ input: Operations.getRecipe.Input) async throws -> Operations.getRecipe.Output
+    /// Replaces the recipe, including its ingredients, steps and tags.
+    ///
+    /// - Remark: HTTP `PUT /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/put(replaceRecipe)`.
+    func replaceRecipe(_ input: Operations.replaceRecipe.Input) async throws -> Operations.replaceRecipe.Output
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/delete(deleteRecipe)`.
+    func deleteRecipe(_ input: Operations.deleteRecipe.Input) async throws -> Operations.deleteRecipe.Output
+    /// Add a photo to a recipe
+    ///
+    /// Multipart upload with one `file` part: JPEG, PNG, GIF or WebP, up to 10 MB and 25 megapixels, at most 12 photos per recipe. The server stores a thumbnail and a large variant as WebP. The variants are fetched with `GET /images/{imageId}/thumb` and `/large` (not in this document: they return image bytes, are auth-checked by the session cookie and carry long-lived cache headers).
+    ///
+    ///
+    /// - Remark: HTTP `POST /recipes/{recipeId}/images`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/images/post(uploadRecipeImage)`.
+    func uploadRecipeImage(_ input: Operations.uploadRecipeImage.Input) async throws -> Operations.uploadRecipeImage.Output
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}/images/{imageId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/images/{imageId}/delete(deleteRecipeImage)`.
+    func deleteRecipeImage(_ input: Operations.deleteRecipeImage.Input) async throws -> Operations.deleteRecipeImage.Output
+    /// - Remark: HTTP `PUT /recipes/{recipeId}/marks/{mark}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/marks/{mark}/put(markRecipe)`.
+    func markRecipe(_ input: Operations.markRecipe.Input) async throws -> Operations.markRecipe.Output
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}/marks/{mark}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/marks/{mark}/delete(unmarkRecipe)`.
+    func unmarkRecipe(_ input: Operations.unmarkRecipe.Input) async throws -> Operations.unmarkRecipe.Output
+    /// - Remark: HTTP `GET /tags`.
+    /// - Remark: Generated from `#/paths//tags/get(listTags)`.
+    func listTags(_ input: Operations.listTags.Input) async throws -> Operations.listTags.Output
+    /// Adds a recipe's ingredients to the list, scaled to the requested servings. Ingredients already on the list are merged into the existing item, and each new item is categorised from the list's item memory.
+    ///
+    ///
+    /// - Remark: HTTP `POST /lists/{listId}/add-recipe`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/add-recipe/post(addRecipeToList)`.
+    func addRecipeToList(_ input: Operations.addRecipeToList.Input) async throws -> Operations.addRecipeToList.Output
+    /// - Remark: HTTP `GET /lists/{listId}/activity`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/activity/get(listActivity)`.
+    func listActivity(_ input: Operations.listActivity.Input) async throws -> Operations.listActivity.Output
+    /// Household activity feed, newest first
+    ///
+    /// Every audited change across lists and recipes. Filter by person, client (web, ios, watch, or mcp for any AI client), type of change and date.
+    ///
+    ///
+    /// - Remark: HTTP `GET /activity`.
+    /// - Remark: Generated from `#/paths//activity/get(listAllActivity)`.
+    func listAllActivity(_ input: Operations.listAllActivity.Input) async throws -> Operations.listAllActivity.Output
+    /// Undo one change
+    ///
+    /// Restores the record to how it was before the change and records the undo as a new activity row. Answers 409 when a later change touched the same record, unless force is true.
+    ///
+    ///
+    /// - Remark: HTTP `POST /activity/{activityId}/undo`.
+    /// - Remark: Generated from `#/paths//activity/{activityId}/undo/post(undoActivity)`.
+    func undoActivity(_ input: Operations.undoActivity.Input) async throws -> Operations.undoActivity.Output
+    /// Undo every change one AI request made
+    ///
+    /// All-or-nothing: when any row in the batch conflicts with a later change (and force is not true) nothing is undone and the answer is 409.
+    ///
+    ///
+    /// - Remark: HTTP `POST /activity/batches/{batchId}/undo`.
+    /// - Remark: Generated from `#/paths//activity/batches/{batchId}/undo/post(undoActivityBatch)`.
+    func undoActivityBatch(_ input: Operations.undoActivityBatch.Input) async throws -> Operations.undoActivityBatch.Output
 }
 
 /// Convenience overloads for operation inputs.
@@ -116,6 +243,377 @@ extension APIProtocol {
         body: Operations.acceptInvite.Input.Body
     ) async throws -> Operations.acceptInvite.Output {
         try await acceptInvite(Operations.acceptInvite.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /lists`.
+    /// - Remark: Generated from `#/paths//lists/get(listLists)`.
+    public func listLists(headers: Operations.listLists.Input.Headers = .init()) async throws -> Operations.listLists.Output {
+        try await listLists(Operations.listLists.Input(headers: headers))
+    }
+    /// - Remark: HTTP `POST /lists`.
+    /// - Remark: Generated from `#/paths//lists/post(createList)`.
+    public func createList(
+        headers: Operations.createList.Input.Headers = .init(),
+        body: Operations.createList.Input.Body
+    ) async throws -> Operations.createList.Output {
+        try await createList(Operations.createList.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/get(getList)`.
+    public func getList(
+        path: Operations.getList.Input.Path,
+        headers: Operations.getList.Input.Headers = .init()
+    ) async throws -> Operations.getList.Output {
+        try await getList(Operations.getList.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `PATCH /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/patch(updateList)`.
+    public func updateList(
+        path: Operations.updateList.Input.Path,
+        headers: Operations.updateList.Input.Headers = .init(),
+        body: Operations.updateList.Input.Body
+    ) async throws -> Operations.updateList.Output {
+        try await updateList(Operations.updateList.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Archives the list; its items are kept.
+    ///
+    /// - Remark: HTTP `DELETE /lists/{listId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/delete(archiveList)`.
+    public func archiveList(
+        path: Operations.archiveList.Input.Path,
+        headers: Operations.archiveList.Input.Headers = .init()
+    ) async throws -> Operations.archiveList.Output {
+        try await archiveList(Operations.archiveList.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `POST /lists/{listId}/categories`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/post(createCategory)`.
+    public func createCategory(
+        path: Operations.createCategory.Input.Path,
+        headers: Operations.createCategory.Input.Headers = .init(),
+        body: Operations.createCategory.Input.Body
+    ) async throws -> Operations.createCategory.Output {
+        try await createCategory(Operations.createCategory.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `PATCH /lists/{listId}/categories/{categoryId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/{categoryId}/patch(updateCategory)`.
+    public func updateCategory(
+        path: Operations.updateCategory.Input.Path,
+        headers: Operations.updateCategory.Input.Headers = .init(),
+        body: Operations.updateCategory.Input.Body
+    ) async throws -> Operations.updateCategory.Output {
+        try await updateCategory(Operations.updateCategory.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Deletes the category; its items become uncategorised.
+    ///
+    /// - Remark: HTTP `DELETE /lists/{listId}/categories/{categoryId}`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/categories/{categoryId}/delete(deleteCategory)`.
+    public func deleteCategory(
+        path: Operations.deleteCategory.Input.Path,
+        headers: Operations.deleteCategory.Input.Headers = .init()
+    ) async throws -> Operations.deleteCategory.Output {
+        try await deleteCategory(Operations.deleteCategory.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Adds an item. The client may supply the id so an offline retry is idempotent. A missing category or quantity is filled from the list's item memory.
+    ///
+    ///
+    /// - Remark: HTTP `POST /lists/{listId}/items`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/items/post(createItem)`.
+    public func createItem(
+        path: Operations.createItem.Input.Path,
+        headers: Operations.createItem.Input.Headers = .init(),
+        body: Operations.createItem.Input.Body
+    ) async throws -> Operations.createItem.Output {
+        try await createItem(Operations.createItem.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Autocomplete from what the household has added to this list before.
+    ///
+    /// - Remark: HTTP `GET /lists/{listId}/suggestions`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/suggestions/get(suggestItems)`.
+    public func suggestItems(
+        path: Operations.suggestItems.Input.Path,
+        query: Operations.suggestItems.Input.Query,
+        headers: Operations.suggestItems.Input.Headers = .init()
+    ) async throws -> Operations.suggestItems.Output {
+        try await suggestItems(Operations.suggestItems.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `PATCH /items/{itemId}`.
+    /// - Remark: Generated from `#/paths//items/{itemId}/patch(updateItem)`.
+    public func updateItem(
+        path: Operations.updateItem.Input.Path,
+        headers: Operations.updateItem.Input.Headers = .init(),
+        body: Operations.updateItem.Input.Body
+    ) async throws -> Operations.updateItem.Output {
+        try await updateItem(Operations.updateItem.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /items/{itemId}`.
+    /// - Remark: Generated from `#/paths//items/{itemId}/delete(deleteItem)`.
+    public func deleteItem(
+        path: Operations.deleteItem.Input.Path,
+        headers: Operations.deleteItem.Input.Headers = .init()
+    ) async throws -> Operations.deleteItem.Output {
+        try await deleteItem(Operations.deleteItem.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Item changes (including deletions) after a version. Start with since=0 and store the returned version for the next pull.
+    ///
+    ///
+    /// - Remark: HTTP `GET /sync`.
+    /// - Remark: Generated from `#/paths//sync/get(pullSync)`.
+    public func pullSync(
+        query: Operations.pullSync.Input.Query,
+        headers: Operations.pullSync.Input.Headers = .init()
+    ) async throws -> Operations.pullSync.Output {
+        try await pullSync(Operations.pullSync.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Applies a batch of offline operations in order. Every operation is idempotent on its item id, so a retried batch is safe.
+    ///
+    ///
+    /// - Remark: HTTP `POST /sync`.
+    /// - Remark: Generated from `#/paths//sync/post(pushSync)`.
+    public func pushSync(
+        headers: Operations.pushSync.Input.Headers = .init(),
+        body: Operations.pushSync.Input.Body
+    ) async throws -> Operations.pushSync.Output {
+        try await pushSync(Operations.pushSync.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /recipes`.
+    /// - Remark: Generated from `#/paths//recipes/get(listRecipes)`.
+    public func listRecipes(
+        query: Operations.listRecipes.Input.Query = .init(),
+        headers: Operations.listRecipes.Input.Headers = .init()
+    ) async throws -> Operations.listRecipes.Output {
+        try await listRecipes(Operations.listRecipes.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `POST /recipes`.
+    /// - Remark: Generated from `#/paths//recipes/post(createRecipe)`.
+    public func createRecipe(
+        headers: Operations.createRecipe.Input.Headers = .init(),
+        body: Operations.createRecipe.Input.Body
+    ) async throws -> Operations.createRecipe.Output {
+        try await createRecipe(Operations.createRecipe.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/get(getRecipe)`.
+    public func getRecipe(
+        path: Operations.getRecipe.Input.Path,
+        headers: Operations.getRecipe.Input.Headers = .init()
+    ) async throws -> Operations.getRecipe.Output {
+        try await getRecipe(Operations.getRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Replaces the recipe, including its ingredients, steps and tags.
+    ///
+    /// - Remark: HTTP `PUT /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/put(replaceRecipe)`.
+    public func replaceRecipe(
+        path: Operations.replaceRecipe.Input.Path,
+        headers: Operations.replaceRecipe.Input.Headers = .init(),
+        body: Operations.replaceRecipe.Input.Body
+    ) async throws -> Operations.replaceRecipe.Output {
+        try await replaceRecipe(Operations.replaceRecipe.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/delete(deleteRecipe)`.
+    public func deleteRecipe(
+        path: Operations.deleteRecipe.Input.Path,
+        headers: Operations.deleteRecipe.Input.Headers = .init()
+    ) async throws -> Operations.deleteRecipe.Output {
+        try await deleteRecipe(Operations.deleteRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Add a photo to a recipe
+    ///
+    /// Multipart upload with one `file` part: JPEG, PNG, GIF or WebP, up to 10 MB and 25 megapixels, at most 12 photos per recipe. The server stores a thumbnail and a large variant as WebP. The variants are fetched with `GET /images/{imageId}/thumb` and `/large` (not in this document: they return image bytes, are auth-checked by the session cookie and carry long-lived cache headers).
+    ///
+    ///
+    /// - Remark: HTTP `POST /recipes/{recipeId}/images`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/images/post(uploadRecipeImage)`.
+    public func uploadRecipeImage(
+        path: Operations.uploadRecipeImage.Input.Path,
+        headers: Operations.uploadRecipeImage.Input.Headers = .init(),
+        body: Operations.uploadRecipeImage.Input.Body
+    ) async throws -> Operations.uploadRecipeImage.Output {
+        try await uploadRecipeImage(Operations.uploadRecipeImage.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}/images/{imageId}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/images/{imageId}/delete(deleteRecipeImage)`.
+    public func deleteRecipeImage(
+        path: Operations.deleteRecipeImage.Input.Path,
+        headers: Operations.deleteRecipeImage.Input.Headers = .init()
+    ) async throws -> Operations.deleteRecipeImage.Output {
+        try await deleteRecipeImage(Operations.deleteRecipeImage.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `PUT /recipes/{recipeId}/marks/{mark}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/marks/{mark}/put(markRecipe)`.
+    public func markRecipe(
+        path: Operations.markRecipe.Input.Path,
+        headers: Operations.markRecipe.Input.Headers = .init()
+    ) async throws -> Operations.markRecipe.Output {
+        try await markRecipe(Operations.markRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `DELETE /recipes/{recipeId}/marks/{mark}`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/marks/{mark}/delete(unmarkRecipe)`.
+    public func unmarkRecipe(
+        path: Operations.unmarkRecipe.Input.Path,
+        headers: Operations.unmarkRecipe.Input.Headers = .init()
+    ) async throws -> Operations.unmarkRecipe.Output {
+        try await unmarkRecipe(Operations.unmarkRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// - Remark: HTTP `GET /tags`.
+    /// - Remark: Generated from `#/paths//tags/get(listTags)`.
+    public func listTags(headers: Operations.listTags.Input.Headers = .init()) async throws -> Operations.listTags.Output {
+        try await listTags(Operations.listTags.Input(headers: headers))
+    }
+    /// Adds a recipe's ingredients to the list, scaled to the requested servings. Ingredients already on the list are merged into the existing item, and each new item is categorised from the list's item memory.
+    ///
+    ///
+    /// - Remark: HTTP `POST /lists/{listId}/add-recipe`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/add-recipe/post(addRecipeToList)`.
+    public func addRecipeToList(
+        path: Operations.addRecipeToList.Input.Path,
+        headers: Operations.addRecipeToList.Input.Headers = .init(),
+        body: Operations.addRecipeToList.Input.Body
+    ) async throws -> Operations.addRecipeToList.Output {
+        try await addRecipeToList(Operations.addRecipeToList.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `GET /lists/{listId}/activity`.
+    /// - Remark: Generated from `#/paths//lists/{listId}/activity/get(listActivity)`.
+    public func listActivity(
+        path: Operations.listActivity.Input.Path,
+        query: Operations.listActivity.Input.Query = .init(),
+        headers: Operations.listActivity.Input.Headers = .init()
+    ) async throws -> Operations.listActivity.Output {
+        try await listActivity(Operations.listActivity.Input(
+            path: path,
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Household activity feed, newest first
+    ///
+    /// Every audited change across lists and recipes. Filter by person, client (web, ios, watch, or mcp for any AI client), type of change and date.
+    ///
+    ///
+    /// - Remark: HTTP `GET /activity`.
+    /// - Remark: Generated from `#/paths//activity/get(listAllActivity)`.
+    public func listAllActivity(
+        query: Operations.listAllActivity.Input.Query = .init(),
+        headers: Operations.listAllActivity.Input.Headers = .init()
+    ) async throws -> Operations.listAllActivity.Output {
+        try await listAllActivity(Operations.listAllActivity.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Undo one change
+    ///
+    /// Restores the record to how it was before the change and records the undo as a new activity row. Answers 409 when a later change touched the same record, unless force is true.
+    ///
+    ///
+    /// - Remark: HTTP `POST /activity/{activityId}/undo`.
+    /// - Remark: Generated from `#/paths//activity/{activityId}/undo/post(undoActivity)`.
+    public func undoActivity(
+        path: Operations.undoActivity.Input.Path,
+        headers: Operations.undoActivity.Input.Headers = .init(),
+        body: Operations.undoActivity.Input.Body
+    ) async throws -> Operations.undoActivity.Output {
+        try await undoActivity(Operations.undoActivity.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Undo every change one AI request made
+    ///
+    /// All-or-nothing: when any row in the batch conflicts with a later change (and force is not true) nothing is undone and the answer is 409.
+    ///
+    ///
+    /// - Remark: HTTP `POST /activity/batches/{batchId}/undo`.
+    /// - Remark: Generated from `#/paths//activity/batches/{batchId}/undo/post(undoActivityBatch)`.
+    public func undoActivityBatch(
+        path: Operations.undoActivityBatch.Input.Path,
+        headers: Operations.undoActivityBatch.Input.Headers = .init(),
+        body: Operations.undoActivityBatch.Input.Body
+    ) async throws -> Operations.undoActivityBatch.Output {
+        try await undoActivityBatch(Operations.undoActivityBatch.Input(
             path: path,
             headers: headers,
             body: body

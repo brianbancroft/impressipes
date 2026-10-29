@@ -449,6 +449,55 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+  /recipes/{recipeId}/images:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    post:
+      operationId: uploadRecipeImage
+      summary: Add a photo to a recipe
+      description: >
+        Multipart upload with one `file` part: JPEG, PNG, GIF or WebP, up to 10 MB
+        and 25 megapixels, at most 12 photos per recipe. The server stores a
+        thumbnail and a large variant as WebP. The variants are fetched with
+        `GET /images/{imageId}/thumb` and `/large` (not in this document: they
+        return image bytes, are auth-checked by the session cookie and carry
+        long-lived cache headers).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: The stored image
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Image" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "413": { $ref: "#/components/responses/Error" }
+        "415": { $ref: "#/components/responses/Error" }
+  /recipes/{recipeId}/images/{imageId}:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+      - name: imageId
+        in: path
+        required: true
+        schema: { type: string }
+    delete:
+      operationId: deleteRecipeImage
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /recipes/{recipeId}/marks/{mark}:
     parameters:
       - $ref: "#/components/parameters/RecipeId"
@@ -532,6 +581,84 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+  /activity:
+    get:
+      operationId: listAllActivity
+      summary: Household activity feed, newest first
+      description: >
+        Every audited change across lists and recipes. Filter by person, client
+        (web, ios, watch, or mcp for any AI client), type of change and date.
+      parameters:
+        - { name: limit, in: query, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { name: userId, in: query, schema: { type: string } }
+        - { name: via, in: query, schema: { type: string } }
+        - { name: action, in: query, schema: { type: string } }
+        - { name: since, in: query, schema: { type: string, format: date-time } }
+        - { name: until, in: query, schema: { type: string, format: date-time } }
+      responses:
+        "200":
+          description: Newest first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ActivityFeed" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /activity/{activityId}/undo:
+    parameters:
+      - $ref: "#/components/parameters/ActivityId"
+    post:
+      operationId: undoActivity
+      summary: Undo one change
+      description: >
+        Restores the record to how it was before the change and records the undo
+        as a new activity row. Answers 409 when a later change touched the same
+        record, unless force is true.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UndoInput" }
+      responses:
+        "200":
+          description: The new undo row
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Activity" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "422": { $ref: "#/components/responses/Error" }
+  /activity/batches/{batchId}/undo:
+    parameters:
+      - name: batchId
+        in: path
+        required: true
+        schema: { type: string }
+    post:
+      operationId: undoActivityBatch
+      summary: Undo every change one AI request made
+      description: >
+        All-or-nothing: when any row in the batch conflicts with a later change
+        (and force is not true) nothing is undone and the answer is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UndoInput" }
+      responses:
+        "200":
+          description: The new undo rows
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Activity" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
 security:
   - session: []
 components:
@@ -571,6 +698,11 @@ components:
       in: path
       required: true
       schema: { type: string }
+    ActivityId:
+      name: activityId
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
   responses:
     Error:
       description: Error
@@ -799,12 +931,18 @@ components:
           items: { $ref: "#/components/schemas/RecipeMark" }
         createdBy: { type: string }
         updatedAt: { type: string, format: date-time }
+        coverUrl:
+          type: string
+          description: Thumbnail of the first photo, relative to the API root
     Recipe:
       allOf:
         - $ref: "#/components/schemas/RecipeSummary"
         - type: object
-          required: [notes, ingredients, steps]
+          required: [notes, ingredients, steps, images]
           properties:
+            images:
+              type: array
+              items: { $ref: "#/components/schemas/Image" }
             sourceUrl: { type: string }
             notes: { type: string }
             ingredients:
@@ -813,6 +951,13 @@ components:
             steps:
               type: array
               items: { $ref: "#/components/schemas/Step" }
+    Image:
+      type: object
+      required: [id, thumbUrl, largeUrl]
+      properties:
+        id: { type: string }
+        thumbUrl: { type: string, description: "Relative to the API root, e.g. /images/{id}/thumb" }
+        largeUrl: { type: string }
     AddRecipeResult:
       type: object
       required: [added, merged]
@@ -825,12 +970,31 @@ components:
           items: { $ref: "#/components/schemas/Item" }
     Activity:
       type: object
-      required: [id, via, action, detail, createdAt]
+      required: [id, via, action, detail, createdAt, undoable]
       properties:
         id: { type: integer, format: int64 }
         userId: { type: string }
         via: { type: string }
         action: { type: string }
+        listId: { type: string }
         recipeId: { type: string }
-        detail: { type: object, additionalProperties: true }
+        batchId: { type: string, description: One AI request; rows sharing it undo together }
+        detail:
+          type: object
+          additionalProperties: true
+          description: Includes before (and after, for edits) so the feed can show what changed
         createdAt: { type: string, format: date-time }
+        undoable: { type: boolean, description: Can still be undone }
+        restorableUntil: { type: string, format: date-time, description: When the undo window closes }
+        undoneAt: { type: string, format: date-time }
+        undoneBy: { type: string }
+        undoOf: { type: integer, format: int64, description: Set on the row an undo created }
+    ActivityFeed:
+      type: array
+      items: { $ref: "#/components/schemas/Activity" }
+    UndoInput:
+      type: object
+      properties:
+        force:
+          type: boolean
+          description: Overwrite a later change to the same record

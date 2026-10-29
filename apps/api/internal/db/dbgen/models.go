@@ -17,6 +17,10 @@ type Activity struct {
 	RecipeID  pgtype.UUID        `json:"recipe_id"`
 	Detail    []byte             `json:"detail"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	BatchID   pgtype.UUID        `json:"batch_id"`
+	UndoneAt  pgtype.Timestamptz `json:"undone_at"`
+	UndoneBy  pgtype.UUID        `json:"undone_by"`
+	UndoOf    pgtype.Int8        `json:"undo_of"`
 }
 
 type ApiToken struct {
