@@ -77,6 +77,9 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 	// does not fit the generated request/response handlers.
 	mux.HandleFunc("GET /events", s.events)
 	mux.HandleFunc("GET /images/{id}/{variant}", s.serveImage)
+	if pool != nil {
+		mux.Handle("/mcp", s.mcpHandler())
+	}
 	rest := api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
 		ErrorHandlerFunc: requestError,
 	})
@@ -109,6 +112,13 @@ type authFail struct {
 // current resolves the request's session. A disabled member gets 403 so the
 // web app can show the disabled state rather than a sign-in prompt.
 func (s *server) current(ctx context.Context) (*family.Member, *authFail) {
+	// A bearer token has already been resolved to a member by the MCP endpoint.
+	if m, ok := ctx.Value(memberKey{}).(*family.Member); ok {
+		if m.Status == family.StatusDisabled {
+			return nil, &authFail{http.StatusForbidden, "disabled"}
+		}
+		return m, nil
+	}
 	sess, _ := ctx.Value(ctxKey{}).(string)
 	if sess == "" {
 		return nil, &authFail{http.StatusUnauthorized, "unauthenticated"}
