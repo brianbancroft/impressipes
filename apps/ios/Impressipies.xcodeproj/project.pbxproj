@@ -60,16 +60,28 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		47238C86749EB5E89D7CE81F /* Shared */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = Shared;
 			sourceTree = "<group>";
 		};
 		7F1FE52F9D492AA39951ABAA /* Impressipies */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = Impressipies;
 			sourceTree = "<group>";
 		};
 		B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			explicitFileTypes = {
+			};
+			explicitFolders = (
+			);
 			path = ImpressipiesWatch;
 			sourceTree = "<group>";
 		};
@@ -154,8 +166,8 @@
 				6E58131559D2419B24C30D09 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				47238C86749EB5E89D7CE81F /* Shared */,
 				7F1FE52F9D492AA39951ABAA /* Impressipies */,
+				47238C86749EB5E89D7CE81F /* Shared */,
 			);
 			name = Impressipies;
 			packageProductDependencies = (
@@ -178,8 +190,8 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				47238C86749EB5E89D7CE81F /* Shared */,
 				B4796E9266E58DDCE86D6FE6 /* ImpressipiesWatch */,
+				47238C86749EB5E89D7CE81F /* Shared */,
 			);
 			name = ImpressipiesWatch;
 			packageProductDependencies = (
@@ -217,10 +229,15 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					15C6864A5129523324401189 = {
+						DevelopmentTeam = 498G2KX3YV;
 						ProvisioningStyle = Automatic;
 					};
 					346CF7C158C4B5BBAC5F6B33 = {
+						DevelopmentTeam = 498G2KX3YV;
 						ProvisioningStyle = Automatic;
+					};
+					876330F35FDDCA3C71637024 = {
+						DevelopmentTeam = 498G2KX3YV;
 					};
 				};
 			};
@@ -358,6 +375,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = 498G2KX3YV;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -432,6 +450,7 @@
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 1;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = 498G2KX3YV;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -486,6 +505,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Impressipes uses the camera to scan the QR code that sets your server address.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -510,6 +530,7 @@
 				CODE_SIGN_IDENTITY = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				INFOPLIST_KEY_CFBundleDisplayName = Impressipes;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_NSAppTransportSecurity_NSAllowsLocalNetworking = YES;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Impressipes uses the camera to scan the QR code that sets your server address.";
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
