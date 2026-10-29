@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { Mail } from 'lucide-react';
+import { KeyRound, Mail } from 'lucide-react';
 import { login, requestMagicLink, verifyCode, type AuthResult } from './api';
 import { Shell } from './Shell';
 import { Button } from './ui/button';
+import { cn } from './ui/cn';
 
 /** Where to go after signing in: back to the page that asked, or home from /signin itself. */
 export function afterSignIn(member: { hasPassword?: boolean }) {
@@ -48,8 +49,27 @@ export function SignIn() {
   return (
     <Shell>
       <p className="scribble">welcome back</p>
-      <h1 className="mt-1 text-4xl leading-none">Sign in</h1>
-      <form onSubmit={submit} className="card mt-6 flex flex-col gap-4 p-5">
+      <h1 className="mt-1 text-4xl leading-none md:text-5xl">Sign in</h1>
+      <p className="mt-2 text-ink-muted">Use your password, or get a one-time link by email.</p>
+
+      <form onSubmit={submit} className="card mt-6 flex flex-col gap-4 p-5 sm:p-6">
+        <div className="grid grid-cols-2 gap-1 rounded-md border-2 border-outline bg-surface-2 p-1" role="group" aria-label="Sign-in method">
+          {(['password', 'link'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              aria-pressed={mode === m}
+              onClick={() => mode !== m && switchMode(m)}
+              className={cn(
+                'inline-flex min-h-10 items-center justify-center gap-2 rounded-sm border-0 text-sm font-bold [&_svg]:size-4',
+                mode === m ? 'bg-surface text-ink shadow-[0_0_0_2px_var(--color-outline)]' : 'bg-transparent text-ink-muted hover:text-ink',
+              )}
+            >
+              {m === 'password' ? <><KeyRound />Password</> : <><Mail />Email link</>}
+            </button>
+          ))}
+        </div>
+
         <div>
           <label htmlFor="email" className="field-label">Email</label>
           <input
@@ -60,7 +80,10 @@ export function SignIn() {
 
         {mode === 'password' && (
           <div>
-            <label htmlFor="password" className="field-label">Password</label>
+            <div className="mb-1.5 flex items-baseline justify-between gap-3">
+              <label htmlFor="password" className="field-label mb-0">Password</label>
+              <Button variant="link" className="min-h-0 text-sm" onClick={() => switchMode('link')}>Forgot it?</Button>
+            </div>
             <input
               id="password" className="field" type="password" autoComplete="current-password"
               value={password} onChange={(e) => setPassword(e.target.value)} required
@@ -68,10 +91,14 @@ export function SignIn() {
           </div>
         )}
 
+        {mode === 'link' && !sent && (
+          <p className="text-sm text-ink-muted">New device or forgot your password? We’ll email a link and a 6-digit code.</p>
+        )}
+
         {mode === 'link' && sent && (
           <div>
-            <p role="status" className="mb-3 text-ink-muted">
-              If <b>{email}</b> belongs to a member, a link and a 6-digit code are on their way. Open the link, or enter the code here.
+            <p role="status" className="mb-3 rounded-md bg-surface-2 p-3 text-sm text-ink-muted">
+              If <b className="break-all text-ink">{email}</b> belongs to a member, a link and a 6-digit code are on their way. Open the link, or enter the code here.
             </p>
             <label htmlFor="code" className="field-label">6-digit code</label>
             <input
@@ -87,18 +114,11 @@ export function SignIn() {
           {mode === 'password' ? 'Sign in' : sent ? 'Sign in with code' : <><Mail />Email me a link</>}
         </Button>
 
-        {mode === 'password' ? (
-          <Button variant="link" className="self-center" onClick={() => switchMode('link')}>
-            Forgot your password, or new device? Email me a link
-          </Button>
-        ) : (
-          <div className="flex flex-col items-center gap-2">
-            {sent && <Button variant="link" onClick={() => { setSent(false); setCode(''); setError(''); }}>Use a different email</Button>}
-            <Button variant="link" onClick={() => switchMode('password')}>Sign in with a password instead</Button>
-          </div>
+        {sent && (
+          <Button variant="link" className="min-h-0 self-center text-sm" onClick={() => { setSent(false); setCode(''); setError(''); }}>Use a different email</Button>
         )}
       </form>
-      <p className="mt-4 text-sm text-ink-muted">Joining the family? Ask the admin for an invite link.</p>
+      <p className="mt-5 text-center text-sm text-ink-muted">Joining the family? Ask the admin for an invite link.</p>
     </Shell>
   );
 }

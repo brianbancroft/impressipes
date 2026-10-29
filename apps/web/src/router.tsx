@@ -74,7 +74,7 @@ const authedRoute = createRoute({
 
 function AuthedLayout() {
   const { data: me, isPending, isError, refetch } = useQuery(meQuery);
-  if (isPending) return <Shell><Loading /></Shell>;
+  if (isPending) return <div className="grid min-h-dvh place-items-center"><Loading /></div>;
   if (isError) return <Shell><ErrorState onRetry={() => refetch()} /></Shell>;
   if (me.kind === 'disabled') {
     return (

@@ -13,7 +13,7 @@ export const buttonVariants = cva(
         sticker: 'bg-butter text-sticker-ink shadow-pop-sm hover:text-sticker-ink hover:-translate-y-px active:translate-x-0.5 active:translate-y-0.5 active:shadow-none',
         flat: 'bg-surface text-ink hover:bg-surface-2 hover:text-ink',
         ghost: 'border-transparent bg-transparent text-ink hover:bg-surface-2 hover:text-ink',
-        link: 'border-0 bg-transparent p-0 text-accent underline underline-offset-2 hover:text-accent-hover',
+        link: 'border-0 bg-transparent p-0 text-center whitespace-normal text-accent underline underline-offset-2 hover:text-accent-hover',
         dashed: 'border-dashed bg-transparent text-ink hover:bg-surface-2 hover:text-ink',
       },
       size: {

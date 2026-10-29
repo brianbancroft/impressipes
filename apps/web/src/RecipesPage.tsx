@@ -90,15 +90,21 @@ export function RecipesPage() {
         </label>
       </div>
 
-      <div className="relative -mx-4 mb-6 flex items-center gap-2 overflow-x-auto px-4 py-1 md:mx-0 md:flex-wrap md:overflow-visible md:px-0" role="group" aria-label="Filters">
-        <Chip on={!filtered} onClick={clearAll}>All{!filtered && recipes.data ? ` ${recipes.data.length}` : ''}</Chip>
-        <Chip on={mark === 'favourite'} fill="bg-rose" onClick={() => setMarkFilter(mark === 'favourite' ? undefined : 'favourite')}><Heart />Faves</Chip>
-        <Chip on={mark === 'want_to_make'} fill="bg-mint" onClick={() => setMarkFilter(mark === 'want_to_make' ? undefined : 'want_to_make')}><Bookmark />Want to make</Chip>
-        {tags.data?.map((t) => (
-          <Chip key={t} on={tag === t} fill={pick(STICKERS, t)} onClick={() => setTag(tag === t ? undefined : t)}>{t}</Chip>
-        ))}
-        <span className="ml-auto flex flex-none items-center gap-3 pl-2">
-          {filtered && <span className="text-sm font-bold text-ink-muted" role="status">{recipes.data?.length ?? 0} found</span>}
+      <div className="relative mb-6 flex items-center gap-3">
+        <div
+          className="-my-1 -ml-4 flex min-w-0 flex-1 items-center gap-2 overflow-x-auto py-1 pr-1 pl-4 [scrollbar-width:none] md:ml-0 md:flex-wrap md:overflow-visible md:pl-0 max-md:[mask-image:linear-gradient(to_right,black_85%,transparent)] [&::-webkit-scrollbar]:hidden"
+          role="group"
+          aria-label="Filters"
+        >
+          <Chip on={!filtered} onClick={clearAll}>All{!filtered && recipes.data ? ` ${recipes.data.length}` : ''}</Chip>
+          <Chip on={mark === 'favourite'} fill="bg-rose" onClick={() => setMarkFilter(mark === 'favourite' ? undefined : 'favourite')}><Heart />Faves</Chip>
+          <Chip on={mark === 'want_to_make'} fill="bg-mint" onClick={() => setMarkFilter(mark === 'want_to_make' ? undefined : 'want_to_make')}><Bookmark />Want to make</Chip>
+          {tags.data?.map((t) => (
+            <Chip key={t} on={tag === t} fill={pick(STICKERS, t)} onClick={() => setTag(tag === t ? undefined : t)}>{t}</Chip>
+          ))}
+        </div>
+        <span className="flex flex-none items-center gap-3">
+          {filtered && <span className="text-sm font-bold whitespace-nowrap text-ink-muted max-sm:sr-only" role="status">{recipes.data?.length ?? 0} found</span>}
           <Button size="sm" variant={selecting ? 'primary' : 'flat'} aria-pressed={selecting} onClick={() => { setSelecting(!selecting); setSelected(new Set()); }}>
             {selecting ? 'Done' : 'Select'}
           </Button>
