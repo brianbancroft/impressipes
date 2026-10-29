@@ -1,0 +1,28 @@
+#!/usr/bin/env bash
+# Push the current branch and ask Coolify to deploy it.
+#
+# Needs COOLIFY_URL (e.g. https://coolify.example.com) and COOLIFY_TOKEN (an API
+# token with the "deploy" ability) in the environment. Coolify builds from git,
+# so the branch has to be on GitHub first; the app builds whichever branch it is
+# configured for, so check that matches.
+#
+#   scripts/deploy          deploy
+#   scripts/deploy --force  deploy with a no-cache rebuild
+set -euo pipefail
+
+APP_UUID="${COOLIFY_APP_UUID:-bkajqtqpzmea440pehbaeegj}"
+: "${COOLIFY_URL:?set COOLIFY_URL}"
+: "${COOLIFY_TOKEN:?set COOLIFY_TOKEN}"
+
+force=false
+[[ "${1:-}" == "--force" ]] && force=true
+
+if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
+  echo "warning: uncommitted changes will not be deployed" >&2
+fi
+
+git push -u origin HEAD
+
+curl -fsS -H "Authorization: Bearer $COOLIFY_TOKEN" \
+  "${COOLIFY_URL%/}/api/v1/deploy?uuid=$APP_UUID&force=$force"
+echo
