@@ -43,6 +43,35 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `POST /invites/{token}/accept`.
     /// - Remark: Generated from `#/paths//invites/{token}/accept/post(acceptInvite)`.
     func acceptInvite(_ input: Operations.acceptInvite.Input) async throws -> Operations.acceptInvite.Output
+    /// Sign in with a confirmed email and a password.
+    ///
+    /// - Remark: HTTP `POST /auth/login`.
+    /// - Remark: Generated from `#/paths//auth/login/post(login)`.
+    func login(_ input: Operations.login.Input) async throws -> Operations.login.Output
+    /// Email a sign-in link and six-digit code to a confirmed address. Always
+    /// answers 202, whether or not the address belongs to a member.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/magic`.
+    /// - Remark: Generated from `#/paths//auth/magic/post(requestMagicLink)`.
+    func requestMagicLink(_ input: Operations.requestMagicLink.Input) async throws -> Operations.requestMagicLink.Output
+    /// Redeem an emailed link (token) or code (email + code). Signs the member in,
+    /// and confirms the address when the email was a confirmation.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/verify`.
+    /// - Remark: Generated from `#/paths//auth/verify/post(verifyMagicLink)`.
+    func verifyMagicLink(_ input: Operations.verifyMagicLink.Input) async throws -> Operations.verifyMagicLink.Output
+    /// Email a confirmation link and code to a new address. It becomes the member's email once confirmed.
+    ///
+    /// - Remark: HTTP `POST /me/email`.
+    /// - Remark: Generated from `#/paths//me/email/post(setEmail)`.
+    func setEmail(_ input: Operations.setEmail.Input) async throws -> Operations.setEmail.Output
+    /// Set or replace the signed-in member's password.
+    ///
+    /// - Remark: HTTP `PUT /me/password`.
+    /// - Remark: Generated from `#/paths//me/password/put(setPassword)`.
+    func setPassword(_ input: Operations.setPassword.Input) async throws -> Operations.setPassword.Output
     /// - Remark: HTTP `GET /lists`.
     /// - Remark: Generated from `#/paths//lists/get(listLists)`.
     func listLists(_ input: Operations.listLists.Input) async throws -> Operations.listLists.Output
@@ -244,6 +273,75 @@ extension APIProtocol {
     ) async throws -> Operations.acceptInvite.Output {
         try await acceptInvite(Operations.acceptInvite.Input(
             path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Sign in with a confirmed email and a password.
+    ///
+    /// - Remark: HTTP `POST /auth/login`.
+    /// - Remark: Generated from `#/paths//auth/login/post(login)`.
+    public func login(
+        headers: Operations.login.Input.Headers = .init(),
+        body: Operations.login.Input.Body
+    ) async throws -> Operations.login.Output {
+        try await login(Operations.login.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Email a sign-in link and six-digit code to a confirmed address. Always
+    /// answers 202, whether or not the address belongs to a member.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/magic`.
+    /// - Remark: Generated from `#/paths//auth/magic/post(requestMagicLink)`.
+    public func requestMagicLink(
+        headers: Operations.requestMagicLink.Input.Headers = .init(),
+        body: Operations.requestMagicLink.Input.Body
+    ) async throws -> Operations.requestMagicLink.Output {
+        try await requestMagicLink(Operations.requestMagicLink.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Redeem an emailed link (token) or code (email + code). Signs the member in,
+    /// and confirms the address when the email was a confirmation.
+    ///
+    ///
+    /// - Remark: HTTP `POST /auth/verify`.
+    /// - Remark: Generated from `#/paths//auth/verify/post(verifyMagicLink)`.
+    public func verifyMagicLink(
+        headers: Operations.verifyMagicLink.Input.Headers = .init(),
+        body: Operations.verifyMagicLink.Input.Body
+    ) async throws -> Operations.verifyMagicLink.Output {
+        try await verifyMagicLink(Operations.verifyMagicLink.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Email a confirmation link and code to a new address. It becomes the member's email once confirmed.
+    ///
+    /// - Remark: HTTP `POST /me/email`.
+    /// - Remark: Generated from `#/paths//me/email/post(setEmail)`.
+    public func setEmail(
+        headers: Operations.setEmail.Input.Headers = .init(),
+        body: Operations.setEmail.Input.Body
+    ) async throws -> Operations.setEmail.Output {
+        try await setEmail(Operations.setEmail.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Set or replace the signed-in member's password.
+    ///
+    /// - Remark: HTTP `PUT /me/password`.
+    /// - Remark: Generated from `#/paths//me/password/put(setPassword)`.
+    public func setPassword(
+        headers: Operations.setPassword.Input.Headers = .init(),
+        body: Operations.setPassword.Input.Body
+    ) async throws -> Operations.setPassword.Output {
+        try await setPassword(Operations.setPassword.Input(
             headers: headers,
             body: body
         ))

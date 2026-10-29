@@ -34,6 +34,8 @@ type Member struct {
 	Role         string `json:"role"`
 	Status       string `json:"status"`
 	CredentialID string `json:"-"`
+	Email        string `json:"-"`
+	HasPassword  bool   `json:"-"`
 }
 
 type Invite struct {
@@ -49,6 +51,16 @@ type Store struct {
 	members  map[string]*Member
 	invites  map[string]*Invite
 	sessions map[string]string
+
+	passwords  map[string]string     // member id → password hash
+	challenges map[string]*challenge // link hash → emailed link + code
+}
+
+type challenge struct {
+	userID, purpose, email, codeHash string
+	attempts                         int
+	expires, created                 time.Time
+	used                             bool
 }
 
 func NewStore() *Store {
@@ -57,6 +69,9 @@ func NewStore() *Store {
 		members:  map[string]*Member{},
 		invites:  map[string]*Invite{},
 		sessions: map[string]string{},
+
+		passwords:  map[string]string{},
+		challenges: map[string]*challenge{},
 	}
 }
 
@@ -109,25 +124,29 @@ func (s *Store) Invite(_ context.Context, tok string) (*Invite, *Member, error) 
 
 // Accept consumes an invite, creating (or updating) the member and a session.
 // The first member ever created becomes the admin.
-func (s *Store) Accept(_ context.Context, tok, name, color, credentialID string) (*Member, string, error) {
+func (s *Store) Accept(_ context.Context, tok string, in AcceptInput) (*Member, string, *Challenge, error) {
+	email, pwHash, err := prepareCredentials(in)
+	if err != nil {
+		return nil, "", nil, err
+	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	inv, ok := s.invites[tok]
 	if !ok {
-		return nil, "", ErrNotFound
+		return nil, "", nil, ErrNotFound
 	}
 	if inv.Used {
-		return nil, "", ErrInviteUsed
+		return nil, "", nil, ErrInviteUsed
 	}
 	if s.now().After(inv.ExpiresAt) {
-		return nil, "", ErrExpired
+		return nil, "", nil, ErrExpired
 	}
 
 	var m *Member
 	if inv.MemberID != "" {
 		m = s.members[inv.MemberID]
 		if m.Status == StatusDisabled {
-			return nil, "", ErrDisabled
+			return nil, "", nil, ErrDisabled
 		}
 	} else {
 		role := RoleMember
@@ -137,13 +156,25 @@ func (s *Store) Accept(_ context.Context, tok, name, color, credentialID string)
 		m = &Member{ID: token()[:12], Role: role, Status: StatusActive}
 		s.members[m.ID] = m
 	}
-	m.Name, m.Color, m.CredentialID = name, color, credentialID
+	if email != "" && email != m.Email {
+		if other := s.byEmail(email); other != nil && other.ID != m.ID {
+			return nil, "", nil, ErrEmailTaken
+		}
+	}
+	m.Name, m.Color, m.CredentialID = in.Name, in.Color, in.CredentialID
+	if pwHash != "" {
+		s.passwords[m.ID], m.HasPassword = pwHash, true
+	}
+	var ch *Challenge
+	if email != "" && email != m.Email {
+		c := s.addChallenge(m, PurposeVerify, email)
+		ch = &c
+	}
 	inv.Used = true
 
-	sess := token()
-	s.sessions[sess] = m.ID
+	sess := s.newSession(m)
 	cp := *m
-	return &cp, sess, nil
+	return &cp, sess, ch, nil
 }
 
 // Session resolves a session token to its member.

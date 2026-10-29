@@ -260,11 +260,15 @@ type ListPatch struct {
 
 // Member defines model for Member.
 type Member struct {
-	Color  string       `json:"color"`
-	Id     string       `json:"id"`
-	Name   string       `json:"name"`
-	Role   MemberRole   `json:"role"`
-	Status MemberStatus `json:"status"`
+	Color string `json:"color"`
+
+	// Email The confirmed email, if the member has one.
+	Email       *string      `json:"email,omitempty"`
+	HasPassword *bool        `json:"hasPassword,omitempty"`
+	Id          string       `json:"id"`
+	Name        string       `json:"name"`
+	Role        MemberRole   `json:"role"`
+	Status      MemberStatus `json:"status"`
 }
 
 // MemberRole defines model for Member.Role.
@@ -420,6 +424,24 @@ type ListAllActivityParams struct {
 	Until  *time.Time `form:"until,omitempty" json:"until,omitempty"`
 }
 
+// LoginJSONBody defines parameters for Login.
+type LoginJSONBody struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
+}
+
+// RequestMagicLinkJSONBody defines parameters for RequestMagicLink.
+type RequestMagicLinkJSONBody struct {
+	Email string `json:"email"`
+}
+
+// VerifyMagicLinkJSONBody defines parameters for VerifyMagicLink.
+type VerifyMagicLinkJSONBody struct {
+	Code  *string `json:"code,omitempty"`
+	Email *string `json:"email,omitempty"`
+	Token *string `json:"token,omitempty"`
+}
+
 // CreateInviteJSONBody defines parameters for CreateInvite.
 type CreateInviteJSONBody struct {
 	MemberId *string `json:"memberId,omitempty"`
@@ -429,7 +451,13 @@ type CreateInviteJSONBody struct {
 type AcceptInviteJSONBody struct {
 	Color        string `json:"color"`
 	CredentialId string `json:"credentialId"`
-	Name         string `json:"name"`
+
+	// Email Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+	Email *string `json:"email,omitempty"`
+	Name  string  `json:"name"`
+
+	// Password Optional, at least 10 characters.
+	Password *string `json:"password,omitempty"`
 }
 
 // ListActivityParams defines parameters for ListActivity.
@@ -446,6 +474,16 @@ type AddRecipeToListJSONBody struct {
 // SuggestItemsParams defines parameters for SuggestItems.
 type SuggestItemsParams struct {
 	Q string `form:"q" json:"q"`
+}
+
+// SetEmailJSONBody defines parameters for SetEmail.
+type SetEmailJSONBody struct {
+	Email string `json:"email"`
+}
+
+// SetPasswordJSONBody defines parameters for SetPassword.
+type SetPasswordJSONBody struct {
+	Password string `json:"password"`
 }
 
 // ListRecipesParams defines parameters for ListRecipes.
@@ -479,6 +517,15 @@ type UndoActivityBatchJSONRequestBody = UndoInput
 // UndoActivityJSONRequestBody defines body for UndoActivity for application/json ContentType.
 type UndoActivityJSONRequestBody = UndoInput
 
+// LoginJSONRequestBody defines body for Login for application/json ContentType.
+type LoginJSONRequestBody LoginJSONBody
+
+// RequestMagicLinkJSONRequestBody defines body for RequestMagicLink for application/json ContentType.
+type RequestMagicLinkJSONRequestBody RequestMagicLinkJSONBody
+
+// VerifyMagicLinkJSONRequestBody defines body for VerifyMagicLink for application/json ContentType.
+type VerifyMagicLinkJSONRequestBody VerifyMagicLinkJSONBody
+
 // CreateInviteJSONRequestBody defines body for CreateInvite for application/json ContentType.
 type CreateInviteJSONRequestBody CreateInviteJSONBody
 
@@ -506,6 +553,12 @@ type UpdateCategoryJSONRequestBody = CategoryPatch
 // CreateItemJSONRequestBody defines body for CreateItem for application/json ContentType.
 type CreateItemJSONRequestBody = ItemInput
 
+// SetEmailJSONRequestBody defines body for SetEmail for application/json ContentType.
+type SetEmailJSONRequestBody SetEmailJSONBody
+
+// SetPasswordJSONRequestBody defines body for SetPassword for application/json ContentType.
+type SetPasswordJSONRequestBody SetPasswordJSONBody
+
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = RecipeInput
 
@@ -529,6 +582,15 @@ type ServerInterface interface {
 	// Undo one change
 	// (POST /activity/{activityId}/undo)
 	UndoActivity(w http.ResponseWriter, r *http.Request, activityId ActivityId)
+
+	// (POST /auth/login)
+	Login(w http.ResponseWriter, r *http.Request)
+
+	// (POST /auth/magic)
+	RequestMagicLink(w http.ResponseWriter, r *http.Request)
+
+	// (POST /auth/verify)
+	VerifyMagicLink(w http.ResponseWriter, r *http.Request)
 
 	// (GET /healthz)
 	GetHealth(w http.ResponseWriter, r *http.Request)
@@ -586,6 +648,12 @@ type ServerInterface interface {
 
 	// (GET /me)
 	GetMe(w http.ResponseWriter, r *http.Request)
+
+	// (POST /me/email)
+	SetEmail(w http.ResponseWriter, r *http.Request)
+
+	// (PUT /me/password)
+	SetPassword(w http.ResponseWriter, r *http.Request)
 
 	// (GET /members)
 	ListMembers(w http.ResponseWriter, r *http.Request)
@@ -768,6 +836,48 @@ func (siw *ServerInterfaceWrapper) UndoActivity(w http.ResponseWriter, r *http.R
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.UndoActivity(w, r, activityId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// Login operation middleware
+func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.Login(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// RequestMagicLink operation middleware
+func (siw *ServerInterfaceWrapper) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.RequestMagicLink(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// VerifyMagicLink operation middleware
+func (siw *ServerInterfaceWrapper) VerifyMagicLink(w http.ResponseWriter, r *http.Request) {
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.VerifyMagicLink(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1331,6 +1441,46 @@ func (siw *ServerInterfaceWrapper) GetMe(w http.ResponseWriter, r *http.Request)
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.GetMe(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetEmail operation middleware
+func (siw *ServerInterfaceWrapper) SetEmail(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetEmail(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// SetPassword operation middleware
+func (siw *ServerInterfaceWrapper) SetPassword(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.SetPassword(w, r)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -1938,6 +2088,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("GET "+options.BaseURL+"/activity", wrapper.ListAllActivity)
 	m.HandleFunc("POST "+options.BaseURL+"/activity/batches/{batchId}/undo", wrapper.UndoActivityBatch)
 	m.HandleFunc("POST "+options.BaseURL+"/activity/{activityId}/undo", wrapper.UndoActivity)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/login", wrapper.Login)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/magic", wrapper.RequestMagicLink)
+	m.HandleFunc("POST "+options.BaseURL+"/auth/verify", wrapper.VerifyMagicLink)
 	m.HandleFunc("GET "+options.BaseURL+"/healthz", wrapper.GetHealth)
 	m.HandleFunc("POST "+options.BaseURL+"/invites", wrapper.CreateInvite)
 	m.HandleFunc("GET "+options.BaseURL+"/invites/{token}", wrapper.GetInvite)
@@ -1957,6 +2110,8 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("POST "+options.BaseURL+"/lists/{listId}/items", wrapper.CreateItem)
 	m.HandleFunc("GET "+options.BaseURL+"/lists/{listId}/suggestions", wrapper.SuggestItems)
 	m.HandleFunc("GET "+options.BaseURL+"/me", wrapper.GetMe)
+	m.HandleFunc("POST "+options.BaseURL+"/me/email", wrapper.SetEmail)
+	m.HandleFunc("PUT "+options.BaseURL+"/me/password", wrapper.SetPassword)
 	m.HandleFunc("GET "+options.BaseURL+"/members", wrapper.ListMembers)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/disable", wrapper.DisableMember)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/enable", wrapper.EnableMember)
@@ -2139,6 +2294,153 @@ func (response UndoActivity422JSONResponse) VisitUndoActivityResponse(w http.Res
 	return json.NewEncoder(w).Encode(response)
 }
 
+type LoginRequestObject struct {
+	Body *LoginJSONRequestBody
+}
+
+type LoginResponseObject interface {
+	VisitLoginResponse(w http.ResponseWriter) error
+}
+
+type Login200ResponseHeaders struct {
+	SetCookie string
+}
+
+type Login200JSONResponse struct {
+	Body    Member
+	Headers Login200ResponseHeaders
+}
+
+func (response Login200JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", fmt.Sprint(response.Headers.SetCookie))
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type Login401JSONResponse struct{ ErrorJSONResponse }
+
+func (response Login401JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type Login403JSONResponse Error
+
+func (response Login403JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type Login429JSONResponse Error
+
+func (response Login429JSONResponse) VisitLoginResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type RequestMagicLinkRequestObject struct {
+	Body *RequestMagicLinkJSONRequestBody
+}
+
+type RequestMagicLinkResponseObject interface {
+	VisitRequestMagicLinkResponse(w http.ResponseWriter) error
+}
+
+type RequestMagicLink202Response struct {
+}
+
+func (response RequestMagicLink202Response) VisitRequestMagicLinkResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type RequestMagicLink429JSONResponse struct{ ErrorJSONResponse }
+
+func (response RequestMagicLink429JSONResponse) VisitRequestMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type VerifyMagicLinkRequestObject struct {
+	Body *VerifyMagicLinkJSONRequestBody
+}
+
+type VerifyMagicLinkResponseObject interface {
+	VisitVerifyMagicLinkResponse(w http.ResponseWriter) error
+}
+
+type VerifyMagicLink200ResponseHeaders struct {
+	SetCookie string
+}
+
+type VerifyMagicLink200JSONResponse struct {
+	Body    Member
+	Headers VerifyMagicLink200ResponseHeaders
+}
+
+func (response VerifyMagicLink200JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Set-Cookie", fmt.Sprint(response.Headers.SetCookie))
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response.Body)
+}
+
+type VerifyMagicLink400JSONResponse struct{ ErrorJSONResponse }
+
+func (response VerifyMagicLink400JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type VerifyMagicLink401JSONResponse Error
+
+func (response VerifyMagicLink401JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type VerifyMagicLink403JSONResponse Error
+
+func (response VerifyMagicLink403JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type VerifyMagicLink409JSONResponse Error
+
+func (response VerifyMagicLink409JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type VerifyMagicLink429JSONResponse Error
+
+func (response VerifyMagicLink429JSONResponse) VisitVerifyMagicLinkResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type GetHealthRequestObject struct {
 }
 
@@ -2286,6 +2588,15 @@ type AcceptInvite404JSONResponse Error
 func (response AcceptInvite404JSONResponse) VisitAcceptInviteResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type AcceptInvite409JSONResponse Error
+
+func (response AcceptInvite409JSONResponse) VisitAcceptInviteResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
 
 	return json.NewEncoder(w).Encode(response)
 }
@@ -3000,6 +3311,110 @@ func (response GetMe403JSONResponse) VisitGetMeResponse(w http.ResponseWriter) e
 	return json.NewEncoder(w).Encode(response)
 }
 
+type SetEmailRequestObject struct {
+	Body *SetEmailJSONRequestBody
+}
+
+type SetEmailResponseObject interface {
+	VisitSetEmailResponse(w http.ResponseWriter) error
+}
+
+type SetEmail202Response struct {
+}
+
+func (response SetEmail202Response) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.WriteHeader(202)
+	return nil
+}
+
+type SetEmail400JSONResponse struct{ ErrorJSONResponse }
+
+func (response SetEmail400JSONResponse) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetEmail401JSONResponse Error
+
+func (response SetEmail401JSONResponse) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetEmail403JSONResponse Error
+
+func (response SetEmail403JSONResponse) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetEmail409JSONResponse Error
+
+func (response SetEmail409JSONResponse) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(409)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetEmail429JSONResponse Error
+
+func (response SetEmail429JSONResponse) VisitSetEmailResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(429)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetPasswordRequestObject struct {
+	Body *SetPasswordJSONRequestBody
+}
+
+type SetPasswordResponseObject interface {
+	VisitSetPasswordResponse(w http.ResponseWriter) error
+}
+
+type SetPassword204Response struct {
+}
+
+func (response SetPassword204Response) VisitSetPasswordResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type SetPassword400JSONResponse struct{ ErrorJSONResponse }
+
+func (response SetPassword400JSONResponse) VisitSetPasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetPassword401JSONResponse Error
+
+func (response SetPassword401JSONResponse) VisitSetPasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type SetPassword403JSONResponse Error
+
+func (response SetPassword403JSONResponse) VisitSetPasswordResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListMembersRequestObject struct {
 }
 
@@ -3687,6 +4102,15 @@ type StrictServerInterface interface {
 	// (POST /activity/{activityId}/undo)
 	UndoActivity(ctx context.Context, request UndoActivityRequestObject) (UndoActivityResponseObject, error)
 
+	// (POST /auth/login)
+	Login(ctx context.Context, request LoginRequestObject) (LoginResponseObject, error)
+
+	// (POST /auth/magic)
+	RequestMagicLink(ctx context.Context, request RequestMagicLinkRequestObject) (RequestMagicLinkResponseObject, error)
+
+	// (POST /auth/verify)
+	VerifyMagicLink(ctx context.Context, request VerifyMagicLinkRequestObject) (VerifyMagicLinkResponseObject, error)
+
 	// (GET /healthz)
 	GetHealth(ctx context.Context, request GetHealthRequestObject) (GetHealthResponseObject, error)
 
@@ -3743,6 +4167,12 @@ type StrictServerInterface interface {
 
 	// (GET /me)
 	GetMe(ctx context.Context, request GetMeRequestObject) (GetMeResponseObject, error)
+
+	// (POST /me/email)
+	SetEmail(ctx context.Context, request SetEmailRequestObject) (SetEmailResponseObject, error)
+
+	// (PUT /me/password)
+	SetPassword(ctx context.Context, request SetPasswordRequestObject) (SetPasswordResponseObject, error)
 
 	// (GET /members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
@@ -3904,6 +4334,99 @@ func (sh *strictHandler) UndoActivity(w http.ResponseWriter, r *http.Request, ac
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(UndoActivityResponseObject); ok {
 		if err := validResponse.VisitUndoActivityResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// Login operation middleware
+func (sh *strictHandler) Login(w http.ResponseWriter, r *http.Request) {
+	var request LoginRequestObject
+
+	var body LoginJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.Login(ctx, request.(LoginRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "Login")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(LoginResponseObject); ok {
+		if err := validResponse.VisitLoginResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// RequestMagicLink operation middleware
+func (sh *strictHandler) RequestMagicLink(w http.ResponseWriter, r *http.Request) {
+	var request RequestMagicLinkRequestObject
+
+	var body RequestMagicLinkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.RequestMagicLink(ctx, request.(RequestMagicLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "RequestMagicLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(RequestMagicLinkResponseObject); ok {
+		if err := validResponse.VisitRequestMagicLinkResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// VerifyMagicLink operation middleware
+func (sh *strictHandler) VerifyMagicLink(w http.ResponseWriter, r *http.Request) {
+	var request VerifyMagicLinkRequestObject
+
+	var body VerifyMagicLinkJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.VerifyMagicLink(ctx, request.(VerifyMagicLinkRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "VerifyMagicLink")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(VerifyMagicLinkResponseObject); ok {
+		if err := validResponse.VisitVerifyMagicLinkResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {
@@ -4455,6 +4978,68 @@ func (sh *strictHandler) GetMe(w http.ResponseWriter, r *http.Request) {
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(GetMeResponseObject); ok {
 		if err := validResponse.VisitGetMeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetEmail operation middleware
+func (sh *strictHandler) SetEmail(w http.ResponseWriter, r *http.Request) {
+	var request SetEmailRequestObject
+
+	var body SetEmailJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetEmail(ctx, request.(SetEmailRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetEmail")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetEmailResponseObject); ok {
+		if err := validResponse.VisitSetEmailResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// SetPassword operation middleware
+func (sh *strictHandler) SetPassword(w http.ResponseWriter, r *http.Request) {
+	var request SetPasswordRequestObject
+
+	var body SetPasswordJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.SetPassword(ctx, request.(SetPasswordRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "SetPassword")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(SetPasswordResponseObject); ok {
+		if err := validResponse.VisitSetPasswordResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

@@ -47,3 +47,34 @@ DELETE FROM passkeys WHERE user_id = $1;
 -- name: AddPasskey :exec
 INSERT INTO passkeys (credential_id, user_id, public_key, sign_count, transports)
 VALUES ($1, $2, $3, $4, $5);
+
+-- name: GetUserByEmail :one
+SELECT * FROM users WHERE email = sqlc.arg(email)::text;
+
+-- name: SetUserEmail :exec
+UPDATE users SET email = $2 WHERE id = $1;
+
+-- name: SetUserPassword :exec
+UPDATE users SET password_hash = $2 WHERE id = $1;
+
+-- name: CreateLoginCode :exec
+INSERT INTO login_codes (user_id, purpose, email, link_hash, code_hash, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6);
+
+-- name: CountRecentLoginCodes :one
+SELECT count(*) FROM login_codes WHERE email = $1 AND created_at > $2;
+
+-- name: GetLoginCodeByLinkForUpdate :one
+SELECT * FROM login_codes WHERE link_hash = $1 FOR UPDATE;
+
+-- name: GetLatestLoginCodeForUpdate :one
+SELECT * FROM login_codes
+WHERE email = $1 AND used_at IS NULL AND expires_at > now() AND attempts < 5
+ORDER BY created_at DESC LIMIT 1
+FOR UPDATE;
+
+-- name: BumpLoginCodeAttempts :exec
+UPDATE login_codes SET attempts = attempts + 1 WHERE id = $1;
+
+-- name: UseLoginCode :exec
+UPDATE login_codes SET used_at = now() WHERE id = $1;

@@ -86,6 +86,19 @@ type ListItem struct {
 	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
 }
 
+type LoginCode struct {
+	ID        pgtype.UUID        `json:"id"`
+	UserID    pgtype.UUID        `json:"user_id"`
+	Purpose   string             `json:"purpose"`
+	Email     string             `json:"email"`
+	LinkHash  string             `json:"link_hash"`
+	CodeHash  string             `json:"code_hash"`
+	Attempts  int32              `json:"attempts"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+	UsedAt    pgtype.Timestamptz `json:"used_at"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
 type OauthClient struct {
 	ID           string             `json:"id"`
 	Name         string             `json:"name"`
@@ -193,10 +206,12 @@ type Tag struct {
 }
 
 type User struct {
-	ID          pgtype.UUID        `json:"id"`
-	DisplayName string             `json:"display_name"`
-	Role        string             `json:"role"`
-	AvatarColor string             `json:"avatar_color"`
-	DisabledAt  pgtype.Timestamptz `json:"disabled_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	ID           pgtype.UUID        `json:"id"`
+	DisplayName  string             `json:"display_name"`
+	Role         string             `json:"role"`
+	AvatarColor  string             `json:"avatar_color"`
+	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Email        pgtype.Text        `json:"email"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
 }

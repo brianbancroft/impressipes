@@ -38,20 +38,22 @@ func (q *Queries) CreateAPIToken(ctx context.Context, arg CreateAPITokenParams) 
 }
 
 const getAPITokenUser = `-- name: GetAPITokenUser :one
-SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, api_tokens.id AS token_id, api_tokens.name AS token_name
+SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash, api_tokens.id AS token_id, api_tokens.name AS token_name
 FROM api_tokens JOIN users ON users.id = api_tokens.user_id
 WHERE api_tokens.token_hash = $1 AND api_tokens.revoked_at IS NULL
 `
 
 type GetAPITokenUserRow struct {
-	ID          pgtype.UUID        `json:"id"`
-	DisplayName string             `json:"display_name"`
-	Role        string             `json:"role"`
-	AvatarColor string             `json:"avatar_color"`
-	DisabledAt  pgtype.Timestamptz `json:"disabled_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	TokenID     pgtype.UUID        `json:"token_id"`
-	TokenName   string             `json:"token_name"`
+	ID           pgtype.UUID        `json:"id"`
+	DisplayName  string             `json:"display_name"`
+	Role         string             `json:"role"`
+	AvatarColor  string             `json:"avatar_color"`
+	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Email        pgtype.Text        `json:"email"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
+	TokenID      pgtype.UUID        `json:"token_id"`
+	TokenName    string             `json:"token_name"`
 }
 
 func (q *Queries) GetAPITokenUser(ctx context.Context, tokenHash string) (GetAPITokenUserRow, error) {
@@ -64,6 +66,8 @@ func (q *Queries) GetAPITokenUser(ctx context.Context, tokenHash string) (GetAPI
 		&i.AvatarColor,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
 		&i.TokenID,
 		&i.TokenName,
 	)

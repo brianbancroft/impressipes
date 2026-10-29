@@ -139,7 +139,7 @@ func (q *Queries) GetOAuthClient(ctx context.Context, id string) (OauthClient, e
 }
 
 const getOAuthGrantByAccess = `-- name: GetOAuthGrantByAccess :one
-SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, oauth_grants.id AS grant_id, oauth_clients.name AS client_name
+SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash, oauth_grants.id AS grant_id, oauth_clients.name AS client_name
 FROM oauth_grants
 JOIN users ON users.id = oauth_grants.user_id
 JOIN oauth_clients ON oauth_clients.id = oauth_grants.client_id
@@ -147,14 +147,16 @@ WHERE oauth_grants.token_hash = $1 AND oauth_grants.revoked_at IS NULL AND oauth
 `
 
 type GetOAuthGrantByAccessRow struct {
-	ID          pgtype.UUID        `json:"id"`
-	DisplayName string             `json:"display_name"`
-	Role        string             `json:"role"`
-	AvatarColor string             `json:"avatar_color"`
-	DisabledAt  pgtype.Timestamptz `json:"disabled_at"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	GrantID     pgtype.UUID        `json:"grant_id"`
-	ClientName  string             `json:"client_name"`
+	ID           pgtype.UUID        `json:"id"`
+	DisplayName  string             `json:"display_name"`
+	Role         string             `json:"role"`
+	AvatarColor  string             `json:"avatar_color"`
+	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	Email        pgtype.Text        `json:"email"`
+	PasswordHash pgtype.Text        `json:"password_hash"`
+	GrantID      pgtype.UUID        `json:"grant_id"`
+	ClientName   string             `json:"client_name"`
 }
 
 func (q *Queries) GetOAuthGrantByAccess(ctx context.Context, tokenHash string) (GetOAuthGrantByAccessRow, error) {
@@ -167,6 +169,8 @@ func (q *Queries) GetOAuthGrantByAccess(ctx context.Context, tokenHash string) (
 		&i.AvatarColor,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
 		&i.GrantID,
 		&i.ClientName,
 	)

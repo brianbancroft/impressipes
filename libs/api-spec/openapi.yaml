@@ -121,6 +121,12 @@ paths:
                 name: { type: string }
                 color: { type: string }
                 credentialId: { type: string }
+                email:
+                  type: string
+                  description: Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+                password:
+                  type: string
+                  description: Optional, at least 10 characters.
       responses:
         "201":
           description: Invite accepted; a session cookie is set
@@ -133,7 +139,123 @@ paths:
         "400": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
         "410": { $ref: "#/components/responses/Error" }
+  /auth/login:
+    post:
+      operationId: login
+      description: Sign in with a confirmed email and a password.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string }
+                password: { type: string }
+      responses:
+        "200":
+          description: Signed in; a session cookie is set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /auth/magic:
+    post:
+      operationId: requestMagicLink
+      description: |
+        Email a sign-in link and six-digit code to a confirmed address. Always
+        answers 202, whether or not the address belongs to a member.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        "202": { description: "If the address belongs to a member, an email is on its way" }
+        "429": { $ref: "#/components/responses/Error" }
+  /auth/verify:
+    post:
+      operationId: verifyMagicLink
+      description: |
+        Redeem an emailed link (token) or code (email + code). Signs the member in,
+        and confirms the address when the email was a confirmation.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                token: { type: string }
+                email: { type: string }
+                code: { type: string }
+      responses:
+        "200":
+          description: Signed in; a session cookie is set
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Member" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /me/email:
+    post:
+      operationId: setEmail
+      description: Email a confirmation link and code to a new address. It becomes the member's email once confirmed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email]
+              properties:
+                email: { type: string }
+      responses:
+        "202": { description: Confirmation sent }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "409": { $ref: "#/components/responses/Error" }
+        "429": { $ref: "#/components/responses/Error" }
+  /me/password:
+    put:
+      operationId: setPassword
+      description: Set or replace the signed-in member's password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        "204": { description: Password saved }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
   /lists:
     get:
       operationId: listLists
@@ -729,6 +851,10 @@ components:
         color: { type: string }
         role: { type: string, enum: [admin, member] }
         status: { type: string, enum: [active, disabled] }
+        email:
+          type: string
+          description: The confirmed email, if the member has one.
+        hasPassword: { type: boolean }
     InviteInfo:
       type: object
       required: [state]

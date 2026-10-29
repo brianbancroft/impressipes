@@ -35,6 +35,31 @@ func (q *Queries) AddPasskey(ctx context.Context, arg AddPasskeyParams) error {
 	return err
 }
 
+const bumpLoginCodeAttempts = `-- name: BumpLoginCodeAttempts :exec
+UPDATE login_codes SET attempts = attempts + 1 WHERE id = $1
+`
+
+func (q *Queries) BumpLoginCodeAttempts(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, bumpLoginCodeAttempts, id)
+	return err
+}
+
+const countRecentLoginCodes = `-- name: CountRecentLoginCodes :one
+SELECT count(*) FROM login_codes WHERE email = $1 AND created_at > $2
+`
+
+type CountRecentLoginCodesParams struct {
+	Email     string             `json:"email"`
+	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+func (q *Queries) CountRecentLoginCodes(ctx context.Context, arg CountRecentLoginCodesParams) (int64, error) {
+	row := q.db.QueryRow(ctx, countRecentLoginCodes, arg.Email, arg.CreatedAt)
+	var count int64
+	err := row.Scan(&count)
+	return count, err
+}
+
 const countUsers = `-- name: CountUsers :one
 SELECT count(*) FROM users
 `
@@ -68,6 +93,32 @@ func (q *Queries) CreateInvite(ctx context.Context, arg CreateInviteParams) erro
 	return err
 }
 
+const createLoginCode = `-- name: CreateLoginCode :exec
+INSERT INTO login_codes (user_id, purpose, email, link_hash, code_hash, expires_at)
+VALUES ($1, $2, $3, $4, $5, $6)
+`
+
+type CreateLoginCodeParams struct {
+	UserID    pgtype.UUID        `json:"user_id"`
+	Purpose   string             `json:"purpose"`
+	Email     string             `json:"email"`
+	LinkHash  string             `json:"link_hash"`
+	CodeHash  string             `json:"code_hash"`
+	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
+}
+
+func (q *Queries) CreateLoginCode(ctx context.Context, arg CreateLoginCodeParams) error {
+	_, err := q.db.Exec(ctx, createLoginCode,
+		arg.UserID,
+		arg.Purpose,
+		arg.Email,
+		arg.LinkHash,
+		arg.CodeHash,
+		arg.ExpiresAt,
+	)
+	return err
+}
+
 const createSession = `-- name: CreateSession :exec
 INSERT INTO sessions (id, user_id, expires_at) VALUES ($1, $2, $3)
 `
@@ -86,7 +137,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (display_name, role, avatar_color)
 VALUES ($1, $2, $3)
-RETURNING id, display_name, role, avatar_color, disabled_at, created_at
+RETURNING id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash
 `
 
 type CreateUserParams struct {
@@ -105,6 +156,8 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.AvatarColor,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
@@ -154,8 +207,55 @@ func (q *Queries) GetInviteForUpdate(ctx context.Context, tokenHash string) (Inv
 	return i, err
 }
 
+const getLatestLoginCodeForUpdate = `-- name: GetLatestLoginCodeForUpdate :one
+SELECT id, user_id, purpose, email, link_hash, code_hash, attempts, expires_at, used_at, created_at FROM login_codes
+WHERE email = $1 AND used_at IS NULL AND expires_at > now() AND attempts < 5
+ORDER BY created_at DESC LIMIT 1
+FOR UPDATE
+`
+
+func (q *Queries) GetLatestLoginCodeForUpdate(ctx context.Context, email string) (LoginCode, error) {
+	row := q.db.QueryRow(ctx, getLatestLoginCodeForUpdate, email)
+	var i LoginCode
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Purpose,
+		&i.Email,
+		&i.LinkHash,
+		&i.CodeHash,
+		&i.Attempts,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
+const getLoginCodeByLinkForUpdate = `-- name: GetLoginCodeByLinkForUpdate :one
+SELECT id, user_id, purpose, email, link_hash, code_hash, attempts, expires_at, used_at, created_at FROM login_codes WHERE link_hash = $1 FOR UPDATE
+`
+
+func (q *Queries) GetLoginCodeByLinkForUpdate(ctx context.Context, linkHash string) (LoginCode, error) {
+	row := q.db.QueryRow(ctx, getLoginCodeByLinkForUpdate, linkHash)
+	var i LoginCode
+	err := row.Scan(
+		&i.ID,
+		&i.UserID,
+		&i.Purpose,
+		&i.Email,
+		&i.LinkHash,
+		&i.CodeHash,
+		&i.Attempts,
+		&i.ExpiresAt,
+		&i.UsedAt,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getSessionUser = `-- name: GetSessionUser :one
-SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at FROM sessions JOIN users ON users.id = sessions.user_id
+SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash FROM sessions JOIN users ON users.id = sessions.user_id
 WHERE sessions.id = $1 AND sessions.expires_at > now()
 `
 
@@ -169,12 +269,14 @@ func (q *Queries) GetSessionUser(ctx context.Context, id string) (User, error) {
 		&i.AvatarColor,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const getUser = `-- name: GetUser :one
-SELECT id, display_name, role, avatar_color, disabled_at, created_at FROM users WHERE id = $1
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -187,12 +289,34 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 		&i.AvatarColor,
 		&i.DisabledAt,
 		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
+	)
+	return i, err
+}
+
+const getUserByEmail = `-- name: GetUserByEmail :one
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users WHERE email = $1::text
+`
+
+func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
+	row := q.db.QueryRow(ctx, getUserByEmail, email)
+	var i User
+	err := row.Scan(
+		&i.ID,
+		&i.DisplayName,
+		&i.Role,
+		&i.AvatarColor,
+		&i.DisabledAt,
+		&i.CreatedAt,
+		&i.Email,
+		&i.PasswordHash,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, display_name, role, avatar_color, disabled_at, created_at FROM users ORDER BY created_at
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users ORDER BY created_at
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -211,6 +335,8 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.AvatarColor,
 			&i.DisabledAt,
 			&i.CreatedAt,
+			&i.Email,
+			&i.PasswordHash,
 		); err != nil {
 			return nil, err
 		}
@@ -259,6 +385,34 @@ func (q *Queries) SetUserDisabled(ctx context.Context, arg SetUserDisabledParams
 	return err
 }
 
+const setUserEmail = `-- name: SetUserEmail :exec
+UPDATE users SET email = $2 WHERE id = $1
+`
+
+type SetUserEmailParams struct {
+	ID    pgtype.UUID `json:"id"`
+	Email pgtype.Text `json:"email"`
+}
+
+func (q *Queries) SetUserEmail(ctx context.Context, arg SetUserEmailParams) error {
+	_, err := q.db.Exec(ctx, setUserEmail, arg.ID, arg.Email)
+	return err
+}
+
+const setUserPassword = `-- name: SetUserPassword :exec
+UPDATE users SET password_hash = $2 WHERE id = $1
+`
+
+type SetUserPasswordParams struct {
+	ID           pgtype.UUID `json:"id"`
+	PasswordHash pgtype.Text `json:"password_hash"`
+}
+
+func (q *Queries) SetUserPassword(ctx context.Context, arg SetUserPasswordParams) error {
+	_, err := q.db.Exec(ctx, setUserPassword, arg.ID, arg.PasswordHash)
+	return err
+}
+
 const setUserProfile = `-- name: SetUserProfile :exec
 UPDATE users SET display_name = $2, avatar_color = $3 WHERE id = $1
 `
@@ -271,5 +425,14 @@ type SetUserProfileParams struct {
 
 func (q *Queries) SetUserProfile(ctx context.Context, arg SetUserProfileParams) error {
 	_, err := q.db.Exec(ctx, setUserProfile, arg.ID, arg.DisplayName, arg.AvatarColor)
+	return err
+}
+
+const useLoginCode = `-- name: UseLoginCode :exec
+UPDATE login_codes SET used_at = now() WHERE id = $1
+`
+
+func (q *Queries) UseLoginCode(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, useLoginCode, id)
 	return err
 }

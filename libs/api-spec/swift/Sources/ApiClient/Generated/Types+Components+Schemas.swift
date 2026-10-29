@@ -74,6 +74,12 @@ extension Components {
             }
             /// - Remark: Generated from `#/components/schemas/Member/status`.
             public var status: Components.Schemas.Member.statusPayload
+            /// The confirmed email, if the member has one.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Member/email`.
+            public var email: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/Member/hasPassword`.
+            public var hasPassword: Swift.Bool?
             /// Creates a new `Member`.
             ///
             /// - Parameters:
@@ -82,18 +88,24 @@ extension Components {
             ///   - color:
             ///   - role:
             ///   - status:
+            ///   - email: The confirmed email, if the member has one.
+            ///   - hasPassword:
             public init(
                 id: Swift.String,
                 name: Swift.String,
                 color: Swift.String,
                 role: Components.Schemas.Member.rolePayload,
-                status: Components.Schemas.Member.statusPayload
+                status: Components.Schemas.Member.statusPayload,
+                email: Swift.String? = nil,
+                hasPassword: Swift.Bool? = nil
             ) {
                 self.id = id
                 self.name = name
                 self.color = color
                 self.role = role
                 self.status = status
+                self.email = email
+                self.hasPassword = hasPassword
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -101,6 +113,8 @@ extension Components {
                 case color
                 case role
                 case status
+                case email
+                case hasPassword
             }
         }
         /// - Remark: Generated from `#/components/schemas/InviteInfo`.

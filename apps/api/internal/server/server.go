@@ -14,6 +14,7 @@ import (
 	"github.com/brianbancroft/impressipies/apps/api/internal/db/dbgen"
 	"github.com/brianbancroft/impressipies/apps/api/internal/family"
 	"github.com/brianbancroft/impressipies/apps/api/internal/images"
+	"github.com/brianbancroft/impressipies/apps/api/internal/mail"
 	"github.com/brianbancroft/impressipies/apps/api/internal/uuidx"
 )
 
@@ -27,6 +28,10 @@ type server struct {
 	q      *dbgen.Queries
 	hub    *hub
 	images images.Store
+
+	mailer  mail.Mailer // nil when email is not configured
+	baseURL string      // public origin that emailed links point at
+	limits  *limiter
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -56,13 +61,20 @@ func New(pool *pgxpool.Pool, opts ...Option) http.Handler {
 			o.mailBootstrap("/invite/" + inv.Token)
 		}
 	}
-	return NewWithStore(context.Background(), dir, pool)
+	return NewWithStore(context.Background(), dir, pool, opts...)
 }
 
 // NewWithStore builds the handler on a directory and, optionally, a database pool.
 // ctx ends the background listener that feeds the event stream.
-func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Pool) http.Handler {
-	s := &server{store: store, pool: pool, images: images.Store{Dir: imageDir()}}
+func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Pool, opts ...Option) http.Handler {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
+	s := &server{
+		store: store, pool: pool, images: images.Store{Dir: imageDir()},
+		mailer: o.mailer, baseURL: o.baseURL, limits: newLimiter(),
+	}
 	if pool != nil {
 		s.q = dbgen.New(pool)
 		s.hub = newHub()
@@ -92,6 +104,7 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 func sessionMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r = r.WithContext(context.WithValue(r.Context(), viaKey{}, clientVia(r)))
+		r = r.WithContext(context.WithValue(r.Context(), ipKey{}, clientIP(r)))
 		if b, ok := uuidx.Parse(r.Header.Get("X-Impressipies-Batch")); ok {
 			r = r.WithContext(context.WithValue(r.Context(), batchKey{}, b))
 		}
@@ -149,7 +162,15 @@ func toMember(m family.Member) api.Member {
 	return api.Member{
 		Id: m.ID, Name: m.Name, Color: m.Color,
 		Role: api.MemberRole(m.Role), Status: api.MemberStatus(m.Status),
+		Email: strPtr(m.Email), HasPassword: &m.HasPassword,
 	}
+}
+
+func strPtr(s string) *string {
+	if s == "" {
+		return nil
+	}
+	return &s
 }
 
 func (s *server) GetHealth(context.Context, api.GetHealthRequestObject) (api.GetHealthResponseObject, error) {
@@ -265,8 +286,19 @@ func (s *server) AcceptInvite(ctx context.Context, req api.AcceptInviteRequestOb
 	if name == "" || req.Body.Color == "" || req.Body.CredentialId == "" {
 		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody("name, color and credentialId are required"))}, nil
 	}
-	m, sess, err := s.store.Accept(ctx, req.Token, name, req.Body.Color, req.Body.CredentialId)
+	in := family.AcceptInput{Name: name, Color: req.Body.Color, CredentialID: req.Body.CredentialId}
+	if req.Body.Email != nil {
+		in.Email = *req.Body.Email
+	}
+	if req.Body.Password != nil {
+		in.Password = *req.Body.Password
+	}
+	m, sess, ch, err := s.store.Accept(ctx, req.Token, in)
 	switch {
+	case errors.Is(err, family.ErrInvalidEmail), errors.Is(err, family.ErrWeakPassword):
+		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(err.Error()))}, nil
+	case errors.Is(err, family.ErrEmailTaken):
+		return api.AcceptInvite409JSONResponse(errBody(err.Error())), nil
 	case errors.Is(err, family.ErrNotFound):
 		return api.AcceptInvite404JSONResponse(errBody("invite not found")), nil
 	case errors.Is(err, family.ErrInviteUsed), errors.Is(err, family.ErrExpired):
@@ -276,13 +308,12 @@ func (s *server) AcceptInvite(ctx context.Context, req api.AcceptInviteRequestOb
 	case err != nil:
 		return nil, err
 	}
-	cookie := (&http.Cookie{
-		Name: sessionCookie, Value: sess, Path: "/",
-		HttpOnly: true, SameSite: http.SameSiteLaxMode, MaxAge: 60 * 60 * 24 * 365,
-	}).String()
+	if ch != nil {
+		s.sendChallenge(*ch)
+	}
 	return api.AcceptInvite201JSONResponse{
 		Body:    toMember(*m),
-		Headers: api.AcceptInvite201ResponseHeaders{SetCookie: cookie},
+		Headers: api.AcceptInvite201ResponseHeaders{SetCookie: sessionCookieHeader(sess)},
 	}, nil
 }
 
