@@ -65,7 +65,8 @@ func main() {
 	mux.Handle("/mcp", api) // the MCP endpoint and its OAuth server live at the site root, not under /api
 	mux.Handle("/oauth/", api)
 	mux.Handle("/.well-known/", api)
-	mux.Handle("GET /skill", web.SkillHandler()) // public: the downloadable Claude skill
+	mux.Handle("GET /skill", web.SkillHandler())            // public: the downloadable Claude skill
+	mux.Handle("GET /skill.md", web.SkillMarkdownHandler()) // the same skill as text, for assistants that fetch it
 	mux.Handle("/", web.Handler())
 
 	log.Printf("listening on :%s", port)

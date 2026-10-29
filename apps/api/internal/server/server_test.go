@@ -58,7 +58,7 @@ func inviteOnboardingFlow(t *testing.T, store family.Directory) {
 	h := NewWithStore(t.Context(), store, nil)
 
 	boot, _ := store.CreateInvite(context.Background(), "")
-	accept := `{"name":"Mum","color":"#e11d48","credentialId":"cred-1"}`
+	accept := `{"name":"Mum","color":"#e11d48","credentialId":"cred-1","email":"mum@example.com","password":"long enough pw"}`
 	rec := do(h, "POST", "/invites/"+boot.Token+"/accept", accept)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("accept: %d %s", rec.Code, rec.Body)
@@ -74,7 +74,7 @@ func inviteOnboardingFlow(t *testing.T, store family.Directory) {
 		t.Fatalf("create invite: %d", rec.Code)
 	}
 	tok := tokenOf(t, rec)
-	rec = do(h, "POST", "/invites/"+tok+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"cred-2"}`)
+	rec = do(h, "POST", "/invites/"+tok+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"cred-2","email":"dad@example.com","password":"long enough pw"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("member accept: %d", rec.Code)
 	}

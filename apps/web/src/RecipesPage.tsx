@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react';
 import { AddToListDialog } from './AddToListDialog';
 import { apiUrl, getMe, listRecipes, listTags, setMark, type RecipeMark, type RecipeSummary } from './api';
 import { formatMinutes, totalMinutes } from './recipes';
+import { SetupChecklist } from './SetupChecklist';
 import { EmptyState, ErrorState, Loading } from './states';
 import { Button } from './ui/button';
 import { cn, pick, STICKERS } from './ui/cn';
@@ -89,6 +90,8 @@ export function RecipesPage() {
           <kbd className="max-md:hidden" aria-hidden>/</kbd>
         </label>
       </div>
+
+      {!filtered && <SetupChecklist />}
 
       <div className="relative mb-6 flex items-center gap-3">
         <div

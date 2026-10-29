@@ -1,6 +1,9 @@
 {
   "version": "0.0.1",
   "configurations": [
-    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "web", "exec", "vite"], "port": 4200 }
+    { "name": "web", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "web", "exec", "vite"], "port": 4200 },
+    { "name": "web-alt", "runtimeExecutable": "pnpm", "runtimeArgs": ["--filter", "web", "exec", "vite", "--port", "4201", "--strictPort"], "port": 4201 },
+    { "name": "api", "runtimeExecutable": "mise", "runtimeArgs": ["run", "--cd", "apps/api", "dev"], "port": 8080 },
+    { "name": "mailpit", "runtimeExecutable": "mailpit", "runtimeArgs": [], "port": 8025 }
   ]
 }

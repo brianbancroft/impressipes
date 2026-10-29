@@ -149,6 +149,9 @@ func (s *Store) Accept(_ context.Context, tok string, in AcceptInput) (*Member, 
 			return nil, "", nil, ErrDisabled
 		}
 	} else {
+		if email == "" || pwHash == "" {
+			return nil, "", nil, ErrCredentialsRequired
+		}
 		role := RoleMember
 		if len(s.members) == 0 {
 			role = RoleAdmin

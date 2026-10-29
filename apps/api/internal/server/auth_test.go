@@ -167,7 +167,7 @@ func emailAuth(t *testing.T, store family.Directory) {
 	// A second member cannot take Mum's address, and a changed address needs confirming.
 	rec = do(h, "POST", "/invites", "{}", mum)
 	dadInvite := tokenOf(t, rec)
-	rec = do(h, "POST", "/invites/"+dadInvite+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"c2","email":"mum@example.com"}`)
+	rec = do(h, "POST", "/invites/"+dadInvite+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"c2","email":"mum@example.com","password":"long enough pw"}`)
 	if rec.Code != http.StatusConflict {
 		t.Fatalf("duplicate email: got %d, want 409", rec.Code)
 	}
@@ -176,6 +176,10 @@ func emailAuth(t *testing.T, store family.Directory) {
 		t.Fatalf("weak password at accept: got %d, want 400", rec.Code)
 	}
 	rec = do(h, "POST", "/invites/"+dadInvite+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"c2"}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("new member without email and password: got %d, want 400", rec.Code)
+	}
+	rec = do(h, "POST", "/invites/"+dadInvite+"/accept", `{"name":"Dad","color":"#2563eb","credentialId":"c2","email":"dad@example.com","password":"long enough pw"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("a refused accept must not burn the invite: %d %s", rec.Code, rec.Body)
 	}
@@ -195,7 +199,7 @@ func emailAuth(t *testing.T, store family.Directory) {
 	if rec := do(h, "GET", "/me", "", dad); strings.Contains(rec.Body.String(), "dad@example.com") {
 		t.Fatal("email shown before it was confirmed")
 	}
-	_, tok, _ = mailer.next(t, 4)
+	_, tok, _ = mailer.next(t, 5)
 	if rec := do(h, "POST", "/auth/verify", `{"token":"`+tok+`"}`); rec.Code != http.StatusOK || !strings.Contains(rec.Body.String(), "dad@example.com") {
 		t.Fatalf("confirm dad: %d %s", rec.Code, rec.Body)
 	}
@@ -212,7 +216,7 @@ func emailAuth(t *testing.T, store family.Directory) {
 	if rec := do(h, "POST", "/auth/magic", `{"email":"dad@example.com"}`); rec.Code != http.StatusAccepted {
 		t.Fatalf("disabled magic: got %d", rec.Code)
 	}
-	mailer.none(t, 4)
+	mailer.none(t, 5)
 }
 
 func TestAuthRateLimits(t *testing.T) {

@@ -80,6 +80,10 @@ extension Components {
             public var email: Swift.String?
             /// - Remark: Generated from `#/components/schemas/Member/hasPassword`.
             public var hasPassword: Swift.Bool?
+            /// Only on /me. What is left on the getting-started checklist.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Member/setup`.
+            public var setup: Components.Schemas.SetupStatus?
             /// Creates a new `Member`.
             ///
             /// - Parameters:
@@ -90,6 +94,7 @@ extension Components {
             ///   - status:
             ///   - email: The confirmed email, if the member has one.
             ///   - hasPassword:
+            ///   - setup: Only on /me. What is left on the getting-started checklist.
             public init(
                 id: Swift.String,
                 name: Swift.String,
@@ -97,7 +102,8 @@ extension Components {
                 role: Components.Schemas.Member.rolePayload,
                 status: Components.Schemas.Member.statusPayload,
                 email: Swift.String? = nil,
-                hasPassword: Swift.Bool? = nil
+                hasPassword: Swift.Bool? = nil,
+                setup: Components.Schemas.SetupStatus? = nil
             ) {
                 self.id = id
                 self.name = name
@@ -106,6 +112,7 @@ extension Components {
                 self.status = status
                 self.email = email
                 self.hasPassword = hasPassword
+                self.setup = setup
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -115,6 +122,42 @@ extension Components {
                 case status
                 case email
                 case hasPassword
+                case setup
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/SetupStatus`.
+        public struct SetupStatus: Codable, Hashable, Sendable {
+            /// An address waiting for its confirmation code, if any.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SetupStatus/pendingEmail`.
+            public var pendingEmail: Swift.String?
+            /// The iOS or watch app has signed in as this member.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SetupStatus/appConnected`.
+            public var appConnected: Swift.Bool
+            /// An assistant holds an active connector grant or personal token.
+            ///
+            /// - Remark: Generated from `#/components/schemas/SetupStatus/aiConnected`.
+            public var aiConnected: Swift.Bool
+            /// Creates a new `SetupStatus`.
+            ///
+            /// - Parameters:
+            ///   - pendingEmail: An address waiting for its confirmation code, if any.
+            ///   - appConnected: The iOS or watch app has signed in as this member.
+            ///   - aiConnected: An assistant holds an active connector grant or personal token.
+            public init(
+                pendingEmail: Swift.String? = nil,
+                appConnected: Swift.Bool,
+                aiConnected: Swift.Bool
+            ) {
+                self.pendingEmail = pendingEmail
+                self.appConnected = appConnected
+                self.aiConnected = aiConnected
+            }
+            public enum CodingKeys: String, CodingKey {
+                case pendingEmail
+                case appConnected
+                case aiConnected
             }
         }
         /// - Remark: Generated from `#/components/schemas/InviteInfo`.

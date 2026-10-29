@@ -78,3 +78,19 @@ UPDATE login_codes SET attempts = attempts + 1 WHERE id = $1;
 
 -- name: UseLoginCode :exec
 UPDATE login_codes SET used_at = now() WHERE id = $1;
+
+-- name: MarkAppConnected :exec
+UPDATE users SET app_connected_at = now() WHERE id = $1 AND app_connected_at IS NULL;
+
+-- name: GetSetupStatus :one
+-- What the home checklist needs: whether the mobile app or an assistant has been
+-- connected, and the address waiting for confirmation, if any.
+SELECT
+    (u.app_connected_at IS NOT NULL)::boolean AS app_connected,
+    (EXISTS (SELECT 1 FROM oauth_grants g WHERE g.user_id = u.id AND g.revoked_at IS NULL)
+     OR EXISTS (SELECT 1 FROM api_tokens t WHERE t.user_id = u.id AND t.revoked_at IS NULL))::boolean AS ai_connected,
+    COALESCE((SELECT c.email FROM login_codes c
+              WHERE c.user_id = u.id AND c.purpose = 'verify' AND c.used_at IS NULL
+                AND c.email IS DISTINCT FROM u.email
+              ORDER BY c.created_at DESC LIMIT 1), '')::text AS pending_email
+FROM users u WHERE u.id = $1;

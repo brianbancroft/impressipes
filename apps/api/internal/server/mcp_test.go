@@ -39,7 +39,7 @@ func newMCPEnv(t *testing.T) *mcpEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"Mum","color":"#e11d48","credentialId":"c1"}`)
+	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"Mum","color":"#e11d48","credentialId":"c1","email":"mum@example.com","password":"long enough pw"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("accept: %d %s", rec.Code, rec.Body)
 	}

@@ -137,7 +137,7 @@ func (q *Queries) CreateSession(ctx context.Context, arg CreateSessionParams) er
 const createUser = `-- name: CreateUser :one
 INSERT INTO users (display_name, role, avatar_color)
 VALUES ($1, $2, $3)
-RETURNING id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash
+RETURNING id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash, app_connected_at
 `
 
 type CreateUserParams struct {
@@ -158,6 +158,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, e
 		&i.CreatedAt,
 		&i.Email,
 		&i.PasswordHash,
+		&i.AppConnectedAt,
 	)
 	return i, err
 }
@@ -255,7 +256,7 @@ func (q *Queries) GetLoginCodeByLinkForUpdate(ctx context.Context, linkHash stri
 }
 
 const getSessionUser = `-- name: GetSessionUser :one
-SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash FROM sessions JOIN users ON users.id = sessions.user_id
+SELECT users.id, users.display_name, users.role, users.avatar_color, users.disabled_at, users.created_at, users.email, users.password_hash, users.app_connected_at FROM sessions JOIN users ON users.id = sessions.user_id
 WHERE sessions.id = $1 AND sessions.expires_at > now()
 `
 
@@ -271,12 +272,40 @@ func (q *Queries) GetSessionUser(ctx context.Context, id string) (User, error) {
 		&i.CreatedAt,
 		&i.Email,
 		&i.PasswordHash,
+		&i.AppConnectedAt,
 	)
 	return i, err
 }
 
+const getSetupStatus = `-- name: GetSetupStatus :one
+SELECT
+    (u.app_connected_at IS NOT NULL)::boolean AS app_connected,
+    (EXISTS (SELECT 1 FROM oauth_grants g WHERE g.user_id = u.id AND g.revoked_at IS NULL)
+     OR EXISTS (SELECT 1 FROM api_tokens t WHERE t.user_id = u.id AND t.revoked_at IS NULL))::boolean AS ai_connected,
+    COALESCE((SELECT c.email FROM login_codes c
+              WHERE c.user_id = u.id AND c.purpose = 'verify' AND c.used_at IS NULL
+                AND c.email IS DISTINCT FROM u.email
+              ORDER BY c.created_at DESC LIMIT 1), '')::text AS pending_email
+FROM users u WHERE u.id = $1
+`
+
+type GetSetupStatusRow struct {
+	AppConnected bool   `json:"app_connected"`
+	AiConnected  bool   `json:"ai_connected"`
+	PendingEmail string `json:"pending_email"`
+}
+
+// What the home checklist needs: whether the mobile app or an assistant has been
+// connected, and the address waiting for confirmation, if any.
+func (q *Queries) GetSetupStatus(ctx context.Context, id pgtype.UUID) (GetSetupStatusRow, error) {
+	row := q.db.QueryRow(ctx, getSetupStatus, id)
+	var i GetSetupStatusRow
+	err := row.Scan(&i.AppConnected, &i.AiConnected, &i.PendingEmail)
+	return i, err
+}
+
 const getUser = `-- name: GetUser :one
-SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users WHERE id = $1
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash, app_connected_at FROM users WHERE id = $1
 `
 
 func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
@@ -291,12 +320,13 @@ func (q *Queries) GetUser(ctx context.Context, id pgtype.UUID) (User, error) {
 		&i.CreatedAt,
 		&i.Email,
 		&i.PasswordHash,
+		&i.AppConnectedAt,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users WHERE email = $1::text
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash, app_connected_at FROM users WHERE email = $1::text
 `
 
 func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error) {
@@ -311,12 +341,13 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.CreatedAt,
 		&i.Email,
 		&i.PasswordHash,
+		&i.AppConnectedAt,
 	)
 	return i, err
 }
 
 const listUsers = `-- name: ListUsers :many
-SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash FROM users ORDER BY created_at
+SELECT id, display_name, role, avatar_color, disabled_at, created_at, email, password_hash, app_connected_at FROM users ORDER BY created_at
 `
 
 func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
@@ -337,6 +368,7 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 			&i.CreatedAt,
 			&i.Email,
 			&i.PasswordHash,
+			&i.AppConnectedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -346,6 +378,15 @@ func (q *Queries) ListUsers(ctx context.Context) ([]User, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const markAppConnected = `-- name: MarkAppConnected :exec
+UPDATE users SET app_connected_at = now() WHERE id = $1 AND app_connected_at IS NULL
+`
+
+func (q *Queries) MarkAppConnected(ctx context.Context, id pgtype.UUID) error {
+	_, err := q.db.Exec(ctx, markAppConnected, id)
+	return err
 }
 
 const markInviteUsed = `-- name: MarkInviteUsed :exec

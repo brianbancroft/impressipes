@@ -268,6 +268,7 @@ type Member struct {
 	Id          string       `json:"id"`
 	Name        string       `json:"name"`
 	Role        MemberRole   `json:"role"`
+	Setup       *SetupStatus `json:"setup,omitempty"`
 	Status      MemberStatus `json:"status"`
 }
 
@@ -341,6 +342,18 @@ type RecipeSummary struct {
 	Tags        []string     `json:"tags"`
 	Title       string       `json:"title"`
 	UpdatedAt   time.Time    `json:"updatedAt"`
+}
+
+// SetupStatus defines model for SetupStatus.
+type SetupStatus struct {
+	// AiConnected An assistant holds an active connector grant or personal token.
+	AiConnected bool `json:"aiConnected"`
+
+	// AppConnected The iOS or watch app has signed in as this member.
+	AppConnected bool `json:"appConnected"`
+
+	// PendingEmail An address waiting for its confirmation code, if any.
+	PendingEmail *string `json:"pendingEmail,omitempty"`
 }
 
 // Step defines model for Step.
@@ -452,11 +465,11 @@ type AcceptInviteJSONBody struct {
 	Color        string `json:"color"`
 	CredentialId string `json:"credentialId"`
 
-	// Email Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+	// Email Required for a new member; optional on a re-invite. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
 	Email *string `json:"email,omitempty"`
 	Name  string  `json:"name"`
 
-	// Password Optional, at least 10 characters.
+	// Password At least 10 characters. Required for a new member; optional on a re-invite.
 	Password *string `json:"password,omitempty"`
 }
 

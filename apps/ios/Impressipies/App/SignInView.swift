@@ -26,6 +26,7 @@ struct JoinView: View {
     @State private var color = Palette.memberColours[0]
     @State private var email = ""
     @State private var password = ""
+    @State private var confirm = ""
     @State private var busy = false
     @State private var error: String?
     @State private var scanning = false
@@ -166,7 +167,7 @@ struct JoinView: View {
                 }
             }
             VStack(alignment: .leading, spacing: 8) {
-                Text("Email (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                Text(credentialsRequired ? "Email" : "Email (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
                 TextField("you@example.com", text: $email)
                     .textContentType(.emailAddress)
                     .keyboardType(.emailAddress)
@@ -175,23 +176,36 @@ struct JoinView: View {
                     .padding(.horizontal, 14)
                     .frame(minHeight: 52)
                     .sticker(radius: 16, shadow: 3)
-                Text("We'll email a code to confirm it. Then you can sign in with an emailed link.")
+                Text("You'll sign in with this. We'll email a code to confirm it.")
                     .font(.footnote)
                     .foregroundStyle(Palette.inkMuted)
             }
             VStack(alignment: .leading, spacing: 8) {
-                Text("Password (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                Text(credentialsRequired ? "Password" : "Password (optional)").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
                 SecureField("At least 10 characters", text: $password)
                     .textContentType(.newPassword)
                     .padding(.horizontal, 14)
                     .frame(minHeight: 52)
                     .sticker(radius: 16, shadow: 3)
             }
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Confirm password").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                SecureField("Type it again", text: $confirm)
+                    .textContentType(.newPassword)
+                    .padding(.horizontal, 14)
+                    .frame(minHeight: 52)
+                    .sticker(radius: 16, shadow: 3)
+                if !confirm.isEmpty && confirm != password {
+                    Text("The passwords don't match yet.")
+                        .font(.footnote)
+                        .foregroundStyle(Palette.danger)
+                }
+            }
             Button(action: accept) {
                 if busy { ProgressView().tint(Palette.onAccent) } else { Text("Let's go") }
             }
             .buttonStyle(PopButtonStyle())
-            .disabled(busy || name.trimmingCharacters(in: .whitespaces).isEmpty || (!password.isEmpty && password.count < 10))
+            .disabled(busy || !canJoin)
             Button("Use a different link") { invite = nil; error = nil }
                 .font(.footnote.weight(.bold))
                 .frame(maxWidth: .infinity)
@@ -250,6 +264,16 @@ struct JoinView: View {
                 self.error = APIError.from(error).message
             }
         }
+    }
+
+    /// A new member must give an email and password; a re-invite may keep the ones they have.
+    private var credentialsRequired: Bool { invite?.reinvite != true }
+
+    private var canJoin: Bool {
+        let mail = email.trimmingCharacters(in: .whitespaces)
+        if name.trimmingCharacters(in: .whitespaces).isEmpty || confirm != password { return false }
+        if credentialsRequired && (mail.isEmpty || password.isEmpty) { return false }
+        return password.isEmpty || password.count >= 10
     }
 
     private func accept() {

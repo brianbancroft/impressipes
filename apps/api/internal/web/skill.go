@@ -22,6 +22,21 @@ func SkillHandler() http.Handler {
 	return skillHandler(sub)
 }
 
+// SkillMarkdownHandler serves the skill's SKILL.md as plain text, so an assistant
+// that can fetch a URL can read the skill without unzipping anything.
+func SkillMarkdownHandler() http.Handler {
+	data, err := fs.ReadFile(skillFS, "skill/impressipes/SKILL.md")
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err != nil {
+			http.Error(w, "skill unavailable", http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "text/markdown; charset=utf-8")
+		w.Header().Set("Cache-Control", "no-cache")
+		http.ServeContent(w, r, "SKILL.md", time.Time{}, bytes.NewReader(data))
+	})
+}
+
 func skillHandler(fsys fs.FS) http.Handler {
 	zipped, err := zipFS(fsys)
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -32,6 +33,8 @@ type server struct {
 	mailer  mail.Mailer // nil when email is not configured
 	baseURL string      // public origin that emailed links point at
 	limits  *limiter
+
+	appSeen sync.Map // member ids already marked as having used the mobile app
 }
 
 var _ api.StrictServerInterface = (*server)(nil)
@@ -147,7 +150,27 @@ func (s *server) current(ctx context.Context) (*family.Member, *authFail) {
 	if m.Status == family.StatusDisabled {
 		return nil, &authFail{http.StatusForbidden, "disabled"}
 	}
+	s.markApp(ctx, m.ID)
 	return m, nil
+}
+
+// markApp records, once per member, that a session was used from the iOS or watch app.
+func (s *server) markApp(ctx context.Context, memberID string) {
+	if via, _ := ctx.Value(viaKey{}).(string); s.q == nil || (via != "ios" && via != "watch") {
+		return
+	}
+	if _, done := s.appSeen.Load(memberID); done {
+		return
+	}
+	id, ok := uuidx.Parse(memberID)
+	if !ok {
+		return
+	}
+	if err := s.q.MarkAppConnected(ctx, id); err != nil {
+		log.Printf("mark app connected for %s: %v", memberID, err)
+		return
+	}
+	s.appSeen.Store(memberID, struct{}{})
 }
 
 func (s *server) admin(ctx context.Context) *authFail {
@@ -184,12 +207,32 @@ func (s *server) GetMe(ctx context.Context, _ api.GetMeRequestObject) (api.GetMe
 	m, fail := s.current(ctx)
 	switch {
 	case fail == nil:
-		return api.GetMe200JSONResponse(toMember(*m)), nil
+		out := toMember(*m)
+		if setup, err := s.setupStatus(ctx, m.ID); err != nil {
+			log.Printf("setup status for %s: %v", m.ID, err)
+		} else {
+			out.Setup = setup
+		}
+		return api.GetMe200JSONResponse(out), nil
 	case fail.code == http.StatusForbidden:
 		return api.GetMe403JSONResponse(errBody(fail.msg)), nil
 	default:
 		return api.GetMe401JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(fail.msg))}, nil
 	}
+}
+
+// setupStatus is what is left on the member's getting-started checklist. It is nil
+// in memory mode, where there is no database to ask.
+func (s *server) setupStatus(ctx context.Context, memberID string) (*api.SetupStatus, error) {
+	id, ok := uuidx.Parse(memberID)
+	if s.q == nil || !ok {
+		return nil, nil
+	}
+	row, err := s.q.GetSetupStatus(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	return &api.SetupStatus{AppConnected: row.AppConnected, AiConnected: row.AiConnected, PendingEmail: strPtr(row.PendingEmail)}, nil
 }
 
 func (s *server) ListMembers(ctx context.Context, _ api.ListMembersRequestObject) (api.ListMembersResponseObject, error) {
@@ -298,7 +341,7 @@ func (s *server) AcceptInvite(ctx context.Context, req api.AcceptInviteRequestOb
 	}
 	m, sess, ch, err := s.store.Accept(ctx, req.Token, in)
 	switch {
-	case errors.Is(err, family.ErrInvalidEmail), errors.Is(err, family.ErrWeakPassword):
+	case errors.Is(err, family.ErrInvalidEmail), errors.Is(err, family.ErrWeakPassword), errors.Is(err, family.ErrCredentialsRequired):
 		return api.AcceptInvite400JSONResponse{ErrorJSONResponse: api.ErrorJSONResponse(errBody(err.Error()))}, nil
 	case errors.Is(err, family.ErrEmailTaken):
 		return api.AcceptInvite409JSONResponse(errBody(err.Error())), nil

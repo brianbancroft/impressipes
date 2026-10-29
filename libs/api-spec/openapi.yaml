@@ -123,10 +123,10 @@ paths:
                 credentialId: { type: string }
                 email:
                   type: string
-                  description: Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+                  description: Required for a new member; optional on a re-invite. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
                 password:
                   type: string
-                  description: Optional, at least 10 characters.
+                  description: At least 10 characters. Required for a new member; optional on a re-invite.
       responses:
         "201":
           description: Invite accepted; a session cookie is set
@@ -855,6 +855,22 @@ components:
           type: string
           description: The confirmed email, if the member has one.
         hasPassword: { type: boolean }
+        setup:
+          $ref: "#/components/schemas/SetupStatus"
+          description: Only on /me. What is left on the getting-started checklist.
+    SetupStatus:
+      type: object
+      required: [appConnected, aiConnected]
+      properties:
+        pendingEmail:
+          type: string
+          description: An address waiting for its confirmation code, if any.
+        appConnected:
+          type: boolean
+          description: The iOS or watch app has signed in as this member.
+        aiConnected:
+          type: boolean
+          description: An assistant holds an active connector grant or personal token.
     InviteInfo:
       type: object
       required: [state]

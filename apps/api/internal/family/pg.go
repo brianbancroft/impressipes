@@ -137,6 +137,9 @@ func (p *PG) Accept(ctx context.Context, tok string, in AcceptInput) (*Member, s
 		}
 		u.DisplayName, u.AvatarColor = in.Name, in.Color
 	} else {
+		if email == "" || pwHash == "" {
+			return nil, "", nil, ErrCredentialsRequired
+		}
 		// Serialise first-run so two bootstrap invites cannot both mint an admin.
 		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(7001)`); err != nil {
 			return nil, "", nil, err

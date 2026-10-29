@@ -206,12 +206,13 @@ type Tag struct {
 }
 
 type User struct {
-	ID           pgtype.UUID        `json:"id"`
-	DisplayName  string             `json:"display_name"`
-	Role         string             `json:"role"`
-	AvatarColor  string             `json:"avatar_color"`
-	DisabledAt   pgtype.Timestamptz `json:"disabled_at"`
-	CreatedAt    pgtype.Timestamptz `json:"created_at"`
-	Email        pgtype.Text        `json:"email"`
-	PasswordHash pgtype.Text        `json:"password_hash"`
+	ID             pgtype.UUID        `json:"id"`
+	DisplayName    string             `json:"display_name"`
+	Role           string             `json:"role"`
+	AvatarColor    string             `json:"avatar_color"`
+	DisabledAt     pgtype.Timestamptz `json:"disabled_at"`
+	CreatedAt      pgtype.Timestamptz `json:"created_at"`
+	Email          pgtype.Text        `json:"email"`
+	PasswordHash   pgtype.Text        `json:"password_hash"`
+	AppConnectedAt pgtype.Timestamptz `json:"app_connected_at"`
 }

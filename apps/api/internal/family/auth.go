@@ -37,6 +37,8 @@ var (
 	ErrInvalidEmail   = errors.New("invalid email")
 	ErrWeakPassword   = fmt.Errorf("password must be at least %d characters", MinPasswordLen)
 	ErrTooMany        = errors.New("too many requests")
+	// ErrCredentialsRequired is returned when a new member joins without an email and password.
+	ErrCredentialsRequired = errors.New("an email and a password are required to join")
 )
 
 // Challenge is an emailed link + code. The caller mails it; only its hashes are stored.

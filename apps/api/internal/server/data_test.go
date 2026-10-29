@@ -30,7 +30,7 @@ func newDataEnv(t *testing.T) *dataEnv {
 	if err != nil {
 		t.Fatal(err)
 	}
-	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"Mum","color":"#e11d48","credentialId":"c1"}`)
+	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"Mum","color":"#e11d48","credentialId":"c1","email":"mum@example.com","password":"long enough pw"}`)
 	if rec.Code != http.StatusCreated {
 		t.Fatalf("accept: %d %s", rec.Code, rec.Body)
 	}
@@ -63,7 +63,7 @@ func TestDataRequiresSession(t *testing.T) {
 	store := family.NewStore()
 	h = NewWithStore(t.Context(), store, nil)
 	inv, _ := store.CreateInvite(t.Context(), "")
-	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"A","color":"#000","credentialId":"c"}`)
+	rec := do(h, "POST", "/invites/"+inv.Token+"/accept", `{"name":"A","color":"#000","credentialId":"c","email":"a@example.com","password":"long enough pw"}`)
 	if rec := do(h, "GET", "/lists", "", sessionOf(t, rec)); rec.Code != http.StatusServiceUnavailable {
 		t.Fatalf("no database: got %d, want 503", rec.Code)
 	}
@@ -381,5 +381,39 @@ func TestEventsStream(t *testing.T) {
 		case <-ctx.Done():
 			t.Fatal("no event received")
 		}
+	}
+}
+
+func TestSetupStatus(t *testing.T) {
+	e := newDataEnv(t)
+	setup := func() (s struct {
+		PendingEmail string
+		AppConnected bool
+		AiConnected  bool
+	}) {
+		var me struct {
+			Setup *struct {
+				PendingEmail string
+				AppConnected bool
+				AiConnected  bool
+			}
+		}
+		e.call("GET", "/me", "", http.StatusOK, &me)
+		if me.Setup == nil {
+			t.Fatal("no setup on /me")
+		}
+		return *me.Setup
+	}
+	if s := setup(); s.PendingEmail != "mum@example.com" || s.AppConnected || s.AiConnected {
+		t.Fatalf("fresh member: %+v", s)
+	}
+
+	// Any request from the iOS app ticks off the mobile step.
+	req := httptest.NewRequest("GET", "/lists", nil)
+	req.Header.Set("X-Impressipies-Client", "ios")
+	req.AddCookie(e.cookie)
+	e.h.ServeHTTP(httptest.NewRecorder(), req)
+	if s := setup(); !s.AppConnected {
+		t.Fatalf("after an iOS request: %+v", s)
 	}
 }

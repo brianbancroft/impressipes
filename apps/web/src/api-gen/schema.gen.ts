@@ -605,6 +605,16 @@ export interface components {
             /** @description The confirmed email, if the member has one. */
             email?: string;
             hasPassword?: boolean;
+            /** @description Only on /me. What is left on the getting-started checklist. */
+            setup?: components["schemas"]["SetupStatus"];
+        };
+        SetupStatus: {
+            /** @description An address waiting for its confirmation code, if any. */
+            pendingEmail?: string;
+            /** @description The iOS or watch app has signed in as this member. */
+            appConnected: boolean;
+            /** @description An assistant holds an active connector grant or personal token. */
+            aiConnected: boolean;
         };
         InviteInfo: {
             /** @enum {string} */
@@ -1035,9 +1045,9 @@ export interface operations {
                     name: string;
                     color: string;
                     credentialId: string;
-                    /** @description Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in. */
+                    /** @description Required for a new member; optional on a re-invite. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in. */
                     email?: string;
-                    /** @description Optional, at least 10 characters. */
+                    /** @description At least 10 characters. Required for a new member; optional on a re-invite. */
                     password?: string;
                 };
             };

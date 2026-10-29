@@ -1259,11 +1259,11 @@ public enum Operations {
                     public var color: Swift.String
                     /// - Remark: Generated from `#/paths/invites/{token}/accept/POST/requestBody/json/credentialId`.
                     public var credentialId: Swift.String
-                    /// Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+                    /// Required for a new member; optional on a re-invite. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
                     ///
                     /// - Remark: Generated from `#/paths/invites/{token}/accept/POST/requestBody/json/email`.
                     public var email: Swift.String?
-                    /// Optional, at least 10 characters.
+                    /// At least 10 characters. Required for a new member; optional on a re-invite.
                     ///
                     /// - Remark: Generated from `#/paths/invites/{token}/accept/POST/requestBody/json/password`.
                     public var password: Swift.String?
@@ -1273,8 +1273,8 @@ public enum Operations {
                     ///   - name:
                     ///   - color:
                     ///   - credentialId:
-                    ///   - email: Optional. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
-                    ///   - password: Optional, at least 10 characters.
+                    ///   - email: Required for a new member; optional on a re-invite. A confirmation link and code are emailed to it; until confirmed it cannot be used to sign in.
+                    ///   - password: At least 10 characters. Required for a new member; optional on a re-invite.
                     public init(
                         name: Swift.String,
                         color: Swift.String,
