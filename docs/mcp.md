@@ -17,7 +17,22 @@ The name is what the activity feed shows (`mcp:Claude Code - laptop`). Then add 
 claude mcp add --transport http impressipes https://impressipes.bancroft.io/mcp --header "Authorization: Bearer imp_..."
 ```
 
-OAuth 2.1 with dynamic client registration, needed for claude.ai and the phone app, is step 2.
+## Connecting claude.ai and the phone (OAuth 2.1)
+
+Add `https://impressipes.bancroft.io/mcp` as a custom connector. The client discovers everything itself:
+
+- `/.well-known/oauth-protected-resource` and `/.well-known/oauth-authorization-server` (metadata)
+- `POST /oauth/register`: dynamic client registration, public clients only
+- `GET|POST /oauth/authorize`: consent page; authorization code with PKCE S256 (required)
+- `POST /oauth/token`: code exchange and refresh; access tokens last 1 hour, refresh tokens 90 days and rotate
+- `POST /oauth/revoke`
+
+Set `PUBLIC_URL` (e.g. `https://impressipes.bancroft.io`) in production so the metadata advertises the right origin.
+
+Consent uses the member's existing web session (cookie), so they must be signed in to Impressipes in that
+browser first. There is no passkey sign-in yet (IMP-29); once it lands, the consent page should offer it
+instead of asking the member to sign in elsewhere. Changes made through a grant are audited as
+`mcp:<client name>`.
 
 ## Tools
 

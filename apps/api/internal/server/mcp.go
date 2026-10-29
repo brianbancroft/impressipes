@@ -32,7 +32,7 @@ func (s *server) mcpHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		m, client, ok := s.bearer(r.Context(), r.Header.Get("Authorization"))
 		if !ok {
-			w.Header().Set("WWW-Authenticate", `Bearer realm="impressipies"`)
+			w.Header().Set("WWW-Authenticate", `Bearer resource_metadata="`+baseURL(r)+`/.well-known/oauth-protected-resource"`)
 			writeError(w, http.StatusUnauthorized, "unauthenticated")
 			return
 		}

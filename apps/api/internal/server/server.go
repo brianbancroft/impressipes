@@ -79,6 +79,7 @@ func NewWithStore(ctx context.Context, store family.Directory, pool *pgxpool.Poo
 	mux.HandleFunc("GET /images/{id}/{variant}", s.serveImage)
 	if pool != nil {
 		mux.Handle("/mcp", s.mcpHandler())
+		s.mountOAuth(mux)
 	}
 	rest := api.HandlerWithOptions(strict, api.StdHTTPServerOptions{
 		ErrorHandlerFunc: requestError,

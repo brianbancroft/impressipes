@@ -48,7 +48,13 @@ func NewToken(ctx context.Context, pool *pgxpool.Pool, userID, name string) (str
 // token was minted for. ok is false when the token is missing, unknown or revoked.
 func (s *server) bearer(ctx context.Context, header string) (m *family.Member, client string, ok bool) {
 	tok, found := strings.CutPrefix(header, "Bearer ")
-	if !found || !strings.HasPrefix(tok, tokenPrefix) || s.q == nil {
+	if !found || s.q == nil {
+		return nil, "", false
+	}
+	if strings.HasPrefix(tok, oauthAccessPrefix) {
+		return s.oauthBearer(ctx, tok)
+	}
+	if !strings.HasPrefix(tok, tokenPrefix) {
 		return nil, "", false
 	}
 	row, err := s.q.GetAPITokenUser(ctx, hashToken(tok))

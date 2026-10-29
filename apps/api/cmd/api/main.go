@@ -57,7 +57,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))
 	mux.Handle("GET /healthz", api)
-	mux.Handle("/mcp", api) // the MCP endpoint lives at the site root, not under /api
+	mux.Handle("/mcp", api) // the MCP endpoint and its OAuth server live at the site root, not under /api
+	mux.Handle("/oauth/", api)
+	mux.Handle("/.well-known/", api)
 	mux.Handle("/", web.Handler())
 
 	log.Printf("listening on :%s", port)

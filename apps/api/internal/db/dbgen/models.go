@@ -93,14 +93,28 @@ type OauthClient struct {
 	CreatedAt    pgtype.Timestamptz `json:"created_at"`
 }
 
+type OauthCode struct {
+	CodeHash      string             `json:"code_hash"`
+	ClientID      string             `json:"client_id"`
+	UserID        pgtype.UUID        `json:"user_id"`
+	RedirectUri   string             `json:"redirect_uri"`
+	CodeChallenge string             `json:"code_challenge"`
+	ExpiresAt     pgtype.Timestamptz `json:"expires_at"`
+	UsedAt        pgtype.Timestamptz `json:"used_at"`
+	CreatedAt     pgtype.Timestamptz `json:"created_at"`
+}
+
 type OauthGrant struct {
-	ID        pgtype.UUID        `json:"id"`
-	ClientID  string             `json:"client_id"`
-	UserID    pgtype.UUID        `json:"user_id"`
-	TokenHash string             `json:"token_hash"`
-	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
-	RevokedAt pgtype.Timestamptz `json:"revoked_at"`
-	CreatedAt pgtype.Timestamptz `json:"created_at"`
+	ID               pgtype.UUID        `json:"id"`
+	ClientID         string             `json:"client_id"`
+	UserID           pgtype.UUID        `json:"user_id"`
+	TokenHash        string             `json:"token_hash"`
+	ExpiresAt        pgtype.Timestamptz `json:"expires_at"`
+	RevokedAt        pgtype.Timestamptz `json:"revoked_at"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	RefreshHash      pgtype.Text        `json:"refresh_hash"`
+	RefreshExpiresAt pgtype.Timestamptz `json:"refresh_expires_at"`
+	LastUsedAt       pgtype.Timestamptz `json:"last_used_at"`
 }
 
 type Passkey struct {
