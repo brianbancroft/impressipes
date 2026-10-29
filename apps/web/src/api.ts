@@ -2,6 +2,13 @@ import createClient from 'openapi-fetch';
 import type { components, paths } from './api-gen/schema.gen';
 
 export type Member = components['schemas']['Member'];
+export type RecipeSummary = components['schemas']['RecipeSummary'];
+export type Recipe = components['schemas']['Recipe'];
+export type RecipeInput = components['schemas']['RecipeInput'];
+export type RecipeMark = components['schemas']['RecipeMark'];
+export type Ingredient = components['schemas']['Ingredient'];
+export type Step = components['schemas']['Step'];
+export type ShoppingList = components['schemas']['List'];
 export type InviteInfo = components['schemas']['InviteInfo'];
 
 const client = createClient<paths>({ baseUrl: '/api' });
@@ -44,4 +51,57 @@ export async function createInvite(memberId?: string): Promise<{ path: string } 
 export async function setMemberStatus(id: string, action: 'disable' | 'enable') {
   const path = action === 'disable' ? '/members/{id}/disable' : '/members/{id}/enable';
   await client.POST(path, { params: { path: { id } } });
+}
+
+export const apiUrl = (path?: string) => (path ? `/api${path}` : undefined);
+
+function must<T>(data: T | undefined, error: { error?: string } | undefined, fallback: string): T {
+  if (data === undefined) throw new Error(error?.error ?? fallback);
+  return data;
+}
+
+export async function listRecipes(params: { q?: string; tag?: string; mark?: RecipeMark }) {
+  const { data, error } = await client.GET('/recipes', { params: { query: params } });
+  return must(data, error, 'Could not load recipes');
+}
+
+export async function listTags() {
+  const { data, error } = await client.GET('/tags');
+  return must(data, error, 'Could not load tags');
+}
+
+export async function getRecipe(recipeId: string) {
+  const { data, error } = await client.GET('/recipes/{recipeId}', { params: { path: { recipeId } } });
+  return must(data, error, 'Could not load recipe');
+}
+
+export async function saveRecipe(recipeId: string | undefined, body: RecipeInput) {
+  if (recipeId) {
+    const { data, error } = await client.PUT('/recipes/{recipeId}', { params: { path: { recipeId } }, body });
+    return must(data, error, 'Could not save recipe');
+  }
+  const { data, error } = await client.POST('/recipes', { body });
+  return must(data, error, 'Could not save recipe');
+}
+
+export async function deleteRecipe(recipeId: string) {
+  await client.DELETE('/recipes/{recipeId}', { params: { path: { recipeId } } });
+}
+
+export async function setMark(recipeId: string, mark: RecipeMark, on: boolean) {
+  const params = { params: { path: { recipeId, mark } } };
+  await (on ? client.PUT('/recipes/{recipeId}/marks/{mark}', params) : client.DELETE('/recipes/{recipeId}/marks/{mark}', params));
+}
+
+export async function listLists() {
+  const { data, error } = await client.GET('/lists');
+  return must(data, error, 'Could not load lists');
+}
+
+export async function addRecipeToList(listId: string, recipeId: string, servings?: number) {
+  const { data, error } = await client.POST('/lists/{listId}/add-recipe', {
+    params: { path: { listId } },
+    body: { recipeId, servings },
+  });
+  return must(data, error, 'Could not add to list');
 }

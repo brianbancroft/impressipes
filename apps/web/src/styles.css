@@ -135,3 +135,15 @@
   .page-title { @apply mb-1 text-3xl; }
   .empty { @apply mx-auto grid max-w-md place-items-center gap-2 rounded-lg border border-dashed border-line bg-surface px-6 py-12 text-center; }
 }
+
+@layer components {
+  input[type='search'] { @apply rounded-full px-4; }
+  .btn-primary { @apply inline-flex min-h-11 items-center rounded-sm bg-accent px-4 font-semibold text-on-accent no-underline; }
+  .chip { @apply min-h-9 rounded-full px-3 py-1 text-sm; }
+  .chip[aria-pressed='true'] { @apply border-accent bg-accent-soft font-semibold; }
+  .icon-btn { @apply grid size-9 min-h-0 place-items-center rounded-full border-0 bg-surface/90 p-0 text-lg; }
+  .select-badge { @apply absolute right-2 top-2 grid size-7 place-items-center rounded-full border-2 border-line bg-surface text-sm; }
+  .select-badge.on { @apply border-accent bg-accent text-on-accent; }
+  .dialog { @apply m-auto w-[min(92vw,26rem)] rounded-lg border border-line bg-surface p-6 text-ink backdrop:bg-black/50; }
+  .choice { @apply mb-0 flex min-h-11 cursor-pointer items-center gap-2 rounded-sm border border-line px-3 text-sm font-normal; }
+}

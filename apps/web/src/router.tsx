@@ -11,7 +11,11 @@ import {
 import { useState } from 'react';
 import { Admin } from './Admin';
 import { getMe, type Me } from './api';
+import { CookMode } from './CookMode';
 import { Onboarding } from './Onboarding';
+import { RecipeEditor } from './RecipeEditor';
+import { RecipePage } from './RecipePage';
+import { RecipesPage } from './RecipesPage';
 import { EmptyState, ErrorState, Loading } from './states';
 import { Shell } from './Shell';
 import { applyTheme, getTheme, type Theme } from './theme';
@@ -64,10 +68,14 @@ function AuthedLayout() {
       </Shell>
     );
   }
-  return <Layout me={me} />;
+  return <Outlet />;
 }
 
-function Layout({ me }: { me: Extract<Me, { kind: 'member' }> }) {
+const shellRoute = createRoute({ getParentRoute: () => authedRoute, id: 'shell', component: Layout });
+
+function Layout() {
+  const { data } = useQuery(meQuery);
+  const me = data as Extract<Me, { kind: 'member' }>;
   const [theme, setTheme] = useState<Theme>(getTheme);
   const next: Record<Theme, Theme> = { system: 'light', light: 'dark', dark: 'system' };
   return (
@@ -99,24 +107,26 @@ function Layout({ me }: { me: Extract<Me, { kind: 'member' }> }) {
 }
 
 const indexRoute = createRoute({
-  getParentRoute: () => authedRoute,
+  getParentRoute: () => shellRoute,
   path: '/',
   beforeLoad: () => { throw redirect({ to: '/recipes' }); },
 });
 
-const recipesRoute = createRoute({
-  getParentRoute: () => authedRoute,
-  path: '/recipes',
-  component: () => (
-    <>
-      <h1 className="page-title">Recipes</h1>
-      <EmptyState emoji="🥘" title="No recipes yet" body="Ask your AI to add one, or write one yourself. Recipes will show up here." />
-    </>
-  ),
+const recipesRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes', component: RecipesPage });
+const newRecipeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes/new', component: () => <RecipeEditor /> });
+const recipeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/recipes/$recipeId', component: RecipePage });
+const editRecipeRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/recipes/$recipeId/edit',
+  component: function EditRoute() {
+    const { recipeId } = useParams({ from: '/authed/shell/recipes/$recipeId/edit' });
+    return <RecipeEditor recipeId={recipeId} />;
+  },
 });
+const cookRoute = createRoute({ getParentRoute: () => authedRoute, path: '/recipes/$recipeId/cook', component: CookMode });
 
 const listsRoute = createRoute({
-  getParentRoute: () => authedRoute,
+  getParentRoute: () => shellRoute,
   path: '/lists',
   component: () => (
     <>
@@ -127,7 +137,7 @@ const listsRoute = createRoute({
 });
 
 const adminRoute = createRoute({
-  getParentRoute: () => authedRoute,
+  getParentRoute: () => shellRoute,
   path: '/admin',
   component: function AdminRoute() {
     const { data } = useQuery(meQuery);
@@ -140,7 +150,10 @@ const adminRoute = createRoute({
 
 const routeTree = rootRoute.addChildren([
   inviteRoute,
-  authedRoute.addChildren([indexRoute, recipesRoute, listsRoute, adminRoute]),
+  authedRoute.addChildren([
+    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, adminRoute]),
+    cookRoute,
+  ]),
 ]);
 
 export const router = createRouter({ routeTree, defaultPreload: 'intent' });
