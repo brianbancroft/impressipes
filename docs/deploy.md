@@ -17,7 +17,7 @@ docker run --rm -p 8080:8080 impressipies
 
 1. New application from this repo, branch `main`, build pack **Dockerfile**, port `8080`.
 2. Leave Coolify's health check off. The image has no shell or curl, so its in-container check would always fail. The app answers `GET /healthz` for external monitors.
-3. Copy the application's deploy webhook into the GitHub repo's webhooks (push events) so pushes to the deploy branch deploy.
+3. No auto-deploy: there is deliberately no GitHub webhook. Deploys are triggered from the command line (below).
 
 The app is `impressipes` in the Impressipies project on `coolify_2`, built over SSH with a deploy key.
 
