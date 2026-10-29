@@ -73,3 +73,7 @@ Local sign-in email lands in Mailpit at http://localhost:8025. Other tasks: `mis
 ## More docs
 
 [Deploying](docs/deploy.md) · [MCP server](docs/mcp.md) · [iOS app](apps/ios/README.md) · [Codegen and database](docs/codegen-and-db.md) · [Information architecture](docs/information-architecture.md)
+
+## License
+
+[MIT](LICENSE)
