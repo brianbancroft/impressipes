@@ -26,17 +26,45 @@ export async function getInvite(token: string): Promise<InviteInfo> {
   return data ?? (error && typeof error === 'object' && 'state' in error ? error : { state: 'invalid' });
 }
 
+export type AuthResult = { ok: true; member: Member } | { ok: false; status: number; message: string };
+export type SimpleResult = { ok: true } | { ok: false; status: number; message: string };
+
+const failure = (error: unknown, response: Response) => ({
+  ok: false as const,
+  status: response.status,
+  message: (error as { error?: string } | undefined)?.error ?? 'Something went wrong. Try again.',
+});
+
+function asAuth({ data, error, response }: { data?: Member; error?: unknown; response: Response }): AuthResult {
+  return data ? { ok: true, member: data } : failure(error, response);
+}
+
+function asSimple({ error, response }: { error?: unknown; response: Response }): SimpleResult {
+  return response.ok ? { ok: true } : failure(error, response);
+}
+
 export async function acceptInvite(
   token: string,
-  body: { name: string; color: string; credentialId: string },
-): Promise<{ ok: true; member: Member } | { ok: false; reason: 'gone' | 'disabled' | 'error' }> {
-  const { data, response } = await client.POST('/invites/{token}/accept', {
-    params: { path: { token } },
-    body,
-  });
-  if (data) return { ok: true, member: data };
-  return { ok: false, reason: response.status === 410 ? 'gone' : response.status === 403 ? 'disabled' : 'error' };
+  body: { name: string; color: string; credentialId: string; email?: string; password?: string },
+): Promise<AuthResult> {
+  return asAuth(await client.POST('/invites/{token}/accept', { params: { path: { token } }, body }));
 }
+
+export const login = async (email: string, password: string) =>
+  asAuth(await client.POST('/auth/login', { body: { email, password } }));
+
+/** Emails a sign-in link and code. Always succeeds for a well-formed request, whether or not the address is a member. */
+export const requestMagicLink = async (email: string) =>
+  asSimple(await client.POST('/auth/magic', { body: { email } }));
+
+export const verifyLink = async (token: string) => asAuth(await client.POST('/auth/verify', { body: { token } }));
+
+export const verifyCode = async (email: string, code: string) =>
+  asAuth(await client.POST('/auth/verify', { body: { email, code } }));
+
+export const setEmail = async (email: string) => asSimple(await client.POST('/me/email', { body: { email } }));
+
+export const setPassword = async (password: string) => asSimple(await client.PUT('/me/password', { body: { password } }));
 
 export async function listMembers(): Promise<Member[]> {
   const { data } = await client.GET('/members');

@@ -7,8 +7,10 @@ import {
   Outlet,
   redirect,
   useParams,
+  useSearch,
   useRouterState,
 } from '@tanstack/react-router';
+import { Account } from './Account';
 import { Admin } from './Admin';
 import { AiIntegration } from './AiIntegration';
 import { AppSetup } from './AppSetup';
@@ -20,6 +22,8 @@ import { Onboarding } from './Onboarding';
 import { RecipeEditor } from './RecipeEditor';
 import { RecipePage } from './RecipePage';
 import { RecipesPage } from './RecipesPage';
+import { SignIn } from './SignIn';
+import { VerifyLink } from './VerifyLink';
 import { EmptyState, ErrorState, Loading } from './states';
 import { Lock } from 'lucide-react';
 import { Shell } from './Shell';
@@ -48,6 +52,19 @@ const inviteRoute = createRoute({
   },
 });
 
+const signInRoute = createRoute({ getParentRoute: () => rootRoute, path: '/signin', component: SignIn });
+
+// The emailed link lands here; the token in ?t= is redeemed once.
+const verifyRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/auth/verify',
+  validateSearch: (s: Record<string, unknown>): { t?: string } => (typeof s.t === 'string' ? { t: s.t } : {}),
+  component: function VerifyRoute() {
+    const { t } = useSearch({ from: '/auth/verify' });
+    return t ? <VerifyLink token={t} /> : <SignIn />;
+  },
+});
+
 // Auth guard: everything under here needs a signed-in, enabled member.
 const authedRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -67,15 +84,7 @@ function AuthedLayout() {
       </Shell>
     );
   }
-  if (me.kind === 'anonymous') {
-    return (
-      <Shell>
-        <p className="scribble">recipes worth showing off</p>
-        <h1 className="mt-1 text-4xl">You need an invite</h1>
-        <p className="mt-2 text-ink-muted">You need an invite link from the family admin to get in.</p>
-      </Shell>
-    );
-  }
+  if (me.kind === 'anonymous') return <SignIn />;
   return <Outlet />;
 }
 
@@ -86,7 +95,7 @@ function Layout() {
   const me = data as Extract<Me, { kind: 'member' }>;
   const path = useRouterState({ select: (st) => st.location.pathname });
   // Detail screens bring their own header and actions, so phones drop the tab bar there.
-  const top = ['/recipes', '/lists', '/admin', '/ai', '/app-setup'].includes(path);
+  const top = ['/recipes', '/lists', '/admin', '/ai', '/app-setup', '/account'].includes(path);
   return (
     <div className="relative isolate min-h-dvh md:pl-24 lg:pl-62">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
@@ -146,12 +155,23 @@ const adminRoute = createRoute({
 });
 
 const aiRoute = createRoute({ getParentRoute: () => shellRoute, path: '/ai', component: AiIntegration });
+const accountRoute = createRoute({
+  getParentRoute: () => shellRoute,
+  path: '/account',
+  component: Account,
+  validateSearch: (s: Record<string, unknown>): { welcome?: boolean; email?: string } => ({
+    ...(s.welcome ? { welcome: true } : {}),
+    ...(typeof s.email === 'string' ? { email: s.email } : {}),
+  }),
+});
 const appSetupRoute = createRoute({ getParentRoute: () => shellRoute, path: '/app-setup', component: AppSetup });
 
 const routeTree = rootRoute.addChildren([
   inviteRoute,
+  signInRoute,
+  verifyRoute,
   authedRoute.addChildren([
-    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute]),
+    shellRoute.addChildren([indexRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute, accountRoute]),
     cookRoute,
   ]),
 ]);
