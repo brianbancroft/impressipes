@@ -14,6 +14,12 @@ enum ServerCode {
         c.port = url.port
         return c.url
     }
+
+    /// A typed address: "kitchen.example.com" means https.
+    static func origin(typed text: String) -> URL? {
+        let t = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        return origin(from: t.contains("://") ? t : "https://" + t)
+    }
 }
 
 /// Full-screen camera that reports the first server code it sees.

@@ -1,120 +1,156 @@
 import SwiftUI
 
-/// Sign in with a password, or with an emailed link and six-digit code.
+/// Sign in to the chosen server, as on the web: a passkey or Apple, a password,
+/// or an emailed link and six-digit code.
 struct EmailSignInView: View {
     @Environment(Session.self) private var session
     let onJoin: () -> Void
 
-    private enum Mode { case password, link }
+    private enum Mode: Hashable { case password, link }
 
     @State private var mode = Mode.password
     @State private var email = ""
     @State private var password = ""
     @State private var code = ""
     @State private var sent = false
-    @State private var serverText = ""
-    @State private var scanning = false
     @State private var busy = false
     @State private var error: String?
 
     var body: some View {
         ScrollView {
             VStack(alignment: .leading, spacing: 20) {
-                Image("Mark")
-                    .resizable()
-                    .frame(width: 72, height: 72)
-                    .rotationEffect(.degrees(-4))
-                    .accessibilityHidden(true)
+                HStack(alignment: .top) {
+                    Image("Mark")
+                        .resizable()
+                        .frame(width: 72, height: 72)
+                        .rotationEffect(.degrees(-4))
+                        .accessibilityHidden(true)
+                    Spacer()
+                    serverChip
+                }
                 VStack(alignment: .leading, spacing: 6) {
                     Scribble(text: "welcome back")
                     Text("Sign in").font(.display()).foregroundStyle(Palette.ink)
-                }
-
-                VStack(spacing: 12) {
-                    Button { signInWithPasskey() } label: {
-                        Label("Sign in with a passkey", systemImage: "person.badge.key.fill")
-                    }
-                    .buttonStyle(PopButtonStyle())
-                    .disabled(busy)
-                    AppleAuthButton(label: .signIn, onError: { error = $0 }) { token, nonce in
-                        await signInWithApple(token: token, nonce: nonce)
-                    }
-                    .disabled(busy)
-                    Text("or use your email")
-                        .font(.footnote.weight(.semibold))
+                    Text("Use a passkey or Apple, your password, or a one-time link by email.")
                         .foregroundStyle(Palette.inkMuted)
                 }
 
-                field("Email") {
-                    TextField("you@example.com", text: $email)
-                        .textContentType(.username)
-                        .keyboardType(.emailAddress)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .disabled(sent)
-                }
+                form
+                    .padding(18)
+                    .sticker(radius: 24)
 
-                if mode == .password {
-                    field("Password") {
-                        SecureField("Password", text: $password)
-                            .textContentType(.password)
-                            .submitLabel(.go)
-                            .onSubmit(submit)
-                    }
-                } else if sent {
-                    Text("If \(email) belongs to a member, a link and a 6-digit code are on their way. Tap the link on this phone, or enter the code.")
-                        .font(.callout)
-                        .foregroundStyle(Palette.inkMuted)
-                    field("6-digit code") {
-                        TextField("000000", text: $code)
-                            .textContentType(.oneTimeCode)
-                            .keyboardType(.numberPad)
-                            .onChange(of: code) { _, v in code = String(v.filter(\.isNumber).prefix(6)) }
-                    }
-                }
-
-                if let error {
-                    Label(error, systemImage: "exclamationmark.triangle.fill")
-                        .font(.callout.weight(.semibold))
-                        .foregroundStyle(Palette.danger)
-                }
-
-                Button(action: submit) {
-                    if busy { ProgressView().tint(Palette.onAccent) } else { Text(primaryTitle) }
-                }
-                .buttonStyle(PopButtonStyle())
-                .disabled(!canSubmit)
-
-                VStack(spacing: 12) {
-                    if mode == .password {
-                        Button("Forgot your password, or new phone? Email me a link") { switchTo(.link) }
-                    } else {
-                        if sent { Button("Use a different email") { sent = false; code = ""; error = nil } }
-                        Button("Sign in with a password instead") { switchTo(.password) }
-                    }
-                    Button("Have an invite link? Join the family", action: onJoin)
-                }
-                .font(.footnote.weight(.bold))
-                .frame(maxWidth: .infinity)
-
-                serverSection
+                Button("Joining the family? Use your invite link", action: onJoin)
+                    .font(.footnote.weight(.bold))
+                    .frame(maxWidth: .infinity)
             }
             .padding(20)
             .padding(.top, 24)
         }
         .scrollDismissesKeyboard(.interactively)
         .pageBackground()
-        .onAppear { serverText = session.server.absoluteString }
-        .sheet(isPresented: $scanning) {
-            QRScannerSheet { url in
-                session.setServer(url)
-                serverText = url.absoluteString
+        .task { await session.loadAuthConfig() }
+    }
+
+    private var form: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            VStack(spacing: 12) {
+                if session.authConfig?.passkeys == true {
+                    Button { signInWithPasskey() } label: {
+                        Label("Sign in with a passkey", systemImage: "person.badge.key.fill")
+                    }
+                    .buttonStyle(PopButtonStyle())
+                    .disabled(busy)
+                }
+                AppleAuthButton(label: .signIn, onError: { error = $0 }) { token, nonce in
+                    await signInWithApple(token: token, nonce: nonce)
+                }
+                .disabled(busy)
+                Text("or use your email")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(Palette.inkMuted)
+            }
+            .frame(maxWidth: .infinity)
+
+            Picker("Sign-in method", selection: Binding(get: { mode }, set: switchTo)) {
+                Label("Password", systemImage: "key.fill").tag(Mode.password)
+                Label("Email link", systemImage: "envelope.fill").tag(Mode.link)
+            }
+            .pickerStyle(.segmented)
+
+            field("Email") {
+                TextField("you@example.com", text: $email)
+                    .textContentType(.username)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+                    .disabled(sent)
+            }
+
+            switch (mode, sent) {
+            case (.password, _):
+                field("Password", accessory: Button("Forgot it?") { switchTo(.link) }) {
+                    SecureField("Password", text: $password)
+                        .textContentType(.password)
+                        .submitLabel(.go)
+                        .onSubmit(submit)
+                }
+            case (.link, false):
+                Text("New phone or forgot your password? We'll email a link and a 6-digit code.")
+                    .font(.callout)
+                    .foregroundStyle(Palette.inkMuted)
+            case (.link, true):
+                (Text("If ") + Text(email).bold().foregroundStyle(Palette.ink)
+                 + Text(" belongs to a member, a link and a 6-digit code are on their way. Tap the link on this phone, or enter the code here."))
+                    .font(.callout)
+                    .foregroundStyle(Palette.inkMuted)
+                    .padding(12)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background(RoundedRectangle(cornerRadius: 14, style: .continuous).fill(Palette.surface2))
+                field("6-digit code") {
+                    TextField("000000", text: $code)
+                        .textContentType(.oneTimeCode)
+                        .keyboardType(.numberPad)
+                        .font(.system(.title, design: .monospaced, weight: .bold))
+                        .tracking(8)
+                        .multilineTextAlignment(.center)
+                        .onChange(of: code) { _, v in code = String(v.filter(\.isNumber).prefix(6)) }
+                }
+            }
+
+            if let error {
+                Label(error, systemImage: "exclamationmark.triangle.fill")
+                    .font(.callout.weight(.semibold))
+                    .foregroundStyle(Palette.danger)
+            }
+
+            Button(action: submit) {
+                if busy {
+                    ProgressView().tint(Palette.onAccent)
+                } else if mode == .link && !sent {
+                    Label("Email me a link", systemImage: "envelope.fill")
+                } else {
+                    Text(sent ? "Sign in with code" : "Sign in")
+                }
+            }
+            .buttonStyle(PopButtonStyle())
+            .disabled(!canSubmit)
+
+            if sent {
+                Button("Use a different email") { sent = false; code = ""; error = nil }
+                    .font(.footnote.weight(.bold))
+                    .frame(maxWidth: .infinity)
             }
         }
     }
 
-    private var primaryTitle: String {
-        mode == .password ? "Sign in" : (sent ? "Sign in with code" : "Email me a link")
+    /// Which server this signs in to; tapping it goes back to pick another.
+    private var serverChip: some View {
+        Button { session.clearServer() } label: {
+            Chip(label: session.server?.host() ?? "", systemImage: "server.rack")
+        }
+        .buttonStyle(.plain)
+        .disabled(busy)
+        .accessibilityLabel("Server \(session.server?.host() ?? ""). Change server")
     }
 
     private var canSubmit: Bool {
@@ -123,36 +159,21 @@ struct EmailSignInView: View {
     }
 
     private func field<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
+        field(title, accessory: EmptyView(), content)
+    }
+
+    private func field<A: View, C: View>(_ title: String, accessory: A, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text(title).font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+            HStack(alignment: .firstTextBaseline) {
+                Text(title).font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
+                Spacer()
+                accessory.font(.footnote.weight(.bold))
+            }
             content()
                 .padding(.horizontal, 14)
                 .frame(minHeight: 52)
                 .sticker(radius: 16, shadow: 3)
         }
-    }
-
-    private var serverSection: some View {
-        DisclosureGroup("Server: \(session.server.host() ?? session.server.absoluteString)") {
-            VStack(alignment: .leading, spacing: 8) {
-                TextField("Server", text: $serverText)
-                    .textInputAutocapitalization(.never)
-                    .autocorrectionDisabled()
-                    .keyboardType(.URL)
-                    .padding(.horizontal, 14)
-                    .frame(minHeight: 48)
-                    .sticker(radius: 14, shadow: 2)
-                HStack {
-                    Button("Impressipes") { serverText = APIConfig.defaultServer.absoluteString }
-                    Button("Local dev") { serverText = "http://localhost:8080" }
-                    Button { scanning = true } label: { Label("Scan QR", systemImage: "qrcode.viewfinder") }
-                }
-                .font(.footnote.weight(.bold))
-            }
-            .padding(.top, 8)
-        }
-        .tint(Palette.ink)
-        .font(.footnote.weight(.bold))
     }
 
     private func switchTo(_ next: Mode) {
@@ -162,18 +183,7 @@ struct EmailSignInView: View {
         code = ""
     }
 
-    /// Points the session at the server in the text field. False (with an error shown) if it isn't one.
-    private func applyServer() -> Bool {
-        guard let server = URL(string: serverText.trimmingCharacters(in: .whitespaces)), server.scheme != nil else {
-            error = "Check the server address."
-            return false
-        }
-        if server != session.server { session.setServer(server) }
-        return true
-    }
-
     private func signInWithPasskey() {
-        guard applyServer() else { return }
         error = nil
         busy = true
         Task {
@@ -183,7 +193,6 @@ struct EmailSignInView: View {
     }
 
     private func signInWithApple(token: String, nonce: String) async {
-        guard applyServer() else { return }
         error = nil
         busy = true
         defer { busy = false }
@@ -191,7 +200,7 @@ struct EmailSignInView: View {
     }
 
     private func submit() {
-        guard canSubmit, applyServer() else { return }
+        guard canSubmit else { return }
         error = nil
         busy = true
         let mail = email.trimmingCharacters(in: .whitespaces)

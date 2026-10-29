@@ -1,12 +1,15 @@
 import SwiftUI
 
-/// Signed out: sign in with email, or join the family with an invite link.
+/// Signed out: pick a server, then sign in, or join the family with an invite link.
 struct SignInView: View {
+    @Environment(Session.self) private var session
     @State private var joining = false
 
     var body: some View {
         if joining {
             JoinView { joining = false }
+        } else if session.server == nil {
+            ServerSetupView { joining = true }
         } else {
             EmailSignInView { joining = true }
         }
@@ -18,7 +21,6 @@ struct JoinView: View {
     @Environment(Session.self) private var session
     let onBack: () -> Void
 
-    @State private var serverText = ""
     @State private var link = ""
     @State private var invite: InviteInfo?
     @State private var token = ""
@@ -29,7 +31,6 @@ struct JoinView: View {
     @State private var confirm = ""
     @State private var busy = false
     @State private var error: String?
-    @State private var scanning = false
 
     var body: some View {
         ScrollView {
@@ -63,27 +64,10 @@ struct JoinView: View {
         }
         .scrollDismissesKeyboard(.interactively)
         .pageBackground()
-        .onAppear { serverText = session.server.absoluteString }
-        .sheet(isPresented: $scanning) {
-            QRScannerSheet { url in
-                session.setServer(url)
-                serverText = url.absoluteString
-            }
-        }
     }
 
     private var linkStep: some View {
         VStack(alignment: .leading, spacing: 16) {
-            VStack(alignment: .leading, spacing: 8) {
-                Button { scanning = true } label: { Label("Scan QR code", systemImage: "qrcode.viewfinder") }
-                    .buttonStyle(PopButtonStyle())
-                Text("Server: \(session.server.host() ?? session.server.absoluteString)")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Palette.inkMuted)
-                Text("Open Impressipes on the web and choose App setup from your profile menu.")
-                    .font(.footnote)
-                    .foregroundStyle(Palette.inkMuted)
-            }
             VStack(alignment: .leading, spacing: 8) {
                 Text("Invite link").font(.subheadline.weight(.bold)).foregroundStyle(Palette.ink)
                 HStack {
@@ -103,27 +87,10 @@ struct JoinView: View {
                 .padding(.trailing, 6)
                 .frame(minHeight: 52)
                 .sticker(radius: 16, shadow: 3)
+                Text("The link carries its server, so there's nothing else to set up.")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkMuted)
             }
-
-            DisclosureGroup("Server") {
-                VStack(alignment: .leading, spacing: 8) {
-                    TextField("Server", text: $serverText)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .keyboardType(.URL)
-                        .padding(.horizontal, 14)
-                        .frame(minHeight: 48)
-                        .sticker(radius: 14, shadow: 2)
-                    HStack {
-                        Button("Impressipes") { serverText = APIConfig.defaultServer.absoluteString }
-                        Button("Local dev") { serverText = "http://localhost:8080" }
-                    }
-                    .font(.footnote.weight(.bold))
-                }
-                .padding(.top, 8)
-            }
-            .tint(Palette.ink)
-            .font(.subheadline.weight(.bold))
 
             Button(action: check) {
                 if busy { ProgressView().tint(Palette.onAccent) } else { Text("Continue") }
@@ -227,10 +194,6 @@ struct JoinView: View {
             error = "That doesn't look like an invite link."
             return
         }
-        guard let server = URL(string: serverText.trimmingCharacters(in: .whitespaces)), server.scheme != nil else {
-            error = "Check the server address."
-            return
-        }
         // An invite link carries its own server: use that origin.
         if let url = URL(string: link.trimmingCharacters(in: .whitespacesAndNewlines)), let host = url.host(), let scheme = url.scheme {
             var c = URLComponents()
@@ -239,10 +202,10 @@ struct JoinView: View {
             c.port = url.port
             // The web dev server on :4200 proxies to the API on :8080.
             if host == "localhost", url.port == 4200 { c.port = 8080 }
-            session.setServer(c.url ?? server)
-            serverText = session.server.absoluteString
-        } else {
-            session.setServer(server)
+            if let origin = c.url { session.setServer(origin) }
+        } else if session.server == nil {
+            error = "Paste the whole invite link, so we know which server it's from."
+            return
         }
         busy = true
         Task {

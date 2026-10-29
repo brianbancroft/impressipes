@@ -17,8 +17,11 @@ final class Session {
 
     private(set) var state: State = .loading
     private(set) var member: Member?
-    private(set) var server: URL
+    /// Nil until the person picks one: there is no built-in server.
+    private(set) var server: URL?
     private(set) var api: API
+    /// What the server offers on the sign-in screen, once fetched.
+    private(set) var authConfig: AuthConfig?
     /// The latest item change from the event stream; list screens reload on it.
     private(set) var lastEvent: ListEvent?
 
@@ -34,11 +37,14 @@ final class Session {
     private static let tokenKey = "session"
 
     init() {
-        let saved = UserDefaults.standard.string(forKey: Self.serverKey).flatMap(URL.init(string:))
-        let server = saved ?? APIConfig.defaultServer
+        var server = UserDefaults.standard.string(forKey: Self.serverKey).flatMap(URL.init(string:))
+        let token = Keychain.read(Self.tokenKey)
+        // A session from before the server was picked up front lived on the default server.
+        if server == nil, token != nil { server = APIConfig.defaultServer }
         self.server = server
-        tokenBox.value = Keychain.read(Self.tokenKey)
-        api = Self.makeAPI(server: server, box: tokenBox)
+        tokenBox.value = token
+        // Nothing calls the API before a server is picked; the default only fills the slot.
+        api = Self.makeAPI(server: server ?? APIConfig.defaultServer, box: tokenBox)
         tokenBox.onUnauthorized = { Task { @MainActor [weak self] in self?.expire() } }
         WatchLink.shared.start()
     }
@@ -69,10 +75,40 @@ final class Session {
     }
 
     func setServer(_ url: URL) {
+        if url != server { authConfig = nil }
         server = url
         UserDefaults.standard.set(url.absoluteString, forKey: Self.serverKey)
         api = Self.makeAPI(server: url, box: tokenBox)
         shareWithWatch()
+    }
+
+    /// Checks that the address answers like an Impressipes server, then uses it.
+    func connect(to url: URL) async throws {
+        let candidate = Self.makeAPI(server: url, box: tokenBox)
+        let config: AuthConfig
+        do {
+            config = try await candidate.client.getAuthConfig().ok.body.json
+        } catch where APIError.isUnreachable(error) {
+            throw APIError.from(error)
+        } catch {
+            throw APIError(message: "That doesn't look like an Impressipes server")
+        }
+        setServer(url)
+        authConfig = config
+    }
+
+    /// Fetches the sign-in options for the current server, if not already known.
+    func loadAuthConfig() async {
+        guard server != nil, authConfig == nil else { return }
+        authConfig = try? await api.authConfig()
+    }
+
+    /// Forgets the server so the person can pick another. Only while signed out.
+    func clearServer() {
+        guard state == .signedOut else { return }
+        server = nil
+        authConfig = nil
+        UserDefaults.standard.removeObject(forKey: Self.serverKey)
     }
 
     /// Signs in by accepting an invite link from the web app. The server only
@@ -177,6 +213,7 @@ final class Session {
 
     /// The watch signs in and out with the phone.
     private func shareWithWatch() {
+        guard let server else { return }
         WatchLink.shared.share(server: server, token: tokenBox.value)
     }
 
@@ -186,7 +223,7 @@ final class Session {
 
     /// Absolute URL for a path the API hands back relative to its root, e.g. /images/…/thumb.
     func apiURL(_ path: String) -> URL {
-        URL(string: APIConfig.apiRoot(for: server).absoluteString + path)!
+        URL(string: APIConfig.apiRoot(for: server ?? APIConfig.defaultServer).absoluteString + path)!
     }
 
     /// Loads image bytes that need the session cookie.

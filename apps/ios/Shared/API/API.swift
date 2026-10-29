@@ -17,6 +17,7 @@ typealias InviteInfo = Components.Schemas.InviteInfo
 typealias CategoryInput = Components.Schemas.CategoryInput
 typealias Passkey = Components.Schemas.Passkey
 typealias SignInMethods = Components.Schemas.SignInMethods
+typealias AuthConfig = Components.Schemas.AuthConfig
 
 /// A passkey ceremony the server started: its id, and the WebAuthn options as JSON.
 struct PasskeyChallenge: Sendable {
@@ -37,6 +38,11 @@ struct API: Sendable {
 
     func me() async throws -> Member {
         try await call { try await client.getMe().ok.body.json }
+    }
+
+    /// What this server offers on the sign-in screen. Also tells us the address is an Impressipes server.
+    func authConfig() async throws -> AuthConfig {
+        try await call { try await client.getAuthConfig().ok.body.json }
     }
 
     func invite(token: String) async throws -> InviteInfo {

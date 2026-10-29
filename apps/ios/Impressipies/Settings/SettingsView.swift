@@ -39,8 +39,10 @@ struct SettingsView: View {
                 }
 
                 Section {
-                    LabeledContent("Server", value: session.server.host() ?? session.server.absoluteString)
-                    Link("Open Impressipes on the web", destination: session.server)
+                    if let server = session.server {
+                        LabeledContent("Server", value: server.host() ?? server.absoluteString)
+                        Link("Open Impressipes on the web", destination: server)
+                    }
                     Button { scanning = true } label: { Label("Change server with QR code", systemImage: "qrcode.viewfinder") }
                 } header: {
                     Text("Sync")
