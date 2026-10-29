@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Undo scripts/up: stop everything and remove what it created: .run/ (logs, pids),
+# the Postgres container and its volume, and .data/ (saved images).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+scripts/stop
+scripts/db rm
+rm -rf .run .data
+echo "down"

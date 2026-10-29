@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+# Reset the local database: drop every table, re-migrate and re-seed. Recipe photos
+# on disk are untouched (see `mise run nuke`). If the API is running it is
+# restarted so it doesn't hold stale state.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+api_was_running=false
+if [[ -f .run/api.pid ]] && kill -0 "$(cat .run/api.pid)" 2>/dev/null; then
+  api_was_running=true
+  scripts/stop api
+fi
+
+scripts/db up
+scripts/db psql -q -c 'DROP SCHEMA public CASCADE; CREATE SCHEMA public;'
+scripts/seed
+
+if $api_was_running; then scripts/up; fi
+echo "database reset"

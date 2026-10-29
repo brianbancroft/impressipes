@@ -1,0 +1,47 @@
+#!/usr/bin/env bash
+# Local Postgres for development: a postgres:17-alpine container on :5433 with a
+# named volume. DATABASE_URL (in mise.toml) points the API and seed at it.
+#
+#   scripts/db up      start (creating if needed) and wait until ready
+#   scripts/db stop    stop the container, keeping its data
+#   scripts/db rm      remove the container and its volume
+#   scripts/db psql    open psql, or run: scripts/db psql -c 'select 1'
+set -euo pipefail
+
+NAME=impressipies-db
+VOLUME=impressipies-pgdata
+PORT=5433
+
+running() { [[ $(docker inspect -f '{{.State.Running}}' "$NAME" 2>/dev/null) == true ]]; }
+exists() { docker inspect "$NAME" >/dev/null 2>&1; }
+
+case "${1:-}" in
+  up)
+    if ! running; then
+      if exists; then
+        docker start "$NAME" >/dev/null
+      else
+        docker run -d --name "$NAME" -p "127.0.0.1:$PORT:5432" \
+          -e POSTGRES_USER=impressipies -e POSTGRES_PASSWORD=impressipies -e POSTGRES_DB=impressipies \
+          -v "$VOLUME:/var/lib/postgresql/data" postgres:17-alpine >/dev/null
+      fi
+    fi
+    for _ in $(seq 60); do
+      docker exec "$NAME" pg_isready -q -U impressipies -d impressipies && { echo "postgres ready on :$PORT"; exit 0; }
+      sleep 0.5
+    done
+    echo "postgres did not become ready" >&2; exit 1
+    ;;
+  stop)
+    ! running || docker stop "$NAME" >/dev/null
+    ;;
+  rm)
+    ! exists || docker rm -f "$NAME" >/dev/null
+    docker volume rm "$VOLUME" >/dev/null 2>&1 || true
+    ;;
+  psql)
+    shift
+    exec docker exec -i "$NAME" psql -U impressipies -d impressipies "$@"
+    ;;
+  *) echo "usage: scripts/db up|stop|rm|psql" >&2; exit 2 ;;
+esac

@@ -33,8 +33,13 @@ var _ api.StrictServerInterface = (*server)(nil)
 
 // New returns the API's root handler. A nil pool runs on the in-memory directory
 // (local development and tests); otherwise everything is persisted to Postgres.
-// Until the first member exists it logs a bootstrap admin invite link.
-func New(pool *pgxpool.Pool) http.Handler {
+// Until the first member exists it logs a bootstrap admin invite link and, when
+// WithBootstrapMail is given, emails it.
+func New(pool *pgxpool.Pool, opts ...Option) http.Handler {
+	var o options
+	for _, opt := range opts {
+		opt(&o)
+	}
 	var dir family.Directory = family.NewStore()
 	first := true
 	if pool != nil {
@@ -48,6 +53,7 @@ func New(pool *pgxpool.Pool) http.Handler {
 	if first {
 		if inv, err := dir.CreateInvite(context.Background(), ""); err == nil {
 			log.Printf("first run: open /invite/%s to create the admin account", inv.Token)
+			o.mailBootstrap("/invite/" + inv.Token)
 		}
 	}
 	return NewWithStore(context.Background(), dir, pool)

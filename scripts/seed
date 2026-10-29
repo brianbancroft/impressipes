@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Migrate the local database and load the starter data unless it is already there.
+set -euo pipefail
+cd "$(dirname "$0")/../apps/api"
+exec go run ./cmd/seed

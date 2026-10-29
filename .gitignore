@@ -10,3 +10,5 @@ apps/api/internal/web/static/*
 apps/ios/build
 .build
 xcuserdata
+.run
+.data

@@ -23,7 +23,7 @@ export async function getMe(): Promise<Me> {
 
 export async function getInvite(token: string): Promise<InviteInfo> {
   const { data, error } = await client.GET('/invites/{token}', { params: { path: { token } } });
-  return (data ?? error)!;
+  return data ?? (error && typeof error === 'object' && 'state' in error ? error : { state: 'invalid' });
 }
 
 export async function acceptInvite(

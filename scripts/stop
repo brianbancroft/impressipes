@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+# Stop everything the local stack runs: kills the process trees started by
+# scripts/up, then whatever is still listening on the stack's ports
+# (mailpit SMTP/UI, API, SPA), and stops the Postgres container (data is kept).
+# Override the ports with PORTS="1025 8025 ...".
+# With a name (scripts/stop api) it stops only that process from .run/.
+set -uo pipefail
+cd "$(dirname "$0")/.."
+
+PORTS=${PORTS:-"1025 8025 8080 4200"}
+
+kill_tree() { # pid
+  local child
+  for child in $(pgrep -P "$1" 2>/dev/null); do kill_tree "$child"; done
+  kill "$1" 2>/dev/null || true
+}
+
+if [[ $# -gt 0 ]]; then
+  [[ -f .run/$1.pid ]] && kill_tree "$(cat ".run/$1.pid")" && rm -f ".run/$1.pid"
+  exit 0
+fi
+
+for f in .run/*.pid; do
+  [[ -f $f ]] || continue
+  kill_tree "$(cat "$f")"
+  rm -f "$f"
+done
+
+for port in $PORTS; do
+  pids=$(lsof -ti "tcp:$port" -sTCP:LISTEN 2>/dev/null || true)
+  [[ -n $pids ]] || continue
+  echo "killing listener(s) on :$port: $pids"
+  kill $pids 2>/dev/null || true
+  sleep 0.5
+  pids=$(lsof -ti "tcp:$port" -sTCP:LISTEN 2>/dev/null || true)
+  [[ -z $pids ]] || kill -9 $pids 2>/dev/null || true
+done
+scripts/db stop
+echo "stopped"

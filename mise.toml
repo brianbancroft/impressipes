@@ -4,15 +4,47 @@ pnpm = "10"
 go = "1.26"
 
 [env]
+DATABASE_URL = "postgres://impressipies:impressipies@localhost:5433/impressipies?sslmode=disable"
+IMAGE_DIR = "{{config_root}}/.data/images"
 _.path = ["{{config_root}}/node_modules/.bin"]
 
 [tasks.install]
 description = "Install JS dependencies"
 run = "pnpm install"
 
+[tasks.mailpit]
+description = "Run Mailpit: SMTP on :1025, inbox UI on http://localhost:8025"
+run = "mailpit"
+
+[tasks.up]
+description = "Start Postgres, Mailpit, the API and the SPA in the background, seeding the DB if needed"
+run = "scripts/up"
+
+[tasks.stop]
+description = "Stop the local stack, kill anything on its ports (1025, 8025, 8080, 4200), stop Postgres"
+run = "scripts/stop"
+
+[tasks.down]
+description = "Undo `up`: stop everything, remove the Postgres container + volume, .run/ and .data/"
+run = "scripts/down"
+
+[tasks.reset]
+description = "Reset the local database: drop everything, re-migrate, re-seed"
+run = "scripts/reset"
+
+[tasks.nuke]
+description = "Delete every saved image (files under .data/images and recipe_images rows)"
+run = "scripts/nuke"
+
 [tasks.dev]
-description = "Run the SPA and the API together"
-run = "pnpm nx run-many -t dev"
+description = "Run Postgres, Mailpit, the SPA and the API together (foreground)"
+run = """
+scripts/db up
+scripts/seed
+mise run mailpit & MP=$!
+trap 'kill $MP' EXIT
+pnpm nx run-many -t dev
+"""
 
 [tasks.build]
 description = "Build every project"

@@ -1,0 +1,31 @@
+#!/usr/bin/env bash
+# Start the local stack in the background: Postgres (Docker), Mailpit, the API
+# and the SPA, seeding the database first.
+# Logs and pids go to .run/ (see scripts/stop and scripts/down).
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+mkdir -p .run
+start() { # name, command...
+  local name=$1; shift
+  if [[ -f .run/$name.pid ]] && kill -0 "$(cat .run/$name.pid)" 2>/dev/null; then
+    echo "$name already running (pid $(cat .run/$name.pid))"
+    return
+  fi
+  nohup "$@" >".run/$name.log" 2>&1 &
+  echo $! >".run/$name.pid"
+  echo "started $name (pid $!), log: .run/$name.log"
+}
+
+scripts/db up
+scripts/seed # migrates, then loads the starter data unless it is already there
+
+start mailpit mailpit
+start api mise run --cd apps/api dev
+start web pnpm --filter web exec vite
+
+echo
+echo "web      http://localhost:4200"
+echo "mailpit  http://localhost:8025"
+echo "postgres localhost:5433 (scripts/db psql)"
+echo "stop with: mise run stop"

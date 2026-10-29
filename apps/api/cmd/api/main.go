@@ -9,6 +9,7 @@ import (
 	"github.com/jackc/pgx/v5/pgxpool"
 
 	"github.com/brianbancroft/impressipies/apps/api/internal/db"
+	"github.com/brianbancroft/impressipies/apps/api/internal/mail"
 	"github.com/brianbancroft/impressipies/apps/api/internal/server"
 	"github.com/brianbancroft/impressipies/apps/api/internal/web"
 )
@@ -31,7 +32,28 @@ func main() {
 		log.Print("database migrated")
 	}
 
-	api := server.New(pool)
+	// SMTP_ADDR (Mailpit in local dev) or RESEND_API_KEY (production) turns on the
+	// first-run admin invite email; Resend also needs MAIL_FROM.
+	var opts []server.Option
+	var mailer mail.Mailer
+	from := envOr("MAIL_FROM", "Impressipies <noreply@impressipes.com>")
+	if addr := os.Getenv("SMTP_ADDR"); addr != "" {
+		mailer = mail.SMTP{Addr: addr, From: from}
+	} else if key := os.Getenv("RESEND_API_KEY"); key != "" {
+		if os.Getenv("MAIL_FROM") == "" {
+			log.Fatal("RESEND_API_KEY is set but MAIL_FROM is not")
+		}
+		mailer = mail.Resend{APIKey: key, From: from}
+	}
+	if mailer != nil {
+		opts = append(opts, server.WithBootstrapMail(
+			mailer,
+			envOr("BOOTSTRAP_ADMIN_EMAIL", "admin@impressipes.com"),
+			envOr("APP_URL", "http://localhost:4200"),
+		))
+	}
+
+	api := server.New(pool, opts...)
 	mux := http.NewServeMux()
 	mux.Handle("/api/", http.StripPrefix("/api", api))
 	mux.Handle("GET /healthz", api)
@@ -39,4 +61,11 @@ func main() {
 
 	log.Printf("listening on :%s", port)
 	log.Fatal(http.ListenAndServe(":"+port, mux))
+}
+
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

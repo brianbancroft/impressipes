@@ -3,6 +3,9 @@ go = "1.26"
 
 [env]
 PORT = "8080"
+SMTP_ADDR = "localhost:1025"
+BOOTSTRAP_ADMIN_EMAIL = "admin@impressipes.com"
+APP_URL = "http://localhost:4200"
 
 [tasks.dev]
 description = "Run the API"

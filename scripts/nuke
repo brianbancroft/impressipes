@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# Destroy every saved image: the files under IMAGE_DIR, and (if the local database
+# is up) the recipe_images rows that pointed at them.
+set -euo pipefail
+cd "$(dirname "$0")/.."
+
+dir=${IMAGE_DIR:?IMAGE_DIR is not set}
+case "$dir" in
+  "$PWD"/*) ;;
+  *) echo "refusing to nuke $dir: not inside this repo" >&2; exit 1 ;;
+esac
+
+if [[ -d $dir ]]; then
+  count=$(find "$dir" -type f | wc -l | tr -d ' ')
+  rm -rf "$dir"
+  echo "deleted $count image files from $dir"
+else
+  echo "no images at $dir"
+fi
+mkdir -p "$dir"
+
+if [[ $(docker inspect -f '{{.State.Running}}' impressipies-db 2>/dev/null) == true ]]; then
+  scripts/db psql -q -c 'DELETE FROM recipe_images;'
+  echo "cleared recipe_images"
+fi
