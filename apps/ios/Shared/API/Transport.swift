@@ -91,6 +91,13 @@ struct APIError: LocalizedError {
         APIError(message: code == 401 ? "You're signed out" : "The server answered \(code)")
     }
 
+    /// True when the request never got an answer (no signal, phone out of reach),
+    /// as opposed to the server turning it down. Only the former is worth retrying.
+    static func isUnreachable(_ error: Error) -> Bool {
+        if let e = error as? ClientError { return isUnreachable(e.underlyingError) }
+        return error is URLError
+    }
+
     /// Unwraps the generated client's error into something readable.
     static func from(_ error: Error) -> APIError {
         if let e = error as? APIError { return e }

@@ -51,10 +51,11 @@ struct ListDetailView: View {
         let open = store.items.filter { !$0.checked || leaving.contains($0.id) }
         let done = store.items.filter { $0.checked && !leaving.contains($0.id) }.sorted { $0.updatedAt > $1.updatedAt }
 
-        if let error = store.error {
-            Label(error, systemImage: "exclamationmark.icloud")
-                .font(.system(size: 12))
+        if store.isOffline {
+            Label("Offline", systemImage: "iphone.slash")
+                .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(WatchPalette.inkMuted)
+                .frame(maxWidth: .infinity)
                 .listRowBackground(Color.clear)
         }
 
@@ -67,7 +68,7 @@ struct ListDetailView: View {
                 .listRowBackground(Color.clear)
                 .listRowInsets(EdgeInsets(top: 4, leading: 0, bottom: 0, trailing: 0))
             ForEach(group.items, id: \.id) { item in
-                ItemRow(item: item, tint: WatchPalette.colour(group.category?.colour), done: leaving.contains(item.id)) {
+                ItemRow(item: item, tint: WatchPalette.colour(group.category?.colour), done: leaving.contains(item.id), pending: store.pendingIds.contains(item.id)) {
                     check(item, in: store)
                 }
             }
@@ -93,7 +94,7 @@ struct ListDetailView: View {
 
             if gotOpen {
                 ForEach(done, id: \.id) { item in
-                    ItemRow(item: item, tint: WatchPalette.colour(store.category(item.categoryId)?.colour), done: true) {
+                    ItemRow(item: item, tint: WatchPalette.colour(store.category(item.categoryId)?.colour), done: true, pending: store.pendingIds.contains(item.id)) {
                         uncheck(item, in: store)
                     }
                 }
@@ -199,6 +200,7 @@ private struct ItemRow: View {
     let item: Item
     let tint: Color
     let done: Bool
+    var pending = false
     let action: () -> Void
 
     var body: some View {
@@ -218,6 +220,13 @@ private struct ItemRow: View {
                     }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
+                if pending {
+                    // Not yet acknowledged by the server; gone on sync.
+                    Image(systemName: "clock")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(WatchPalette.inkMuted)
+                        .accessibilityHidden(true)
+                }
             }
             .padding(.leading, 8)
             .padding(.trailing, 10)
@@ -229,7 +238,7 @@ private struct ItemRow: View {
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
         .accessibilityLabel([item.name, item.quantityText].filter { !$0.isEmpty }.joined(separator: ", "))
-        .accessibilityValue(done ? "Got it" : "")
+        .accessibilityValue([done ? "Got it" : "", pending ? "Waiting to sync" : ""].filter { !$0.isEmpty }.joined(separator: ", "))
         .accessibilityHint(done ? "Puts it back on the list" : "Crosses it off")
     }
 }
@@ -271,24 +280,46 @@ private struct CheckRing: View {
 
 // MARK: Store
 
-/// One list's items, with an optimistic check that rolls back if the server says no.
+/// One list's items. A check applies at once and joins the offline queue; it
+/// is sent whenever the server can be reached and never rolled back for being
+/// out of range (IMP-58).
 @MainActor @Observable
 final class WatchListStore {
+    /// No successful sync for this long and the title says "Offline".
+    static let offlineAfter: TimeInterval = 10 * 60
+
     let listId: String
     private(set) var detail: ListDetail?
+    /// Only set when there is nothing to show at all.
     private(set) var error: String?
     private(set) var updated: Date?
+    private(set) var pendingIds: Set<String> = []
+    /// Advances with every refresh attempt so the Offline label can appear
+    /// while the server stays unreachable.
+    private(set) var checkedAt = Date()
 
     private let api: () -> API
+    private let offline: OfflineStore
 
-    init(listId: String, api: @escaping () -> API) {
+    init(listId: String, offline: OfflineStore = .shared, api: @escaping () -> API) {
         self.listId = listId
         self.api = api
+        self.offline = offline
+        if let snap = offline.snapshot(listId) {
+            detail = offline.overlay(snap.detail, listId: listId)
+            updated = snap.syncedAt
+        }
+        pendingIds = offline.pendingIds(in: listId)
     }
 
     var categories: [Category] { detail?.categories ?? [] }
     var items: [Item] { detail?.items ?? [] }
     var remaining: Int? { detail?.remaining }
+
+    var isOffline: Bool {
+        guard let updated else { return detail != nil }
+        return checkedAt.timeIntervalSince(updated) > Self.offlineAfter
+    }
 
     func category(_ id: String?) -> Category? {
         guard let id else { return nil }
@@ -296,13 +327,24 @@ final class WatchListStore {
     }
 
     func load() async {
+        await flush()
+        checkedAt = .now
         do {
-            detail = try await api().list(listId)
+            let fresh = try await api().list(listId)
+            let now = Date.now
+            offline.save(snapshot: ListSnapshot(detail: fresh, syncedAt: now), for: listId)
+            detail = offline.overlay(fresh, listId: listId)
+            updated = now
             error = nil
-            updated = .now
         } catch {
-            self.error = APIError.from(error).message
+            // Being out of reach is normal: keep what's on screen.
+            if detail == nil { self.error = APIError.from(error).message }
         }
+    }
+
+    func flush() async {
+        for item in await offline.flush(using: api()) where item.listId == listId { replace(item) }
+        pendingIds = offline.pendingIds(in: listId)
     }
 
     struct AisleGroup: Identifiable {
@@ -327,14 +369,10 @@ final class WatchListStore {
         var next = item
         next.checked = checked
         next.updatedAt = .now
+        offline.enqueue(PendingCheck(listId: listId, itemId: item.id, checked: checked, at: next.updatedAt))
+        pendingIds = offline.pendingIds(in: listId)
         withAnimation(animation) { replace(next) }
-        do {
-            replace(try await api().updateItem(item.id, .init(checked: checked)))
-            error = nil
-        } catch {
-            withAnimation(animation) { replace(item) }
-            self.error = APIError.from(error).message
-        }
+        await flush()
     }
 
     private func replace(_ item: Item) {

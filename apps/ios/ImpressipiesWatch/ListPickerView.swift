@@ -4,8 +4,12 @@ import SwiftUI
 struct ListPickerView: View {
     @Environment(WatchSession.self) private var session
     @Environment(\.scenePhase) private var scenePhase
-    @State private var lists: [ShoppingList] = []
-    @State private var remaining: [String: Int] = [:]
+    @State private var lists: [ShoppingList] = OfflineStore.shared.lists
+    @State private var remaining: [String: Int] = Dictionary(
+        uniqueKeysWithValues: OfflineStore.shared.lists.compactMap { l in
+            OfflineStore.shared.snapshot(l.id).map { (l.id, OfflineStore.shared.overlay($0.detail, listId: l.id).remaining) }
+        }
+    )
     @State private var loaded = false
     @State private var error: String?
 
@@ -47,18 +51,23 @@ struct ListPickerView: View {
     }
 
     private func load() async {
+        _ = await OfflineStore.shared.flush(using: session.api)
         do {
             let fetched = try await session.api.lists().sorted { $0.sortOrder < $1.sortOrder }
             lists = fetched
+            OfflineStore.shared.save(lists: fetched)
             error = nil
             // Counts come from each list's items; there are only a handful of lists.
             let api = session.api
-            await withTaskGroup(of: (String, Int?).self) { group in
+            await withTaskGroup(of: (String, ListDetail?).self) { group in
                 for l in fetched {
-                    group.addTask { (l.id, try? await api.list(l.id).remaining) }
+                    group.addTask { (l.id, try? await api.list(l.id)) }
                 }
-                for await (id, n) in group {
-                    if let n { remaining[id] = n }
+                for await (id, fresh) in group {
+                    if let fresh {
+                        // Counts include check-offs still waiting to sync.
+                        remaining[id] = OfflineStore.shared.overlay(fresh, listId: id).remaining
+                    }
                 }
             }
         } catch {
