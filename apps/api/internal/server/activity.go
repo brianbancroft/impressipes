@@ -38,7 +38,7 @@ func itemSnap(i dbgen.ListItem) map[string]any {
 	return map[string]any{
 		"name": i.Name, "quantityText": i.QuantityText, "note": i.Note,
 		"categoryId": uuidx.Ptr(i.CategoryID), "checked": i.CheckedAt.Valid,
-		"checkedBy": uuidx.Ptr(i.CheckedBy),
+		"checkedBy": uuidx.Ptr(i.CheckedBy), "onSaleOnly": i.OnSaleOnly,
 	}
 }
 
@@ -303,6 +303,10 @@ func undoItem(ctx context.Context, q *dbgen.Queries, m *family.Member, action st
 	}
 	if _, err := q.UpdateItem(ctx, p); err != nil {
 		return err
+	}
+	if v, ok := before["onSaleOnly"].(bool); ok {
+		p.SetOnSaleOnly = true
+		p.OnSaleOnly = v
 	}
 	if want, ok := before["checked"].(bool); ok && want != cur.CheckedAt.Valid {
 		by := uuidOf(m)

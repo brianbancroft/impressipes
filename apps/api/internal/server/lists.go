@@ -32,6 +32,7 @@ func toItem(i dbgen.ListItem) api.Item {
 		Checked: i.CheckedAt.Valid, CheckedBy: uuidx.Ptr(i.CheckedBy), AddedBy: uuidx.String(i.AddedBy),
 		SourceRecipeId: uuidx.Ptr(i.SourceRecipeID), Position: int(i.Position),
 		Version: i.Version, UpdatedAt: i.UpdatedAt.Time, Deleted: i.DeletedAt.Valid,
+		OnSaleOnly: i.OnSaleOnly,
 	}
 }
 
@@ -346,7 +347,11 @@ func (s *server) CreateItem(ctx context.Context, req api.CreateItemRequestObject
 			return orNotFound(err, "list")
 		}
 		user, _ := uuidx.Parse(m.ID)
-		item, err = addItem(ctx, q, listID, user, itemID, strings.TrimSpace(b.Name), deref(b.QuantityText), deref(b.Note), b.CategoryId, pgtype.UUID{})
+		onSale := false
+		if b.OnSaleOnly != nil {
+			onSale = *b.OnSaleOnly
+		}
+		item, err = addItem(ctx, q, listID, user, itemID, strings.TrimSpace(b.Name), deref(b.QuantityText), deref(b.Note), b.CategoryId, pgtype.UUID{}, onSale)
 		if err != nil {
 			return err
 		}
@@ -367,7 +372,7 @@ func deref(p *string) string {
 
 // addItem inserts an item, filling a missing category or quantity from the list's
 // item memory, and teaches the memory about it.
-func addItem(ctx context.Context, q *dbgen.Queries, listID, user, id pgtype.UUID, name, qty, note string, category *string, recipe pgtype.UUID) (dbgen.ListItem, error) {
+func addItem(ctx context.Context, q *dbgen.Queries, listID, user, id pgtype.UUID, name, qty, note string, category *string, recipe pgtype.UUID, onSaleOnly bool) (dbgen.ListItem, error) {
 	norm := listsvc.Normalize(name)
 	mem, err := q.GetItemMemory(ctx, dbgen.GetItemMemoryParams{ListID: listID, NormalizedName: norm})
 	if err != nil && err != pgx.ErrNoRows {
@@ -393,7 +398,7 @@ func addItem(ctx context.Context, q *dbgen.Queries, listID, user, id pgtype.UUID
 	}
 	item, err := q.InsertItemIfAbsent(ctx, dbgen.InsertItemIfAbsentParams{
 		ID: id, ListID: listID, CategoryID: cat, Name: name, QuantityText: qty, Note: note,
-		AddedBy: user, SourceRecipeID: recipe, Position: pos,
+		AddedBy: user, SourceRecipeID: recipe, Position: pos, OnSaleOnly: onSaleOnly,
 	})
 	if err != nil {
 		return item, err
@@ -458,6 +463,10 @@ func (s *server) UpdateItem(ctx context.Context, req api.UpdateItemRequestObject
 					return err
 				}
 			}
+		}
+		if b.OnSaleOnly != nil {
+			p.SetOnSaleOnly = true
+			p.OnSaleOnly = *b.OnSaleOnly
 		}
 		if item, err = q.UpdateItem(ctx, p); err != nil {
 			return orNotFound(err, "item")

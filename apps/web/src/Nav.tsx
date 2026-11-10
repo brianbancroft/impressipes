@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useRouterState } from '@tanstack/react-router';
-import { Bot, Heart, House, Plus, ShoppingCart, Smartphone, Soup, UserRound, Users } from 'lucide-react';
+import { Bot, CalendarDays, Heart, House, Plus, ShoppingCart, Smartphone, Soup, UserRound, Users } from 'lucide-react';
 import { useState } from 'react';
 import { listLists, type Member } from './api';
 import { applyTheme, getTheme, type Theme } from './theme';
@@ -16,6 +16,7 @@ function useActive() {
     recipes: loc.pathname.startsWith('/recipes') && !fav,
     faves: loc.pathname === '/recipes' && fav,
     lists: loc.pathname.startsWith('/lists'),
+    week: loc.pathname.startsWith('/week'),
     family: loc.pathname.startsWith('/admin'),
     listId: loc.pathname.match(/^\/lists\/([^/]+)/)?.[1],
   };
@@ -83,6 +84,7 @@ export function SideRail({ me }: { me: Member }) {
         <Link to="/home" className={cn(railLink, a.home && railOn)} aria-current={a.home ? 'page' : undefined}><House /><span className="max-lg:sr-only">Home</span></Link>
         <Link to="/recipes" className={cn(railLink, a.recipes && railOn)} aria-current={a.recipes ? 'page' : undefined}><Soup /><span className="max-lg:sr-only">Recipes</span></Link>
         <Link to="/lists" className={cn(railLink, a.lists && railOn)} aria-current={a.lists ? 'page' : undefined}><ShoppingCart /><span className="max-lg:sr-only">Lists</span></Link>
+        <Link to="/week" className={cn(railLink, a.week && 'bg-accent-fill text-white hover:bg-accent-fill hover:text-white')} aria-current={a.week ? 'page' : undefined}><CalendarDays /><span className="max-lg:sr-only">This week</span></Link>
         {me.role === 'admin' && (
           <Link to="/admin" className={cn(railLink, a.family && railOn)} aria-current={a.family ? 'page' : undefined}><Users /><span className="max-lg:sr-only">Family</span></Link>
         )}

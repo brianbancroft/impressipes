@@ -20,6 +20,7 @@ struct ItemSheet: View {
     @State private var unit = ""
     @State private var note = ""
     @State private var categoryId: String?
+    @State private var onSaleOnly = false
     @State private var busy = false
     @State private var error: String?
     @State private var confirmDelete = false
@@ -107,6 +108,16 @@ struct ItemSheet: View {
                             .sticker(radius: 16, shadow: 0)
                     }
 
+                    Toggle(isOn: $onSaleOnly) {
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("On sale only").font(.headline)
+                            Text("Buy only if it's on sale").font(.footnote).foregroundStyle(Palette.inkMuted)
+                        }
+                    }
+                    .tint(Palette.butter)
+                    .padding(14)
+                    .sticker(radius: 16, shadow: 3)
+
                     field("Preview") {
                         let q = Format.splitQuantity(quantityText)
                         HStack(spacing: 12) {
@@ -173,6 +184,7 @@ struct ItemSheet: View {
             name = item.name
             note = item.note
             categoryId = item.categoryId
+            onSaleOnly = item.onSaleOnly
             text = item.quantityText
         }
         let split = Format.splitQuantity(text)
@@ -202,9 +214,9 @@ struct ItemSheet: View {
             defer { busy = false }
             do {
                 if let item = editing {
-                    try await store.update(item, name: n, quantityText: quantityText, note: note, categoryId: categoryId)
+                    try await store.update(item, name: n, quantityText: quantityText, note: note, categoryId: categoryId, onSaleOnly: onSaleOnly)
                 } else {
-                    try await store.add(name: n, quantityText: quantityText, note: note, categoryId: categoryId)
+                    try await store.add(name: n, quantityText: quantityText, note: note, categoryId: categoryId, onSaleOnly: onSaleOnly)
                 }
                 dismiss()
             } catch {

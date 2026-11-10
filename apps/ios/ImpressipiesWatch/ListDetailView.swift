@@ -218,6 +218,14 @@ private struct ItemRow: View {
                             .font(.system(size: 12, weight: .medium))
                             .foregroundStyle(WatchPalette.inkMuted)
                     }
+                    if item.onSaleOnly {
+                        Text("ON SALE")
+                            .font(.system(size: 11, weight: .heavy))
+                            .foregroundStyle(Color(hex: "#2A1630"))
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 2)
+                            .background(Capsule().fill(Color(hex: "#FFE27A")))
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 if pending {
@@ -237,7 +245,7 @@ private struct ItemRow: View {
         .buttonStyle(RowPress(tint: tint))
         .listRowBackground(Color.clear)
         .listRowInsets(EdgeInsets(top: 2, leading: 0, bottom: 2, trailing: 0))
-        .accessibilityLabel([item.name, item.quantityText].filter { !$0.isEmpty }.joined(separator: ", "))
+        .accessibilityLabel([item.name, item.quantityText, item.onSaleOnly ? "On sale only" : ""].filter { !$0.isEmpty }.joined(separator: ", "))
         .accessibilityValue([done ? "Got it" : "", pending ? "Waiting to sync" : ""].filter { !$0.isEmpty }.joined(separator: ", "))
         .accessibilityHint(done ? "Puts it back on the list" : "Crosses it off")
     }

@@ -110,3 +110,9 @@ ORDER BY recipe_id, position, created_at;
 
 -- name: LockRecipe :one
 SELECT id FROM recipes WHERE id = $1 AND deleted_at IS NULL FOR UPDATE;
+
+-- name: IncrementTimesCooked :one
+UPDATE recipes
+SET times_cooked = times_cooked + 1, last_cooked_at = now()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING *;

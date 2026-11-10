@@ -14,6 +14,7 @@ struct RecipeDetailView: View {
     @State private var tab = Tab.ingredients
     @State private var ticked: Set<Int> = []
     @State private var addingToList = false
+    @State private var cooking = false
     @State private var toast: Toast?
 
     enum Tab: String, CaseIterable { case ingredients = "Ingredients", steps = "Steps" }
@@ -65,6 +66,8 @@ struct RecipeDetailView: View {
                     if let c = r.summary.cookMinutes, c > 0 { Chip(label: "Cook \(Format.minutes(c))", systemImage: "flame", fill: Palette.tangerine) }
                     ForEach(r.summary.tags, id: \.self) { t in Chip(label: t, systemImage: "tag", fill: Palette.sky) }
                 }
+
+                cookedCard(r)
 
                 if (r.summary.servings ?? 0) > 0 {
                     StepperPill(
@@ -231,6 +234,46 @@ struct RecipeDetailView: View {
     private func sourceHost(_ r: Recipe) -> String? {
         guard let s = r.sourceUrl, let host = URL(string: s)?.host() else { return nil }
         return host.hasPrefix("www.") ? String(host.dropFirst(4)) : host
+    }
+
+    private func cookedCard(_ r: Recipe) -> some View {
+        HStack(alignment: .center, spacing: 12) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text("COOKED")
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(Palette.inkMuted)
+                Text("\(r.timesCooked) \(r.timesCooked == 1 ? "time" : "times")")
+                    .font(.system(.title, design: .rounded, weight: .heavy))
+                    .foregroundStyle(Palette.stickerInk)
+                    .padding(.horizontal, 10)
+                    .padding(.vertical, 2)
+                    .background(Capsule().fill(Palette.butter))
+                Text(r.lastCookedAt.map { "Last \(FamilyCalendar.monthDay.string(from: $0)) · tap again anytime" } ?? "Not counted yet")
+                    .font(.footnote)
+                    .foregroundStyle(Palette.inkMuted)
+            }
+            Spacer(minLength: 8)
+            Button("I cooked this") { Task { await cook() } }
+                .buttonStyle(PopButtonStyle(fill: Palette.accent, foreground: .white, fullWidth: false))
+                .disabled(cooking)
+        }
+        .padding(14)
+        .sticker(radius: 18, shadow: 3)
+    }
+
+    private func cook() async {
+        cooking = true
+        defer { cooking = false }
+        do {
+            let result = try await session.api.cookRecipe(recipeId)
+            if var next = recipe {
+                next.timesCooked = result.timesCooked
+                next.lastCookedAt = result.lastCookedAt
+                recipe = next
+            }
+        } catch {
+            toast = Toast(message: APIError.from(error).message)
+        }
     }
 
     private func load() async {

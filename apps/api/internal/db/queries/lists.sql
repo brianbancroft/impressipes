@@ -15,14 +15,15 @@ RETURNING *;
 SELECT * FROM list_categories WHERE list_id = $1 ORDER BY sort_order;
 
 -- name: UpsertListItem :one
-INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position, on_sale_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (id) DO UPDATE SET
     category_id = EXCLUDED.category_id,
     name = EXCLUDED.name,
     quantity_text = EXCLUDED.quantity_text,
     note = EXCLUDED.note,
-    position = EXCLUDED.position
+    position = EXCLUDED.position,
+    on_sale_only = EXCLUDED.on_sale_only
 RETURNING *;
 
 -- name: SetItemChecked :one
@@ -96,8 +97,8 @@ DELETE FROM list_categories WHERE id = $1 AND list_id = $2;
 SELECT * FROM list_items WHERE id = $1 AND deleted_at IS NULL;
 
 -- name: InsertItemIfAbsent :one
-INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position, on_sale_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (id) DO UPDATE SET id = list_items.id
 RETURNING *;
 
@@ -107,7 +108,8 @@ UPDATE list_items SET
     quantity_text = COALESCE(sqlc.narg(quantity_text), quantity_text),
     note = COALESCE(sqlc.narg(note), note),
     position = COALESCE(sqlc.narg(position), position),
-    category_id = CASE WHEN sqlc.arg(set_category)::boolean THEN sqlc.narg(category_id)::uuid ELSE category_id END
+    category_id = CASE WHEN sqlc.arg(set_category)::boolean THEN sqlc.narg(category_id)::uuid ELSE category_id END,
+    on_sale_only = CASE WHEN sqlc.arg(set_on_sale_only)::boolean THEN sqlc.arg(on_sale_only)::boolean ELSE on_sale_only END
 WHERE id = sqlc.arg(id) AND deleted_at IS NULL
 RETURNING *;
 

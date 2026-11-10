@@ -91,6 +91,7 @@ type ListItem struct {
 	Version        int64              `json:"version"`
 	UpdatedAt      pgtype.Timestamptz `json:"updated_at"`
 	DeletedAt      pgtype.Timestamptz `json:"deleted_at"`
+	OnSaleOnly     bool               `json:"on_sale_only"`
 }
 
 type LoginCode struct {
@@ -104,6 +105,20 @@ type LoginCode struct {
 	ExpiresAt pgtype.Timestamptz `json:"expires_at"`
 	UsedAt    pgtype.Timestamptz `json:"used_at"`
 	CreatedAt pgtype.Timestamptz `json:"created_at"`
+}
+
+type MealPlanEntry struct {
+	ID          pgtype.UUID        `json:"id"`
+	PlanDate    pgtype.Date        `json:"plan_date"`
+	Slot        string             `json:"slot"`
+	Title       string             `json:"title"`
+	RecipeID    pgtype.UUID        `json:"recipe_id"`
+	CompletedAt pgtype.Timestamptz `json:"completed_at"`
+	CompletedBy pgtype.UUID        `json:"completed_by"`
+	Notes       string             `json:"notes"`
+	Position    int32              `json:"position"`
+	CreatedAt   pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
 }
 
 type OauthClient struct {
@@ -152,19 +167,21 @@ type Passkey struct {
 }
 
 type Recipe struct {
-	ID          pgtype.UUID        `json:"id"`
-	Title       string             `json:"title"`
-	Summary     string             `json:"summary"`
-	Servings    pgtype.Numeric     `json:"servings"`
-	PrepMinutes pgtype.Int4        `json:"prep_minutes"`
-	CookMinutes pgtype.Int4        `json:"cook_minutes"`
-	SourceUrl   pgtype.Text        `json:"source_url"`
-	SourceKind  string             `json:"source_kind"`
-	Notes       string             `json:"notes"`
-	CreatedBy   pgtype.UUID        `json:"created_by"`
-	CreatedAt   pgtype.Timestamptz `json:"created_at"`
-	UpdatedAt   pgtype.Timestamptz `json:"updated_at"`
-	DeletedAt   pgtype.Timestamptz `json:"deleted_at"`
+	ID           pgtype.UUID        `json:"id"`
+	Title        string             `json:"title"`
+	Summary      string             `json:"summary"`
+	Servings     pgtype.Numeric     `json:"servings"`
+	PrepMinutes  pgtype.Int4        `json:"prep_minutes"`
+	CookMinutes  pgtype.Int4        `json:"cook_minutes"`
+	SourceUrl    pgtype.Text        `json:"source_url"`
+	SourceKind   string             `json:"source_kind"`
+	Notes        string             `json:"notes"`
+	CreatedBy    pgtype.UUID        `json:"created_by"`
+	CreatedAt    pgtype.Timestamptz `json:"created_at"`
+	UpdatedAt    pgtype.Timestamptz `json:"updated_at"`
+	DeletedAt    pgtype.Timestamptz `json:"deleted_at"`
+	TimesCooked  int32              `json:"times_cooked"`
+	LastCookedAt pgtype.Timestamptz `json:"last_cooked_at"`
 }
 
 type RecipeFavourite struct {

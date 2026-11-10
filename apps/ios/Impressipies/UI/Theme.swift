@@ -46,6 +46,8 @@ enum Palette {
     static let onAccent = Color(light: 0xFFFFFF, dark: 0x2A0A18)
     static let accentSoft = Color(light: 0xFFC7DA, dark: 0x4F2340)
     static let danger = Color(light: 0xB3261E, dark: 0xFF8A80)
+    /// Readable green for completed meals and home suggestions, in both modes.
+    static let good = Color(light: 0x1F6B45, dark: 0x8EE8B0)
     /// Tick box ring: the dark outline vanishes on the dark ground, so it lightens there.
     static let tickRing = Color(light: 0x2A1630, dark: 0xCBB3CF)
 

@@ -90,7 +90,7 @@ func (q *Queries) CountRecipeImages(ctx context.Context, recipeID pgtype.UUID) (
 const createRecipe = `-- name: CreateRecipe :one
 INSERT INTO recipes (title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by)
 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at
+RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at, times_cooked, last_cooked_at
 `
 
 type CreateRecipeParams struct {
@@ -132,6 +132,8 @@ func (q *Queries) CreateRecipe(ctx context.Context, arg CreateRecipeParams) (Rec
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.TimesCooked,
+		&i.LastCookedAt,
 	)
 	return i, err
 }
@@ -199,7 +201,7 @@ func (q *Queries) GetLiveRecipeImage(ctx context.Context, id pgtype.UUID) (Recip
 }
 
 const getRecipe = `-- name: GetRecipe :one
-SELECT id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at FROM recipes WHERE id = $1 AND deleted_at IS NULL
+SELECT id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at, times_cooked, last_cooked_at FROM recipes WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetRecipe(ctx context.Context, id pgtype.UUID) (Recipe, error) {
@@ -219,6 +221,38 @@ func (q *Queries) GetRecipe(ctx context.Context, id pgtype.UUID) (Recipe, error)
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.TimesCooked,
+		&i.LastCookedAt,
+	)
+	return i, err
+}
+
+const incrementTimesCooked = `-- name: IncrementTimesCooked :one
+UPDATE recipes
+SET times_cooked = times_cooked + 1, last_cooked_at = now()
+WHERE id = $1 AND deleted_at IS NULL
+RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at, times_cooked, last_cooked_at
+`
+
+func (q *Queries) IncrementTimesCooked(ctx context.Context, id pgtype.UUID) (Recipe, error) {
+	row := q.db.QueryRow(ctx, incrementTimesCooked, id)
+	var i Recipe
+	err := row.Scan(
+		&i.ID,
+		&i.Title,
+		&i.Summary,
+		&i.Servings,
+		&i.PrepMinutes,
+		&i.CookMinutes,
+		&i.SourceUrl,
+		&i.SourceKind,
+		&i.Notes,
+		&i.CreatedBy,
+		&i.CreatedAt,
+		&i.UpdatedAt,
+		&i.DeletedAt,
+		&i.TimesCooked,
+		&i.LastCookedAt,
 	)
 	return i, err
 }
@@ -470,7 +504,7 @@ func (q *Queries) RestoreRecipe(ctx context.Context, id pgtype.UUID) (int64, err
 }
 
 const searchRecipes = `-- name: SearchRecipes :many
-SELECT r.id, r.title, r.summary, r.servings, r.prep_minutes, r.cook_minutes, r.source_url, r.source_kind, r.notes, r.created_by, r.created_at, r.updated_at, r.deleted_at FROM recipes r
+SELECT r.id, r.title, r.summary, r.servings, r.prep_minutes, r.cook_minutes, r.source_url, r.source_kind, r.notes, r.created_by, r.created_at, r.updated_at, r.deleted_at, r.times_cooked, r.last_cooked_at FROM recipes r
 WHERE r.deleted_at IS NULL
   AND ($1::text = '' OR position(lower($1::text) in lower(r.title)) > 0
        OR position(lower($1::text) in lower(r.summary)) > 0
@@ -521,6 +555,8 @@ func (q *Queries) SearchRecipes(ctx context.Context, arg SearchRecipesParams) ([
 			&i.CreatedAt,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.TimesCooked,
+			&i.LastCookedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -593,7 +629,7 @@ const updateRecipe = `-- name: UpdateRecipe :one
 UPDATE recipes SET title = $2, summary = $3, servings = $4, prep_minutes = $5, cook_minutes = $6,
     source_url = $7, source_kind = $8, notes = $9, updated_at = now()
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at
+RETURNING id, title, summary, servings, prep_minutes, cook_minutes, source_url, source_kind, notes, created_by, created_at, updated_at, deleted_at, times_cooked, last_cooked_at
 `
 
 type UpdateRecipeParams struct {
@@ -635,6 +671,8 @@ func (q *Queries) UpdateRecipe(ctx context.Context, arg UpdateRecipeParams) (Rec
 		&i.CreatedAt,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.TimesCooked,
+		&i.LastCookedAt,
 	)
 	return i, err
 }

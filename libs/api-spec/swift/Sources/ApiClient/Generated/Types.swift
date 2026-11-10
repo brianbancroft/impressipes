@@ -208,6 +208,31 @@ public protocol APIProtocol: Sendable {
     /// - Remark: HTTP `DELETE /recipes/{recipeId}/marks/{mark}`.
     /// - Remark: Generated from `#/paths//recipes/{recipeId}/marks/{mark}/delete(unmarkRecipe)`.
     func unmarkRecipe(_ input: Operations.unmarkRecipe.Input) async throws -> Operations.unmarkRecipe.Output
+    /// Increments the recipe's cooked counter by one. Independent of marking a planned meal complete.
+    ///
+    ///
+    /// - Remark: HTTP `POST /recipes/{recipeId}/cooked`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/cooked/post(cookRecipe)`.
+    func cookRecipe(_ input: Operations.cookRecipe.Input) async throws -> Operations.cookRecipe.Output
+    /// Planned meals whose dates fall in the inclusive range. Clients own the Sunday–Saturday week.
+    ///
+    /// - Remark: HTTP `GET /meal-plan`.
+    /// - Remark: Generated from `#/paths//meal-plan/get(listMealPlan)`.
+    func listMealPlan(_ input: Operations.listMealPlan.Input) async throws -> Operations.listMealPlan.Output
+    /// Creates or replaces the meal in a date and slot. A meal may link a recipe or be free text (no recipeId), such as tacos made from memory. Replacing the meal does not change whether it was completed.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /meal-plan/entries`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/put(upsertMealPlanEntry)`.
+    func upsertMealPlanEntry(_ input: Operations.upsertMealPlanEntry.Input) async throws -> Operations.upsertMealPlanEntry.Output
+    /// Changes the title, optional recipe link, notes, or completion. Completion does not increment timesCooked.
+    ///
+    /// - Remark: HTTP `PATCH /meal-plan/entries/{entryId}`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/{entryId}/patch(updateMealPlanEntry)`.
+    func updateMealPlanEntry(_ input: Operations.updateMealPlanEntry.Input) async throws -> Operations.updateMealPlanEntry.Output
+    /// - Remark: HTTP `DELETE /meal-plan/entries/{entryId}`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/{entryId}/delete(deleteMealPlanEntry)`.
+    func deleteMealPlanEntry(_ input: Operations.deleteMealPlanEntry.Input) async throws -> Operations.deleteMealPlanEntry.Output
     /// - Remark: HTTP `GET /tags`.
     /// - Remark: Generated from `#/paths//tags/get(listTags)`.
     func listTags(_ input: Operations.listTags.Input) async throws -> Operations.listTags.Output
@@ -767,6 +792,73 @@ extension APIProtocol {
         headers: Operations.unmarkRecipe.Input.Headers = .init()
     ) async throws -> Operations.unmarkRecipe.Output {
         try await unmarkRecipe(Operations.unmarkRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Increments the recipe's cooked counter by one. Independent of marking a planned meal complete.
+    ///
+    ///
+    /// - Remark: HTTP `POST /recipes/{recipeId}/cooked`.
+    /// - Remark: Generated from `#/paths//recipes/{recipeId}/cooked/post(cookRecipe)`.
+    public func cookRecipe(
+        path: Operations.cookRecipe.Input.Path,
+        headers: Operations.cookRecipe.Input.Headers = .init()
+    ) async throws -> Operations.cookRecipe.Output {
+        try await cookRecipe(Operations.cookRecipe.Input(
+            path: path,
+            headers: headers
+        ))
+    }
+    /// Planned meals whose dates fall in the inclusive range. Clients own the Sunday–Saturday week.
+    ///
+    /// - Remark: HTTP `GET /meal-plan`.
+    /// - Remark: Generated from `#/paths//meal-plan/get(listMealPlan)`.
+    public func listMealPlan(
+        query: Operations.listMealPlan.Input.Query,
+        headers: Operations.listMealPlan.Input.Headers = .init()
+    ) async throws -> Operations.listMealPlan.Output {
+        try await listMealPlan(Operations.listMealPlan.Input(
+            query: query,
+            headers: headers
+        ))
+    }
+    /// Creates or replaces the meal in a date and slot. A meal may link a recipe or be free text (no recipeId), such as tacos made from memory. Replacing the meal does not change whether it was completed.
+    ///
+    ///
+    /// - Remark: HTTP `PUT /meal-plan/entries`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/put(upsertMealPlanEntry)`.
+    public func upsertMealPlanEntry(
+        headers: Operations.upsertMealPlanEntry.Input.Headers = .init(),
+        body: Operations.upsertMealPlanEntry.Input.Body
+    ) async throws -> Operations.upsertMealPlanEntry.Output {
+        try await upsertMealPlanEntry(Operations.upsertMealPlanEntry.Input(
+            headers: headers,
+            body: body
+        ))
+    }
+    /// Changes the title, optional recipe link, notes, or completion. Completion does not increment timesCooked.
+    ///
+    /// - Remark: HTTP `PATCH /meal-plan/entries/{entryId}`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/{entryId}/patch(updateMealPlanEntry)`.
+    public func updateMealPlanEntry(
+        path: Operations.updateMealPlanEntry.Input.Path,
+        headers: Operations.updateMealPlanEntry.Input.Headers = .init(),
+        body: Operations.updateMealPlanEntry.Input.Body
+    ) async throws -> Operations.updateMealPlanEntry.Output {
+        try await updateMealPlanEntry(Operations.updateMealPlanEntry.Input(
+            path: path,
+            headers: headers,
+            body: body
+        ))
+    }
+    /// - Remark: HTTP `DELETE /meal-plan/entries/{entryId}`.
+    /// - Remark: Generated from `#/paths//meal-plan/entries/{entryId}/delete(deleteMealPlanEntry)`.
+    public func deleteMealPlanEntry(
+        path: Operations.deleteMealPlanEntry.Input.Path,
+        headers: Operations.deleteMealPlanEntry.Input.Headers = .init()
+    ) async throws -> Operations.deleteMealPlanEntry.Output {
+        try await deleteMealPlanEntry(Operations.deleteMealPlanEntry.Input(
             path: path,
             headers: headers
         ))

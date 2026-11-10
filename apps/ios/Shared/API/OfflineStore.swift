@@ -4,7 +4,7 @@ import Foundation
 struct PendingOp: Codable, Equatable {
     enum Kind: Codable, Equatable {
         case check(Bool)
-        case add(name: String, quantityText: String, note: String, categoryId: String?)
+        case add(name: String, quantityText: String, note: String, categoryId: String?, onSaleOnly: Bool)
     }
 
     let listId: String
@@ -111,11 +111,12 @@ final class OfflineStore {
                 switch op.kind {
                 case let .check(checked):
                     item = try await api.updateItem(op.itemId, .init(checked: checked))
-                case let .add(name, quantityText, note, categoryId):
+                case let .add(name, quantityText, note, categoryId, onSaleOnly):
                     item = try await api.createItem(
                         listId: op.listId, id: op.itemId, name: name,
                         quantityText: quantityText.isEmpty ? nil : quantityText,
-                        note: note.isEmpty ? nil : note, categoryId: categoryId
+                        note: note.isEmpty ? nil : note, categoryId: categoryId,
+                        onSaleOnly: onSaleOnly
                     )
                 }
                 acknowledge(op)
@@ -157,10 +158,11 @@ final class OfflineStore {
 
     /// What an unsent add looks like on screen until the server has it.
     func localItem(for op: PendingOp, after position: Int) -> Item? {
-        guard case let .add(name, quantityText, note, categoryId) = op.kind else { return nil }
+        guard case let .add(name, quantityText, note, categoryId, onSaleOnly) = op.kind else { return nil }
         return Item(
             id: op.itemId, listId: op.listId, categoryId: categoryId, name: name, quantityText: quantityText,
-            note: note, checked: false, addedBy: "", position: position + 1, version: 0, updatedAt: op.at, deleted: false
+            note: note, checked: false, addedBy: "", position: position + 1, version: 0, updatedAt: op.at, deleted: false,
+            onSaleOnly: onSaleOnly
         )
     }
 

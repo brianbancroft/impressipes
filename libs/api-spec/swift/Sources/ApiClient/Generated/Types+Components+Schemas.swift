@@ -744,6 +744,10 @@ extension Components {
             public var updatedAt: Foundation.Date
             /// - Remark: Generated from `#/components/schemas/Item/deleted`.
             public var deleted: Swift.Bool
+            /// Buy this only when it is on sale. Shown on list rows; edited from item details.
+            ///
+            /// - Remark: Generated from `#/components/schemas/Item/onSaleOnly`.
+            public var onSaleOnly: Swift.Bool
             /// Creates a new `Item`.
             ///
             /// - Parameters:
@@ -761,6 +765,7 @@ extension Components {
             ///   - version:
             ///   - updatedAt:
             ///   - deleted:
+            ///   - onSaleOnly: Buy this only when it is on sale. Shown on list rows; edited from item details.
             public init(
                 id: Swift.String,
                 listId: Swift.String,
@@ -775,7 +780,8 @@ extension Components {
                 position: Swift.Int,
                 version: Swift.Int64,
                 updatedAt: Foundation.Date,
-                deleted: Swift.Bool
+                deleted: Swift.Bool,
+                onSaleOnly: Swift.Bool
             ) {
                 self.id = id
                 self.listId = listId
@@ -791,6 +797,7 @@ extension Components {
                 self.version = version
                 self.updatedAt = updatedAt
                 self.deleted = deleted
+                self.onSaleOnly = onSaleOnly
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -807,6 +814,7 @@ extension Components {
                 case version
                 case updatedAt
                 case deleted
+                case onSaleOnly
             }
         }
         /// - Remark: Generated from `#/components/schemas/ItemInput`.
@@ -823,6 +831,8 @@ extension Components {
             public var note: Swift.String?
             /// - Remark: Generated from `#/components/schemas/ItemInput/categoryId`.
             public var categoryId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/ItemInput/onSaleOnly`.
+            public var onSaleOnly: Swift.Bool?
             /// Creates a new `ItemInput`.
             ///
             /// - Parameters:
@@ -831,18 +841,21 @@ extension Components {
             ///   - quantityText:
             ///   - note:
             ///   - categoryId:
+            ///   - onSaleOnly:
             public init(
                 id: Swift.String? = nil,
                 name: Swift.String,
                 quantityText: Swift.String? = nil,
                 note: Swift.String? = nil,
-                categoryId: Swift.String? = nil
+                categoryId: Swift.String? = nil,
+                onSaleOnly: Swift.Bool? = nil
             ) {
                 self.id = id
                 self.name = name
                 self.quantityText = quantityText
                 self.note = note
                 self.categoryId = categoryId
+                self.onSaleOnly = onSaleOnly
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -850,6 +863,7 @@ extension Components {
                 case quantityText
                 case note
                 case categoryId
+                case onSaleOnly
             }
         }
         /// - Remark: Generated from `#/components/schemas/ItemPatch`.
@@ -868,6 +882,8 @@ extension Components {
             public var checked: Swift.Bool?
             /// - Remark: Generated from `#/components/schemas/ItemPatch/position`.
             public var position: Swift.Int?
+            /// - Remark: Generated from `#/components/schemas/ItemPatch/onSaleOnly`.
+            public var onSaleOnly: Swift.Bool?
             /// Creates a new `ItemPatch`.
             ///
             /// - Parameters:
@@ -877,13 +893,15 @@ extension Components {
             ///   - categoryId: Empty string clears the category.
             ///   - checked:
             ///   - position:
+            ///   - onSaleOnly:
             public init(
                 name: Swift.String? = nil,
                 quantityText: Swift.String? = nil,
                 note: Swift.String? = nil,
                 categoryId: Swift.String? = nil,
                 checked: Swift.Bool? = nil,
-                position: Swift.Int? = nil
+                position: Swift.Int? = nil,
+                onSaleOnly: Swift.Bool? = nil
             ) {
                 self.name = name
                 self.quantityText = quantityText
@@ -891,6 +909,7 @@ extension Components {
                 self.categoryId = categoryId
                 self.checked = checked
                 self.position = position
+                self.onSaleOnly = onSaleOnly
             }
             public enum CodingKeys: String, CodingKey {
                 case name
@@ -899,6 +918,7 @@ extension Components {
                 case categoryId
                 case checked
                 case position
+                case onSaleOnly
             }
         }
         /// - Remark: Generated from `#/components/schemas/Suggestion`.
@@ -1240,6 +1260,12 @@ extension Components {
             ///
             /// - Remark: Generated from `#/components/schemas/RecipeSummary/coverUrl`.
             public var coverUrl: Swift.String?
+            /// How many times someone pressed I cooked this.
+            ///
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/timesCooked`.
+            public var timesCooked: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/RecipeSummary/lastCookedAt`.
+            public var lastCookedAt: Foundation.Date?
             /// Creates a new `RecipeSummary`.
             ///
             /// - Parameters:
@@ -1255,6 +1281,8 @@ extension Components {
             ///   - createdBy:
             ///   - updatedAt:
             ///   - coverUrl: Thumbnail of the first photo, relative to the API root
+            ///   - timesCooked: How many times someone pressed I cooked this.
+            ///   - lastCookedAt:
             public init(
                 id: Swift.String,
                 title: Swift.String,
@@ -1267,7 +1295,9 @@ extension Components {
                 marks: [Components.Schemas.RecipeMark],
                 createdBy: Swift.String,
                 updatedAt: Foundation.Date,
-                coverUrl: Swift.String? = nil
+                coverUrl: Swift.String? = nil,
+                timesCooked: Swift.Int,
+                lastCookedAt: Foundation.Date? = nil
             ) {
                 self.id = id
                 self.title = title
@@ -1281,6 +1311,8 @@ extension Components {
                 self.createdBy = createdBy
                 self.updatedAt = updatedAt
                 self.coverUrl = coverUrl
+                self.timesCooked = timesCooked
+                self.lastCookedAt = lastCookedAt
             }
             public enum CodingKeys: String, CodingKey {
                 case id
@@ -1295,6 +1327,8 @@ extension Components {
                 case createdBy
                 case updatedAt
                 case coverUrl
+                case timesCooked
+                case lastCookedAt
             }
         }
         /// - Remark: Generated from `#/components/schemas/Recipe`.
@@ -1546,6 +1580,228 @@ extension Components {
         }
         /// - Remark: Generated from `#/components/schemas/ActivityFeed`.
         public typealias ActivityFeed = [Components.Schemas.Activity]
+        /// - Remark: Generated from `#/components/schemas/MealSlot`.
+        @frozen public enum MealSlot: String, Codable, Hashable, Sendable, CaseIterable {
+            case breakfast = "breakfast"
+            case lunch = "lunch"
+            case dinner = "dinner"
+            case extra = "extra"
+        }
+        /// The live recipe a meal links to. Absent when the meal is free text or the recipe was deleted.
+        ///
+        /// - Remark: Generated from `#/components/schemas/MealPlanRecipe`.
+        public struct MealPlanRecipe: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MealPlanRecipe/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MealPlanRecipe/title`.
+            public var title: Swift.String
+            /// Creates a new `MealPlanRecipe`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - title:
+            public init(
+                id: Swift.String,
+                title: Swift.String
+            ) {
+                self.id = id
+                self.title = title
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case title
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MealPlanEntry`.
+        public struct MealPlanEntry: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/id`.
+            public var id: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/planDate`.
+            public var planDate: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/slot`.
+            public var slot: Components.Schemas.MealSlot
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/title`.
+            public var title: Swift.String
+            /// Set when the meal links a recipe that still exists.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/recipeId`.
+            public var recipeId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/recipe`.
+            public var recipe: Components.Schemas.MealPlanRecipe?
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/completed`.
+            public var completed: Swift.Bool
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/completedAt`.
+            public var completedAt: Foundation.Date?
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/completedBy`.
+            public var completedBy: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/notes`.
+            public var notes: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/createdAt`.
+            public var createdAt: Foundation.Date
+            /// - Remark: Generated from `#/components/schemas/MealPlanEntry/updatedAt`.
+            public var updatedAt: Foundation.Date
+            /// Creates a new `MealPlanEntry`.
+            ///
+            /// - Parameters:
+            ///   - id:
+            ///   - planDate:
+            ///   - slot:
+            ///   - title:
+            ///   - recipeId: Set when the meal links a recipe that still exists.
+            ///   - recipe:
+            ///   - completed:
+            ///   - completedAt:
+            ///   - completedBy:
+            ///   - notes:
+            ///   - createdAt:
+            ///   - updatedAt:
+            public init(
+                id: Swift.String,
+                planDate: Swift.String,
+                slot: Components.Schemas.MealSlot,
+                title: Swift.String,
+                recipeId: Swift.String? = nil,
+                recipe: Components.Schemas.MealPlanRecipe? = nil,
+                completed: Swift.Bool,
+                completedAt: Foundation.Date? = nil,
+                completedBy: Swift.String? = nil,
+                notes: Swift.String,
+                createdAt: Foundation.Date,
+                updatedAt: Foundation.Date
+            ) {
+                self.id = id
+                self.planDate = planDate
+                self.slot = slot
+                self.title = title
+                self.recipeId = recipeId
+                self.recipe = recipe
+                self.completed = completed
+                self.completedAt = completedAt
+                self.completedBy = completedBy
+                self.notes = notes
+                self.createdAt = createdAt
+                self.updatedAt = updatedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case id
+                case planDate
+                case slot
+                case title
+                case recipeId
+                case recipe
+                case completed
+                case completedAt
+                case completedBy
+                case notes
+                case createdAt
+                case updatedAt
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MealPlanUpsert`.
+        public struct MealPlanUpsert: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MealPlanUpsert/planDate`.
+            public var planDate: Swift.String
+            /// - Remark: Generated from `#/components/schemas/MealPlanUpsert/slot`.
+            public var slot: Components.Schemas.MealSlot
+            /// - Remark: Generated from `#/components/schemas/MealPlanUpsert/title`.
+            public var title: Swift.String
+            /// Omit or send an empty string for a free-text meal with no recipe.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MealPlanUpsert/recipeId`.
+            public var recipeId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MealPlanUpsert/notes`.
+            public var notes: Swift.String?
+            /// Creates a new `MealPlanUpsert`.
+            ///
+            /// - Parameters:
+            ///   - planDate:
+            ///   - slot:
+            ///   - title:
+            ///   - recipeId: Omit or send an empty string for a free-text meal with no recipe.
+            ///   - notes:
+            public init(
+                planDate: Swift.String,
+                slot: Components.Schemas.MealSlot,
+                title: Swift.String,
+                recipeId: Swift.String? = nil,
+                notes: Swift.String? = nil
+            ) {
+                self.planDate = planDate
+                self.slot = slot
+                self.title = title
+                self.recipeId = recipeId
+                self.notes = notes
+            }
+            public enum CodingKeys: String, CodingKey {
+                case planDate
+                case slot
+                case title
+                case recipeId
+                case notes
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/MealPlanPatch`.
+        public struct MealPlanPatch: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/MealPlanPatch/title`.
+            public var title: Swift.String?
+            /// Empty string clears the recipe link. Omit to leave it unchanged.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MealPlanPatch/recipeId`.
+            public var recipeId: Swift.String?
+            /// - Remark: Generated from `#/components/schemas/MealPlanPatch/notes`.
+            public var notes: Swift.String?
+            /// Marks the planned meal done or not. Does not change the recipe's cooked counter.
+            ///
+            /// - Remark: Generated from `#/components/schemas/MealPlanPatch/completed`.
+            public var completed: Swift.Bool?
+            /// Creates a new `MealPlanPatch`.
+            ///
+            /// - Parameters:
+            ///   - title:
+            ///   - recipeId: Empty string clears the recipe link. Omit to leave it unchanged.
+            ///   - notes:
+            ///   - completed: Marks the planned meal done or not. Does not change the recipe's cooked counter.
+            public init(
+                title: Swift.String? = nil,
+                recipeId: Swift.String? = nil,
+                notes: Swift.String? = nil,
+                completed: Swift.Bool? = nil
+            ) {
+                self.title = title
+                self.recipeId = recipeId
+                self.notes = notes
+                self.completed = completed
+            }
+            public enum CodingKeys: String, CodingKey {
+                case title
+                case recipeId
+                case notes
+                case completed
+            }
+        }
+        /// - Remark: Generated from `#/components/schemas/CookedResult`.
+        public struct CookedResult: Codable, Hashable, Sendable {
+            /// - Remark: Generated from `#/components/schemas/CookedResult/timesCooked`.
+            public var timesCooked: Swift.Int
+            /// - Remark: Generated from `#/components/schemas/CookedResult/lastCookedAt`.
+            public var lastCookedAt: Foundation.Date
+            /// Creates a new `CookedResult`.
+            ///
+            /// - Parameters:
+            ///   - timesCooked:
+            ///   - lastCookedAt:
+            public init(
+                timesCooked: Swift.Int,
+                lastCookedAt: Foundation.Date
+            ) {
+                self.timesCooked = timesCooked
+                self.lastCookedAt = lastCookedAt
+            }
+            public enum CodingKeys: String, CodingKey {
+                case timesCooked
+                case lastCookedAt
+            }
+        }
         /// - Remark: Generated from `#/components/schemas/UndoInput`.
         public struct UndoInput: Codable, Hashable, Sendable {
             /// Overwrite a later change to the same record

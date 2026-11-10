@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgtype"
@@ -25,8 +26,16 @@ func toSummary(r dbgen.Recipe, tags []string, marks []api.RecipeMark, cover *str
 		Id: uuidx.String(r.ID), Title: r.Title, Summary: r.Summary, Servings: floatOf(r.Servings),
 		PrepMinutes: intOf(r.PrepMinutes), CookMinutes: intOf(r.CookMinutes), SourceKind: r.SourceKind,
 		Tags: tags, Marks: marks, CreatedBy: uuidx.String(r.CreatedBy), UpdatedAt: r.UpdatedAt.Time,
-		CoverUrl: cover,
+		CoverUrl: cover, TimesCooked: int(r.TimesCooked), LastCookedAt: timePtr(r.LastCookedAt),
 	}
+}
+
+func timePtr(t pgtype.Timestamptz) *time.Time {
+	if !t.Valid {
+		return nil
+	}
+	v := t.Time
+	return &v
 }
 
 // recipeLabels loads the tags and the member's marks for a set of recipes.
@@ -82,7 +91,8 @@ func loadRecipe(ctx context.Context, q *dbgen.Queries, user pgtype.UUID, r dbgen
 		Id: sum.Id, Title: sum.Title, Summary: sum.Summary, Servings: sum.Servings,
 		PrepMinutes: sum.PrepMinutes, CookMinutes: sum.CookMinutes, SourceKind: sum.SourceKind,
 		Tags: sum.Tags, Marks: sum.Marks, CreatedBy: sum.CreatedBy, UpdatedAt: sum.UpdatedAt,
-		CoverUrl: sum.CoverUrl, Images: make([]api.Image, 0, len(imgs)),
+		CoverUrl: sum.CoverUrl, TimesCooked: sum.TimesCooked, LastCookedAt: sum.LastCookedAt,
+		Images:    make([]api.Image, 0, len(imgs)),
 		SourceUrl: textOf(r.SourceUrl), Notes: r.Notes,
 		Ingredients: make([]api.Ingredient, 0, len(ings)), Steps: make([]api.Step, 0, len(steps)),
 	}
@@ -350,6 +360,10 @@ func (s *server) DeleteRecipe(ctx context.Context, req api.DeleteRecipeRequestOb
 		if _, err := q.SoftDeleteRecipe(ctx, id); err != nil {
 			return err
 		}
+		// The title on each planned meal stays; the link does not.
+		if err := q.DetachMealPlanRecipe(ctx, id); err != nil {
+			return err
+		}
 		return s.record(ctx, q, m, "recipe_deleted", pgtype.UUID{}, id, map[string]any{"title": r.Title})
 	})
 	if err != nil {
@@ -490,7 +504,7 @@ func (s *server) AddRecipeToList(ctx context.Context, req api.AddRecipeToListReq
 			} else if err != pgx.ErrNoRows {
 				return err
 			}
-			item, err := addItem(ctx, q, listID, user, uuidx.New(), name, qtyText, in.PrepNote, nil, recipeID)
+			item, err := addItem(ctx, q, listID, user, uuidx.New(), name, qtyText, in.PrepNote, nil, recipeID, false)
 			if err != nil {
 				return err
 			}
@@ -508,4 +522,25 @@ func (s *server) AddRecipeToList(ctx context.Context, req api.AddRecipeToListReq
 		return nil, err
 	}
 	return api.AddRecipeToList200JSONResponse(res), nil
+}
+
+// CookRecipe counts one press of "I cooked this". It does not look at the meal plan.
+func (s *server) CookRecipe(ctx context.Context, req api.CookRecipeRequestObject) (api.CookRecipeResponseObject, error) {
+	if _, err := s.member(ctx); err != nil {
+		return nil, err
+	}
+	id, err := idOf(req.RecipeId, "recipe")
+	if err != nil {
+		return nil, err
+	}
+	r, err := s.q.IncrementTimesCooked(ctx, id)
+	if err != nil {
+		return nil, orNotFound(err, "recipe")
+	}
+	if !r.LastCookedAt.Valid {
+		return nil, fail(http.StatusInternalServerError, "cook time was not recorded")
+	}
+	return api.CookRecipe200JSONResponse(api.CookedResult{
+		TimesCooked: int(r.TimesCooked), LastCookedAt: r.LastCookedAt.Time,
+	}), nil
 }

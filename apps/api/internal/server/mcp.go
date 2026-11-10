@@ -694,7 +694,7 @@ func (s *server) mcpAddItems(ctx context.Context, in addItemsIn) (addItemsOut, e
 			} else if !errors.Is(err, pgx.ErrNoRows) {
 				return err
 			}
-			item, err := addItem(ctx, q, l.ID, user, uuidx.New(), name, strings.TrimSpace(it.Quantity), strings.TrimSpace(it.Note), catID, pgtype.UUID{})
+			item, err := addItem(ctx, q, l.ID, user, uuidx.New(), name, strings.TrimSpace(it.Quantity), strings.TrimSpace(it.Note), catID, pgtype.UUID{}, false)
 			if err != nil {
 				return err
 			}

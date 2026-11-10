@@ -119,7 +119,7 @@ func (q *Queries) DeleteCategory(ctx context.Context, arg DeleteCategoryParams) 
 }
 
 const findOpenItemByName = `-- name: FindOpenItemByName :one
-SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only FROM list_items
 WHERE list_id = $1 AND deleted_at IS NULL AND checked_at IS NULL
   AND lower(btrim(regexp_replace(name, '\s+', ' ', 'g'))) = $2
 LIMIT 1
@@ -148,6 +148,7 @@ func (q *Queries) FindOpenItemByName(ctx context.Context, arg FindOpenItemByName
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
@@ -176,7 +177,7 @@ func (q *Queries) GetCategory(ctx context.Context, arg GetCategoryParams) (ListC
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE id = $1 AND deleted_at IS NULL
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only FROM list_items WHERE id = $1 AND deleted_at IS NULL
 `
 
 func (q *Queries) GetItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
@@ -197,12 +198,13 @@ func (q *Queries) GetItem(ctx context.Context, id pgtype.UUID) (ListItem, error)
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
 
 const getItemAny = `-- name: GetItemAny :one
-SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE id = $1
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only FROM list_items WHERE id = $1
 `
 
 func (q *Queries) GetItemAny(ctx context.Context, id pgtype.UUID) (ListItem, error) {
@@ -223,6 +225,7 @@ func (q *Queries) GetItemAny(ctx context.Context, id pgtype.UUID) (ListItem, err
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
@@ -269,10 +272,10 @@ func (q *Queries) GetList(ctx context.Context, id pgtype.UUID) (List, error) {
 }
 
 const insertItemIfAbsent = `-- name: InsertItemIfAbsent :one
-INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position, on_sale_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (id) DO UPDATE SET id = list_items.id
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 type InsertItemIfAbsentParams struct {
@@ -285,6 +288,7 @@ type InsertItemIfAbsentParams struct {
 	AddedBy        pgtype.UUID `json:"added_by"`
 	SourceRecipeID pgtype.UUID `json:"source_recipe_id"`
 	Position       int32       `json:"position"`
+	OnSaleOnly     bool        `json:"on_sale_only"`
 }
 
 func (q *Queries) InsertItemIfAbsent(ctx context.Context, arg InsertItemIfAbsentParams) (ListItem, error) {
@@ -298,6 +302,7 @@ func (q *Queries) InsertItemIfAbsent(ctx context.Context, arg InsertItemIfAbsent
 		arg.AddedBy,
 		arg.SourceRecipeID,
 		arg.Position,
+		arg.OnSaleOnly,
 	)
 	var i ListItem
 	err := row.Scan(
@@ -315,12 +320,13 @@ func (q *Queries) InsertItemIfAbsent(ctx context.Context, arg InsertItemIfAbsent
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
 
 const itemsSince = `-- name: ItemsSince :many
-SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE version > $1 ORDER BY version
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only FROM list_items WHERE version > $1 ORDER BY version
 `
 
 func (q *Queries) ItemsSince(ctx context.Context, version int64) ([]ListItem, error) {
@@ -347,6 +353,7 @@ func (q *Queries) ItemsSince(ctx context.Context, version int64) ([]ListItem, er
 			&i.Version,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.OnSaleOnly,
 		); err != nil {
 			return nil, err
 		}
@@ -390,7 +397,7 @@ func (q *Queries) ListCategories(ctx context.Context, listID pgtype.UUID) ([]Lis
 }
 
 const listItems = `-- name: ListItems :many
-SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at FROM list_items WHERE list_id = $1 AND deleted_at IS NULL ORDER BY position
+SELECT id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only FROM list_items WHERE list_id = $1 AND deleted_at IS NULL ORDER BY position
 `
 
 func (q *Queries) ListItems(ctx context.Context, listID pgtype.UUID) ([]ListItem, error) {
@@ -417,6 +424,7 @@ func (q *Queries) ListItems(ctx context.Context, listID pgtype.UUID) ([]ListItem
 			&i.Version,
 			&i.UpdatedAt,
 			&i.DeletedAt,
+			&i.OnSaleOnly,
 		); err != nil {
 			return nil, err
 		}
@@ -521,7 +529,7 @@ func (q *Queries) RememberItem(ctx context.Context, arg RememberItemParams) erro
 
 const restoreItem = `-- name: RestoreItem :one
 UPDATE list_items SET deleted_at = NULL WHERE id = $1 AND deleted_at IS NOT NULL
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 func (q *Queries) RestoreItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
@@ -542,6 +550,7 @@ func (q *Queries) RestoreItem(ctx context.Context, id pgtype.UUID) (ListItem, er
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
@@ -551,7 +560,7 @@ UPDATE list_items
 SET checked_at = CASE WHEN $2::boolean THEN now() END,
     checked_by = CASE WHEN $2::boolean THEN $3::uuid END
 WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 type SetItemCheckedParams struct {
@@ -578,13 +587,14 @@ func (q *Queries) SetItemChecked(ctx context.Context, arg SetItemCheckedParams) 
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
 
 const softDeleteItem = `-- name: SoftDeleteItem :one
 UPDATE list_items SET deleted_at = now() WHERE id = $1 AND deleted_at IS NULL
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 func (q *Queries) SoftDeleteItem(ctx context.Context, id pgtype.UUID) (ListItem, error) {
@@ -605,6 +615,7 @@ func (q *Queries) SoftDeleteItem(ctx context.Context, id pgtype.UUID) (ListItem,
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
@@ -693,19 +704,22 @@ UPDATE list_items SET
     quantity_text = COALESCE($2, quantity_text),
     note = COALESCE($3, note),
     position = COALESCE($4, position),
-    category_id = CASE WHEN $5::boolean THEN $6::uuid ELSE category_id END
-WHERE id = $7 AND deleted_at IS NULL
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+    category_id = CASE WHEN $5::boolean THEN $6::uuid ELSE category_id END,
+    on_sale_only = CASE WHEN $7::boolean THEN $8::boolean ELSE on_sale_only END
+WHERE id = $9 AND deleted_at IS NULL
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 type UpdateItemParams struct {
-	Name         pgtype.Text `json:"name"`
-	QuantityText pgtype.Text `json:"quantity_text"`
-	Note         pgtype.Text `json:"note"`
-	Position     pgtype.Int4 `json:"position"`
-	SetCategory  bool        `json:"set_category"`
-	CategoryID   pgtype.UUID `json:"category_id"`
-	ID           pgtype.UUID `json:"id"`
+	Name          pgtype.Text `json:"name"`
+	QuantityText  pgtype.Text `json:"quantity_text"`
+	Note          pgtype.Text `json:"note"`
+	Position      pgtype.Int4 `json:"position"`
+	SetCategory   bool        `json:"set_category"`
+	CategoryID    pgtype.UUID `json:"category_id"`
+	SetOnSaleOnly bool        `json:"set_on_sale_only"`
+	OnSaleOnly    bool        `json:"on_sale_only"`
+	ID            pgtype.UUID `json:"id"`
 }
 
 func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (ListItem, error) {
@@ -716,6 +730,8 @@ func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (ListIte
 		arg.Position,
 		arg.SetCategory,
 		arg.CategoryID,
+		arg.SetOnSaleOnly,
+		arg.OnSaleOnly,
 		arg.ID,
 	)
 	var i ListItem
@@ -734,6 +750,7 @@ func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (ListIte
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }
@@ -778,15 +795,16 @@ func (q *Queries) UpdateList(ctx context.Context, arg UpdateListParams) (List, e
 }
 
 const upsertListItem = `-- name: UpsertListItem :one
-INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position)
-VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+INSERT INTO list_items (id, list_id, category_id, name, quantity_text, note, added_by, source_recipe_id, position, on_sale_only)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
 ON CONFLICT (id) DO UPDATE SET
     category_id = EXCLUDED.category_id,
     name = EXCLUDED.name,
     quantity_text = EXCLUDED.quantity_text,
     note = EXCLUDED.note,
-    position = EXCLUDED.position
-RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at
+    position = EXCLUDED.position,
+    on_sale_only = EXCLUDED.on_sale_only
+RETURNING id, list_id, category_id, name, quantity_text, note, checked_at, checked_by, added_by, source_recipe_id, position, version, updated_at, deleted_at, on_sale_only
 `
 
 type UpsertListItemParams struct {
@@ -799,6 +817,7 @@ type UpsertListItemParams struct {
 	AddedBy        pgtype.UUID `json:"added_by"`
 	SourceRecipeID pgtype.UUID `json:"source_recipe_id"`
 	Position       int32       `json:"position"`
+	OnSaleOnly     bool        `json:"on_sale_only"`
 }
 
 func (q *Queries) UpsertListItem(ctx context.Context, arg UpsertListItemParams) (ListItem, error) {
@@ -812,6 +831,7 @@ func (q *Queries) UpsertListItem(ctx context.Context, arg UpsertListItemParams) 
 		arg.AddedBy,
 		arg.SourceRecipeID,
 		arg.Position,
+		arg.OnSaleOnly,
 	)
 	var i ListItem
 	err := row.Scan(
@@ -829,6 +849,7 @@ func (q *Queries) UpsertListItem(ctx context.Context, arg UpsertListItemParams) 
 		&i.Version,
 		&i.UpdatedAt,
 		&i.DeletedAt,
+		&i.OnSaleOnly,
 	)
 	return i, err
 }

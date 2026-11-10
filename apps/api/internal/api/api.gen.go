@@ -36,6 +36,14 @@ const (
 	InviteInfoStateValid    InviteInfoState = "valid"
 )
 
+// Defines values for MealSlot.
+const (
+	Breakfast MealSlot = "breakfast"
+	Dinner    MealSlot = "dinner"
+	Extra     MealSlot = "extra"
+	Lunch     MealSlot = "lunch"
+)
+
 // Defines values for MemberRole.
 const (
 	MemberRoleAdmin  MemberRole = "admin"
@@ -163,6 +171,12 @@ type CategoryPatch struct {
 	SortOrder *int    `json:"sortOrder,omitempty"`
 }
 
+// CookedResult defines model for CookedResult.
+type CookedResult struct {
+	LastCookedAt time.Time `json:"lastCookedAt"`
+	TimesCooked  int       `json:"timesCooked"`
+}
+
 // Error defines model for Error.
 type Error struct {
 	Error string `json:"error"`
@@ -208,15 +222,18 @@ type InviteInfoState string
 
 // Item defines model for Item.
 type Item struct {
-	AddedBy        string    `json:"addedBy"`
-	CategoryId     *string   `json:"categoryId,omitempty"`
-	Checked        bool      `json:"checked"`
-	CheckedBy      *string   `json:"checkedBy,omitempty"`
-	Deleted        bool      `json:"deleted"`
-	Id             string    `json:"id"`
-	ListId         string    `json:"listId"`
-	Name           string    `json:"name"`
-	Note           string    `json:"note"`
+	AddedBy    string  `json:"addedBy"`
+	CategoryId *string `json:"categoryId,omitempty"`
+	Checked    bool    `json:"checked"`
+	CheckedBy  *string `json:"checkedBy,omitempty"`
+	Deleted    bool    `json:"deleted"`
+	Id         string  `json:"id"`
+	ListId     string  `json:"listId"`
+	Name       string  `json:"name"`
+	Note       string  `json:"note"`
+
+	// OnSaleOnly Buy this only when it is on sale. Shown on list rows; edited from item details.
+	OnSaleOnly     bool      `json:"onSaleOnly"`
 	Position       int       `json:"position"`
 	QuantityText   string    `json:"quantityText"`
 	SourceRecipeId *string   `json:"sourceRecipeId,omitempty"`
@@ -232,6 +249,7 @@ type ItemInput struct {
 	Id           *string `json:"id,omitempty"`
 	Name         string  `json:"name"`
 	Note         *string `json:"note,omitempty"`
+	OnSaleOnly   *bool   `json:"onSaleOnly,omitempty"`
 	QuantityText *string `json:"quantityText,omitempty"`
 }
 
@@ -242,6 +260,7 @@ type ItemPatch struct {
 	Checked      *bool   `json:"checked,omitempty"`
 	Name         *string `json:"name,omitempty"`
 	Note         *string `json:"note,omitempty"`
+	OnSaleOnly   *bool   `json:"onSaleOnly,omitempty"`
 	Position     *int    `json:"position,omitempty"`
 	QuantityText *string `json:"quantityText,omitempty"`
 }
@@ -281,6 +300,57 @@ type ListPatch struct {
 	Name      *string `json:"name,omitempty"`
 	SortOrder *int    `json:"sortOrder,omitempty"`
 }
+
+// MealPlanEntry defines model for MealPlanEntry.
+type MealPlanEntry struct {
+	Completed   bool               `json:"completed"`
+	CompletedAt *time.Time         `json:"completedAt,omitempty"`
+	CompletedBy *string            `json:"completedBy,omitempty"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Id          string             `json:"id"`
+	Notes       string             `json:"notes"`
+	PlanDate    openapi_types.Date `json:"planDate"`
+
+	// Recipe The live recipe a meal links to. Absent when the meal is free text or the recipe was deleted.
+	Recipe *MealPlanRecipe `json:"recipe,omitempty"`
+
+	// RecipeId Set when the meal links a recipe that still exists.
+	RecipeId  *string   `json:"recipeId,omitempty"`
+	Slot      MealSlot  `json:"slot"`
+	Title     string    `json:"title"`
+	UpdatedAt time.Time `json:"updatedAt"`
+}
+
+// MealPlanPatch defines model for MealPlanPatch.
+type MealPlanPatch struct {
+	// Completed Marks the planned meal done or not. Does not change the recipe's cooked counter.
+	Completed *bool   `json:"completed,omitempty"`
+	Notes     *string `json:"notes,omitempty"`
+
+	// RecipeId Empty string clears the recipe link. Omit to leave it unchanged.
+	RecipeId *string `json:"recipeId,omitempty"`
+	Title    *string `json:"title,omitempty"`
+}
+
+// MealPlanRecipe The live recipe a meal links to. Absent when the meal is free text or the recipe was deleted.
+type MealPlanRecipe struct {
+	Id    string `json:"id"`
+	Title string `json:"title"`
+}
+
+// MealPlanUpsert defines model for MealPlanUpsert.
+type MealPlanUpsert struct {
+	Notes    *string            `json:"notes,omitempty"`
+	PlanDate openapi_types.Date `json:"planDate"`
+
+	// RecipeId Omit or send an empty string for a free-text meal with no recipe.
+	RecipeId *string  `json:"recipeId,omitempty"`
+	Slot     MealSlot `json:"slot"`
+	Title    string   `json:"title"`
+}
+
+// MealSlot defines model for MealSlot.
+type MealSlot string
 
 // Member defines model for Member.
 type Member struct {
@@ -339,11 +409,12 @@ type Recipe struct {
 	CookMinutes *int `json:"cookMinutes,omitempty"`
 
 	// CoverUrl Thumbnail of the first photo, relative to the API root
-	CoverUrl    *string      `json:"coverUrl,omitempty"`
-	CreatedBy   string       `json:"createdBy"`
-	Id          string       `json:"id"`
-	Images      []Image      `json:"images"`
-	Ingredients []Ingredient `json:"ingredients"`
+	CoverUrl     *string      `json:"coverUrl,omitempty"`
+	CreatedBy    string       `json:"createdBy"`
+	Id           string       `json:"id"`
+	Images       []Image      `json:"images"`
+	Ingredients  []Ingredient `json:"ingredients"`
+	LastCookedAt *time.Time   `json:"lastCookedAt,omitempty"`
 
 	// Marks The signed-in member's marks.
 	Marks       []RecipeMark `json:"marks"`
@@ -355,8 +426,11 @@ type Recipe struct {
 	Steps       []Step       `json:"steps"`
 	Summary     string       `json:"summary"`
 	Tags        []string     `json:"tags"`
-	Title       string       `json:"title"`
-	UpdatedAt   time.Time    `json:"updatedAt"`
+
+	// TimesCooked How many times someone pressed I cooked this.
+	TimesCooked int       `json:"timesCooked"`
+	Title       string    `json:"title"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // RecipeInput defines model for RecipeInput.
@@ -385,9 +459,10 @@ type RecipeSummary struct {
 	CookMinutes *int `json:"cookMinutes,omitempty"`
 
 	// CoverUrl Thumbnail of the first photo, relative to the API root
-	CoverUrl  *string `json:"coverUrl,omitempty"`
-	CreatedBy string  `json:"createdBy"`
-	Id        string  `json:"id"`
+	CoverUrl     *string    `json:"coverUrl,omitempty"`
+	CreatedBy    string     `json:"createdBy"`
+	Id           string     `json:"id"`
+	LastCookedAt *time.Time `json:"lastCookedAt,omitempty"`
 
 	// Marks The signed-in member's marks.
 	Marks       []RecipeMark `json:"marks"`
@@ -396,8 +471,11 @@ type RecipeSummary struct {
 	SourceKind  string       `json:"sourceKind"`
 	Summary     string       `json:"summary"`
 	Tags        []string     `json:"tags"`
-	Title       string       `json:"title"`
-	UpdatedAt   time.Time    `json:"updatedAt"`
+
+	// TimesCooked How many times someone pressed I cooked this.
+	TimesCooked int       `json:"timesCooked"`
+	Title       string    `json:"title"`
+	UpdatedAt   time.Time `json:"updatedAt"`
 }
 
 // SetupStatus defines model for SetupStatus.
@@ -473,6 +551,9 @@ type ActivityId = int64
 
 // CategoryId defines model for CategoryId.
 type CategoryId = string
+
+// EntryId defines model for EntryId.
+type EntryId = string
 
 // InviteToken defines model for InviteToken.
 type InviteToken = string
@@ -572,6 +653,12 @@ type SetPasswordJSONBody struct {
 	Password string `json:"password"`
 }
 
+// ListMealPlanParams defines parameters for ListMealPlan.
+type ListMealPlanParams struct {
+	From openapi_types.Date `form:"from" json:"from"`
+	To   openapi_types.Date `form:"to" json:"to"`
+}
+
 // ListRecipesParams defines parameters for ListRecipes.
 type ListRecipesParams struct {
 	// Q Matches title, summary, ingredients and tags.
@@ -656,6 +743,12 @@ type FinishPasskeyRegistrationJSONRequestBody FinishPasskeyRegistrationJSONBody
 
 // SetPasswordJSONRequestBody defines body for SetPassword for application/json ContentType.
 type SetPasswordJSONRequestBody SetPasswordJSONBody
+
+// UpsertMealPlanEntryJSONRequestBody defines body for UpsertMealPlanEntry for application/json ContentType.
+type UpsertMealPlanEntryJSONRequestBody = MealPlanUpsert
+
+// UpdateMealPlanEntryJSONRequestBody defines body for UpdateMealPlanEntry for application/json ContentType.
+type UpdateMealPlanEntryJSONRequestBody = MealPlanPatch
 
 // CreateRecipeJSONRequestBody defines body for CreateRecipe for application/json ContentType.
 type CreateRecipeJSONRequestBody = RecipeInput
@@ -783,6 +876,18 @@ type ServerInterface interface {
 	// (GET /me/sign-in)
 	GetSignInMethods(w http.ResponseWriter, r *http.Request)
 
+	// (GET /meal-plan)
+	ListMealPlan(w http.ResponseWriter, r *http.Request, params ListMealPlanParams)
+
+	// (PUT /meal-plan/entries)
+	UpsertMealPlanEntry(w http.ResponseWriter, r *http.Request)
+
+	// (DELETE /meal-plan/entries/{entryId})
+	DeleteMealPlanEntry(w http.ResponseWriter, r *http.Request, entryId EntryId)
+
+	// (PATCH /meal-plan/entries/{entryId})
+	UpdateMealPlanEntry(w http.ResponseWriter, r *http.Request, entryId EntryId)
+
 	// (GET /members)
 	ListMembers(w http.ResponseWriter, r *http.Request)
 
@@ -806,6 +911,9 @@ type ServerInterface interface {
 
 	// (PUT /recipes/{recipeId})
 	ReplaceRecipe(w http.ResponseWriter, r *http.Request, recipeId RecipeId)
+
+	// (POST /recipes/{recipeId}/cooked)
+	CookRecipe(w http.ResponseWriter, r *http.Request, recipeId RecipeId)
 	// Add a photo to a recipe
 	// (POST /recipes/{recipeId}/images)
 	UploadRecipeImage(w http.ResponseWriter, r *http.Request, recipeId RecipeId)
@@ -1805,6 +1913,143 @@ func (siw *ServerInterfaceWrapper) GetSignInMethods(w http.ResponseWriter, r *ht
 	handler.ServeHTTP(w, r)
 }
 
+// ListMealPlan operation middleware
+func (siw *ServerInterfaceWrapper) ListMealPlan(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	// Parameter object where we will unmarshal all parameters from the context
+	var params ListMealPlanParams
+
+	// ------------- Required query parameter "from" -------------
+
+	if paramValue := r.URL.Query().Get("from"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "from"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "from", r.URL.Query(), &params.From)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "from", Err: err})
+		return
+	}
+
+	// ------------- Required query parameter "to" -------------
+
+	if paramValue := r.URL.Query().Get("to"); paramValue != "" {
+
+	} else {
+		siw.ErrorHandlerFunc(w, r, &RequiredParamError{ParamName: "to"})
+		return
+	}
+
+	err = runtime.BindQueryParameter("form", true, true, "to", r.URL.Query(), &params.To)
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "to", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.ListMealPlan(w, r, params)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpsertMealPlanEntry operation middleware
+func (siw *ServerInterfaceWrapper) UpsertMealPlanEntry(w http.ResponseWriter, r *http.Request) {
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpsertMealPlanEntry(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// DeleteMealPlanEntry operation middleware
+func (siw *ServerInterfaceWrapper) DeleteMealPlanEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "entryId" -------------
+	var entryId EntryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entryId", r.PathValue("entryId"), &entryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.DeleteMealPlanEntry(w, r, entryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// UpdateMealPlanEntry operation middleware
+func (siw *ServerInterfaceWrapper) UpdateMealPlanEntry(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "entryId" -------------
+	var entryId EntryId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "entryId", r.PathValue("entryId"), &entryId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "entryId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.UpdateMealPlanEntry(w, r, entryId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
 // ListMembers operation middleware
 func (siw *ServerInterfaceWrapper) ListMembers(w http.ResponseWriter, r *http.Request) {
 
@@ -2040,6 +2285,37 @@ func (siw *ServerInterfaceWrapper) ReplaceRecipe(w http.ResponseWriter, r *http.
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		siw.Handler.ReplaceRecipe(w, r, recipeId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r)
+}
+
+// CookRecipe operation middleware
+func (siw *ServerInterfaceWrapper) CookRecipe(w http.ResponseWriter, r *http.Request) {
+
+	var err error
+
+	// ------------- Path parameter "recipeId" -------------
+	var recipeId RecipeId
+
+	err = runtime.BindStyledParameterWithOptions("simple", "recipeId", r.PathValue("recipeId"), &recipeId, runtime.BindStyledParameterOptions{ParamLocation: runtime.ParamLocationPath, Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "recipeId", Err: err})
+		return
+	}
+
+	ctx := r.Context()
+
+	ctx = context.WithValue(ctx, SessionScopes, []string{})
+
+	r = r.WithContext(ctx)
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.CookRecipe(w, r, recipeId)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -2437,6 +2713,10 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/me/passkeys/{passkeyId}", wrapper.DeletePasskey)
 	m.HandleFunc("PUT "+options.BaseURL+"/me/password", wrapper.SetPassword)
 	m.HandleFunc("GET "+options.BaseURL+"/me/sign-in", wrapper.GetSignInMethods)
+	m.HandleFunc("GET "+options.BaseURL+"/meal-plan", wrapper.ListMealPlan)
+	m.HandleFunc("PUT "+options.BaseURL+"/meal-plan/entries", wrapper.UpsertMealPlanEntry)
+	m.HandleFunc("DELETE "+options.BaseURL+"/meal-plan/entries/{entryId}", wrapper.DeleteMealPlanEntry)
+	m.HandleFunc("PATCH "+options.BaseURL+"/meal-plan/entries/{entryId}", wrapper.UpdateMealPlanEntry)
 	m.HandleFunc("GET "+options.BaseURL+"/members", wrapper.ListMembers)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/disable", wrapper.DisableMember)
 	m.HandleFunc("POST "+options.BaseURL+"/members/{id}/enable", wrapper.EnableMember)
@@ -2445,6 +2725,7 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}", wrapper.DeleteRecipe)
 	m.HandleFunc("GET "+options.BaseURL+"/recipes/{recipeId}", wrapper.GetRecipe)
 	m.HandleFunc("PUT "+options.BaseURL+"/recipes/{recipeId}", wrapper.ReplaceRecipe)
+	m.HandleFunc("POST "+options.BaseURL+"/recipes/{recipeId}/cooked", wrapper.CookRecipe)
 	m.HandleFunc("POST "+options.BaseURL+"/recipes/{recipeId}/images", wrapper.UploadRecipeImage)
 	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}/images/{imageId}", wrapper.DeleteRecipeImage)
 	m.HandleFunc("DELETE "+options.BaseURL+"/recipes/{recipeId}/marks/{mark}", wrapper.UnmarkRecipe)
@@ -4198,6 +4479,191 @@ func (response GetSignInMethods403JSONResponse) VisitGetSignInMethodsResponse(w 
 	return json.NewEncoder(w).Encode(response)
 }
 
+type ListMealPlanRequestObject struct {
+	Params ListMealPlanParams
+}
+
+type ListMealPlanResponseObject interface {
+	VisitListMealPlanResponse(w http.ResponseWriter) error
+}
+
+type ListMealPlan200JSONResponse []MealPlanEntry
+
+func (response ListMealPlan200JSONResponse) VisitListMealPlanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMealPlan400JSONResponse struct{ ErrorJSONResponse }
+
+func (response ListMealPlan400JSONResponse) VisitListMealPlanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMealPlan401JSONResponse Error
+
+func (response ListMealPlan401JSONResponse) VisitListMealPlanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type ListMealPlan403JSONResponse Error
+
+func (response ListMealPlan403JSONResponse) VisitListMealPlanResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertMealPlanEntryRequestObject struct {
+	Body *UpsertMealPlanEntryJSONRequestBody
+}
+
+type UpsertMealPlanEntryResponseObject interface {
+	VisitUpsertMealPlanEntryResponse(w http.ResponseWriter) error
+}
+
+type UpsertMealPlanEntry200JSONResponse MealPlanEntry
+
+func (response UpsertMealPlanEntry200JSONResponse) VisitUpsertMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertMealPlanEntry400JSONResponse struct{ ErrorJSONResponse }
+
+func (response UpsertMealPlanEntry400JSONResponse) VisitUpsertMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertMealPlanEntry401JSONResponse Error
+
+func (response UpsertMealPlanEntry401JSONResponse) VisitUpsertMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpsertMealPlanEntry403JSONResponse Error
+
+func (response UpsertMealPlanEntry403JSONResponse) VisitUpsertMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteMealPlanEntryRequestObject struct {
+	EntryId EntryId `json:"entryId"`
+}
+
+type DeleteMealPlanEntryResponseObject interface {
+	VisitDeleteMealPlanEntryResponse(w http.ResponseWriter) error
+}
+
+type DeleteMealPlanEntry204Response struct {
+}
+
+func (response DeleteMealPlanEntry204Response) VisitDeleteMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.WriteHeader(204)
+	return nil
+}
+
+type DeleteMealPlanEntry401JSONResponse struct{ ErrorJSONResponse }
+
+func (response DeleteMealPlanEntry401JSONResponse) VisitDeleteMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteMealPlanEntry403JSONResponse Error
+
+func (response DeleteMealPlanEntry403JSONResponse) VisitDeleteMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type DeleteMealPlanEntry404JSONResponse Error
+
+func (response DeleteMealPlanEntry404JSONResponse) VisitDeleteMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateMealPlanEntryRequestObject struct {
+	EntryId EntryId `json:"entryId"`
+	Body    *UpdateMealPlanEntryJSONRequestBody
+}
+
+type UpdateMealPlanEntryResponseObject interface {
+	VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error
+}
+
+type UpdateMealPlanEntry200JSONResponse MealPlanEntry
+
+func (response UpdateMealPlanEntry200JSONResponse) VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateMealPlanEntry400JSONResponse struct{ ErrorJSONResponse }
+
+func (response UpdateMealPlanEntry400JSONResponse) VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(400)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateMealPlanEntry401JSONResponse Error
+
+func (response UpdateMealPlanEntry401JSONResponse) VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateMealPlanEntry403JSONResponse Error
+
+func (response UpdateMealPlanEntry403JSONResponse) VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type UpdateMealPlanEntry404JSONResponse Error
+
+func (response UpdateMealPlanEntry404JSONResponse) VisitUpdateMealPlanEntryResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
 type ListMembersRequestObject struct {
 }
 
@@ -4532,6 +4998,50 @@ func (response ReplaceRecipe403JSONResponse) VisitReplaceRecipeResponse(w http.R
 type ReplaceRecipe404JSONResponse Error
 
 func (response ReplaceRecipe404JSONResponse) VisitReplaceRecipeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(404)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CookRecipeRequestObject struct {
+	RecipeId RecipeId `json:"recipeId"`
+}
+
+type CookRecipeResponseObject interface {
+	VisitCookRecipeResponse(w http.ResponseWriter) error
+}
+
+type CookRecipe200JSONResponse CookedResult
+
+func (response CookRecipe200JSONResponse) VisitCookRecipeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(200)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CookRecipe401JSONResponse struct{ ErrorJSONResponse }
+
+func (response CookRecipe401JSONResponse) VisitCookRecipeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(401)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CookRecipe403JSONResponse Error
+
+func (response CookRecipe403JSONResponse) VisitCookRecipeResponse(w http.ResponseWriter) error {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(403)
+
+	return json.NewEncoder(w).Encode(response)
+}
+
+type CookRecipe404JSONResponse Error
+
+func (response CookRecipe404JSONResponse) VisitCookRecipeResponse(w http.ResponseWriter) error {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(404)
 
@@ -4987,6 +5497,18 @@ type StrictServerInterface interface {
 	// (GET /me/sign-in)
 	GetSignInMethods(ctx context.Context, request GetSignInMethodsRequestObject) (GetSignInMethodsResponseObject, error)
 
+	// (GET /meal-plan)
+	ListMealPlan(ctx context.Context, request ListMealPlanRequestObject) (ListMealPlanResponseObject, error)
+
+	// (PUT /meal-plan/entries)
+	UpsertMealPlanEntry(ctx context.Context, request UpsertMealPlanEntryRequestObject) (UpsertMealPlanEntryResponseObject, error)
+
+	// (DELETE /meal-plan/entries/{entryId})
+	DeleteMealPlanEntry(ctx context.Context, request DeleteMealPlanEntryRequestObject) (DeleteMealPlanEntryResponseObject, error)
+
+	// (PATCH /meal-plan/entries/{entryId})
+	UpdateMealPlanEntry(ctx context.Context, request UpdateMealPlanEntryRequestObject) (UpdateMealPlanEntryResponseObject, error)
+
 	// (GET /members)
 	ListMembers(ctx context.Context, request ListMembersRequestObject) (ListMembersResponseObject, error)
 
@@ -5010,6 +5532,9 @@ type StrictServerInterface interface {
 
 	// (PUT /recipes/{recipeId})
 	ReplaceRecipe(ctx context.Context, request ReplaceRecipeRequestObject) (ReplaceRecipeResponseObject, error)
+
+	// (POST /recipes/{recipeId}/cooked)
+	CookRecipe(ctx context.Context, request CookRecipeRequestObject) (CookRecipeResponseObject, error)
 	// Add a photo to a recipe
 	// (POST /recipes/{recipeId}/images)
 	UploadRecipeImage(ctx context.Context, request UploadRecipeImageRequestObject) (UploadRecipeImageResponseObject, error)
@@ -6130,6 +6655,122 @@ func (sh *strictHandler) GetSignInMethods(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// ListMealPlan operation middleware
+func (sh *strictHandler) ListMealPlan(w http.ResponseWriter, r *http.Request, params ListMealPlanParams) {
+	var request ListMealPlanRequestObject
+
+	request.Params = params
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.ListMealPlan(ctx, request.(ListMealPlanRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "ListMealPlan")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(ListMealPlanResponseObject); ok {
+		if err := validResponse.VisitListMealPlanResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpsertMealPlanEntry operation middleware
+func (sh *strictHandler) UpsertMealPlanEntry(w http.ResponseWriter, r *http.Request) {
+	var request UpsertMealPlanEntryRequestObject
+
+	var body UpsertMealPlanEntryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpsertMealPlanEntry(ctx, request.(UpsertMealPlanEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpsertMealPlanEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpsertMealPlanEntryResponseObject); ok {
+		if err := validResponse.VisitUpsertMealPlanEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// DeleteMealPlanEntry operation middleware
+func (sh *strictHandler) DeleteMealPlanEntry(w http.ResponseWriter, r *http.Request, entryId EntryId) {
+	var request DeleteMealPlanEntryRequestObject
+
+	request.EntryId = entryId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.DeleteMealPlanEntry(ctx, request.(DeleteMealPlanEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "DeleteMealPlanEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(DeleteMealPlanEntryResponseObject); ok {
+		if err := validResponse.VisitDeleteMealPlanEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// UpdateMealPlanEntry operation middleware
+func (sh *strictHandler) UpdateMealPlanEntry(w http.ResponseWriter, r *http.Request, entryId EntryId) {
+	var request UpdateMealPlanEntryRequestObject
+
+	request.EntryId = entryId
+
+	var body UpdateMealPlanEntryJSONRequestBody
+	if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+		sh.options.RequestErrorHandlerFunc(w, r, fmt.Errorf("can't decode JSON body: %w", err))
+		return
+	}
+	request.Body = &body
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.UpdateMealPlanEntry(ctx, request.(UpdateMealPlanEntryRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "UpdateMealPlanEntry")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(UpdateMealPlanEntryResponseObject); ok {
+		if err := validResponse.VisitUpdateMealPlanEntryResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
 // ListMembers operation middleware
 func (sh *strictHandler) ListMembers(w http.ResponseWriter, r *http.Request) {
 	var request ListMembersRequestObject
@@ -6341,6 +6982,32 @@ func (sh *strictHandler) ReplaceRecipe(w http.ResponseWriter, r *http.Request, r
 		sh.options.ResponseErrorHandlerFunc(w, r, err)
 	} else if validResponse, ok := response.(ReplaceRecipeResponseObject); ok {
 		if err := validResponse.VisitReplaceRecipeResponse(w); err != nil {
+			sh.options.ResponseErrorHandlerFunc(w, r, err)
+		}
+	} else if response != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, fmt.Errorf("unexpected response type: %T", response))
+	}
+}
+
+// CookRecipe operation middleware
+func (sh *strictHandler) CookRecipe(w http.ResponseWriter, r *http.Request, recipeId RecipeId) {
+	var request CookRecipeRequestObject
+
+	request.RecipeId = recipeId
+
+	handler := func(ctx context.Context, w http.ResponseWriter, r *http.Request, request interface{}) (interface{}, error) {
+		return sh.ssi.CookRecipe(ctx, request.(CookRecipeRequestObject))
+	}
+	for _, middleware := range sh.middlewares {
+		handler = middleware(handler, "CookRecipe")
+	}
+
+	response, err := handler(r.Context(), w, r, request)
+
+	if err != nil {
+		sh.options.ResponseErrorHandlerFunc(w, r, err)
+	} else if validResponse, ok := response.(CookRecipeResponseObject); ok {
+		if err := validResponse.VisitCookRecipeResponse(w); err != nil {
 			sh.options.ResponseErrorHandlerFunc(w, r, err)
 		}
 	} else if response != nil {

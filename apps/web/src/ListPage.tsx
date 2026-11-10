@@ -189,7 +189,10 @@ function ItemRow({ item, onToggle, onDelete }: { item: Item; onToggle: () => voi
         <Tick checked={item.checked} />
         <QtyBadge qty={q.qty} unit={q.unit} className={cn(item.checked && 'opacity-50')} />
         <span className="min-w-0 flex-1">
-          <span className={cn('block text-[17px] font-bold', item.checked && 'text-ink-muted line-through decoration-accent-fill decoration-2')}>{item.name}</span>
+          <span className="flex flex-wrap items-center gap-2">
+            <span className={cn('text-[17px] font-bold', item.checked && 'text-ink-muted line-through decoration-accent-fill decoration-2')}>{item.name}</span>
+            {item.onSaleOnly && <span className="rounded-full bg-butter px-2 py-0.5 text-[11px] font-extrabold tracking-wide text-sticker-ink">ON SALE</span>}
+          </span>
           {item.note && <span className="block text-xs font-medium text-ink-muted">{item.note}</span>}
         </span>
       </button>
