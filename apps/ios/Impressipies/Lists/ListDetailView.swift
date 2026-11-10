@@ -331,6 +331,15 @@ struct ItemRow: View {
                 }
             }
             Spacer(minLength: 0)
+            if item.onSaleOnly {
+                Text("ON SALE")
+                    .font(.caption2.weight(.heavy))
+                    .foregroundStyle(Palette.stickerInk)
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 3)
+                    .background(Capsule().fill(Palette.butter))
+                    .accessibilityLabel("On sale only")
+            }
             if pending {
                 // Not yet acknowledged by the server; gone on sync.
                 Image(systemName: "clock")

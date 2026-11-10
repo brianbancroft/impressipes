@@ -804,6 +804,96 @@ paths:
         "401": { $ref: "#/components/responses/Error" }
         "403": { $ref: "#/components/responses/Error" }
         "404": { $ref: "#/components/responses/Error" }
+  /recipes/{recipeId}/cooked:
+    parameters:
+      - $ref: "#/components/parameters/RecipeId"
+    post:
+      operationId: cookRecipe
+      description: >
+        Increments the recipe's cooked counter by one. Independent of marking a
+        planned meal complete.
+      responses:
+        "200":
+          description: The new count and when it was cooked
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CookedResult" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+  /meal-plan:
+    get:
+      operationId: listMealPlan
+      description: Planned meals whose dates fall in the inclusive range. Clients own the Sunday–Saturday week.
+      parameters:
+        - name: from
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: to
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        "200":
+          description: Meals in the range, Sunday-first when the client asks for a week
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MealPlanEntry" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /meal-plan/entries:
+    put:
+      operationId: upsertMealPlanEntry
+      description: >
+        Creates or replaces the meal in a date and slot. A meal may link a recipe
+        or be free text (no recipeId), such as tacos made from memory. Replacing
+        the meal does not change whether it was completed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MealPlanUpsert" }
+      responses:
+        "200":
+          description: The stored meal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealPlanEntry" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+  /meal-plan/entries/{entryId}:
+    parameters:
+      - $ref: "#/components/parameters/EntryId"
+    patch:
+      operationId: updateMealPlanEntry
+      description: Changes the title, optional recipe link, notes, or completion. Completion does not increment timesCooked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/MealPlanPatch" }
+      responses:
+        "200":
+          description: The updated meal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealPlanEntry" }
+        "400": { $ref: "#/components/responses/Error" }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
+    delete:
+      operationId: deleteMealPlanEntry
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Error" }
+        "403": { $ref: "#/components/responses/Error" }
+        "404": { $ref: "#/components/responses/Error" }
   /tags:
     get:
       operationId: listTags
@@ -980,6 +1070,11 @@ components:
       schema: { type: string }
     RecipeId:
       name: recipeId
+      in: path
+      required: true
+      schema: { type: string }
+    EntryId:
+      name: entryId
       in: path
       required: true
       schema: { type: string }
@@ -1170,7 +1265,7 @@ components:
         sortOrder: { type: integer }
     Item:
       type: object
-      required: [id, listId, name, quantityText, note, checked, addedBy, position, version, updatedAt, deleted]
+      required: [id, listId, name, quantityText, note, checked, addedBy, position, version, updatedAt, deleted, onSaleOnly]
       properties:
         id: { type: string }
         listId: { type: string }
@@ -1186,6 +1281,9 @@ components:
         version: { type: integer, format: int64 }
         updatedAt: { type: string, format: date-time }
         deleted: { type: boolean }
+        onSaleOnly:
+          type: boolean
+          description: Buy this only when it is on sale. Shown on list rows; edited from item details.
     ItemInput:
       type: object
       required: [name]
@@ -1195,6 +1293,7 @@ components:
         quantityText: { type: string }
         note: { type: string }
         categoryId: { type: string }
+        onSaleOnly: { type: boolean }
     ItemPatch:
       type: object
       properties:
@@ -1204,6 +1303,7 @@ components:
         categoryId: { type: string, description: Empty string clears the category. }
         checked: { type: boolean }
         position: { type: integer }
+        onSaleOnly: { type: boolean }
     Suggestion:
       type: object
       required: [name, quantityText]
@@ -1282,7 +1382,7 @@ components:
           items: { $ref: "#/components/schemas/Step" }
     RecipeSummary:
       type: object
-      required: [id, title, summary, sourceKind, tags, marks, createdBy, updatedAt]
+      required: [id, title, summary, sourceKind, tags, marks, createdBy, updatedAt, timesCooked]
       properties:
         id: { type: string }
         title: { type: string }
@@ -1303,6 +1403,13 @@ components:
         coverUrl:
           type: string
           description: Thumbnail of the first photo, relative to the API root
+        timesCooked:
+          type: integer
+          minimum: 0
+          description: How many times someone pressed I cooked this.
+        lastCookedAt:
+          type: string
+          format: date-time
     Recipe:
       allOf:
         - $ref: "#/components/schemas/RecipeSummary"
@@ -1361,6 +1468,62 @@ components:
     ActivityFeed:
       type: array
       items: { $ref: "#/components/schemas/Activity" }
+    MealSlot:
+      type: string
+      enum: [breakfast, lunch, dinner, extra]
+    MealPlanRecipe:
+      type: object
+      required: [id, title]
+      description: The live recipe a meal links to. Absent when the meal is free text or the recipe was deleted.
+      properties:
+        id: { type: string }
+        title: { type: string }
+    MealPlanEntry:
+      type: object
+      required: [id, planDate, slot, title, completed, notes, createdAt, updatedAt]
+      properties:
+        id: { type: string }
+        planDate: { type: string, format: date }
+        slot: { $ref: "#/components/schemas/MealSlot" }
+        title: { type: string }
+        recipeId:
+          type: string
+          description: Set when the meal links a recipe that still exists.
+        recipe: { $ref: "#/components/schemas/MealPlanRecipe" }
+        completed: { type: boolean }
+        completedAt: { type: string, format: date-time }
+        completedBy: { type: string }
+        notes: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MealPlanUpsert:
+      type: object
+      required: [planDate, slot, title]
+      properties:
+        planDate: { type: string, format: date }
+        slot: { $ref: "#/components/schemas/MealSlot" }
+        title: { type: string }
+        recipeId:
+          type: string
+          description: Omit or send an empty string for a free-text meal with no recipe.
+        notes: { type: string }
+    MealPlanPatch:
+      type: object
+      properties:
+        title: { type: string }
+        recipeId:
+          type: string
+          description: Empty string clears the recipe link. Omit to leave it unchanged.
+        notes: { type: string }
+        completed:
+          type: boolean
+          description: Marks the planned meal done or not. Does not change the recipe's cooked counter.
+    CookedResult:
+      type: object
+      required: [timesCooked, lastCookedAt]
+      properties:
+        timesCooked: { type: integer, minimum: 0 }
+        lastCookedAt: { type: string, format: date-time }
     UndoInput:
       type: object
       properties:

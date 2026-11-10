@@ -105,7 +105,11 @@ func (s *server) applySyncOp(ctx context.Context, m *family.Member, user pgtype.
 			cur, err := q.GetItem(ctx, id)
 			switch {
 			case err == pgx.ErrNoRows:
-				item, err := addItem(ctx, q, listID, user, id, name, deref(op.Item.QuantityText), deref(op.Item.Note), op.Item.CategoryId, pgtype.UUID{})
+				onSale := false
+				if op.Item.OnSaleOnly != nil {
+					onSale = *op.Item.OnSaleOnly
+				}
+				item, err := addItem(ctx, q, listID, user, id, name, deref(op.Item.QuantityText), deref(op.Item.Note), op.Item.CategoryId, pgtype.UUID{}, onSale)
 				if err != nil {
 					return syncInvalid(err)
 				}
@@ -124,6 +128,10 @@ func (s *server) applySyncOp(ctx context.Context, m *family.Member, user pgtype.
 						return syncInvalid(err)
 					}
 				}
+			}
+			if op.Item.OnSaleOnly != nil {
+				p.SetOnSaleOnly = true
+				p.OnSaleOnly = *op.Item.OnSaleOnly
 			}
 			item, err := q.UpdateItem(ctx, p)
 			if err != nil {

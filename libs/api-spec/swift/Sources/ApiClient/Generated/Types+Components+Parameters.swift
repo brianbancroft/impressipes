@@ -30,6 +30,8 @@ extension Components {
         public typealias ItemId = Swift.String
         /// - Remark: Generated from `#/components/parameters/RecipeId`.
         public typealias RecipeId = Swift.String
+        /// - Remark: Generated from `#/components/parameters/EntryId`.
+        public typealias EntryId = Swift.String
         /// - Remark: Generated from `#/components/parameters/ActivityId`.
         public typealias ActivityId = Swift.Int64
     }

@@ -12,6 +12,14 @@ extension ListDetail {
 
 extension Recipe {
     var summary: RecipeSummary { value1 }
+    var timesCooked: Int {
+        get { value1.timesCooked }
+        set { value1.timesCooked = newValue }
+    }
+    var lastCookedAt: Date? {
+        get { value1.lastCookedAt }
+        set { value1.lastCookedAt = newValue }
+    }
     var id: String { value1.id }
     var title: String { value1.title }
     var ingredients: [Ingredient] { value2.ingredients }

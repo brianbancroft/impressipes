@@ -17,7 +17,7 @@ final class OfflineStoreTests: XCTestCase {
 
     func testAddAndCheckBothStayQueued() {
         let s = store()
-        s.enqueue(PendingOp(listId: "l", itemId: "a", kind: .add(name: "Milk", quantityText: "", note: "", categoryId: nil), at: .now))
+        s.enqueue(PendingOp(listId: "l", itemId: "a", kind: .add(name: "Milk", quantityText: "", note: "", categoryId: nil, onSaleOnly: false), at: .now))
         s.enqueue(PendingOp(listId: "l", itemId: "a", kind: .check(true), at: .now))
         XCTAssertEqual(s.pending.count, 2)
         XCTAssertEqual(s.pendingIds(in: "l"), ["a"])
@@ -31,10 +31,11 @@ final class OfflineStoreTests: XCTestCase {
 
     func testLocalItemForUnsentAdd() {
         let s = store()
-        let op = PendingOp(listId: "l", itemId: "a", kind: .add(name: "Milk", quantityText: "2 L", note: "", categoryId: nil), at: .now)
+        let op = PendingOp(listId: "l", itemId: "a", kind: .add(name: "Milk", quantityText: "2 L", note: "", categoryId: nil, onSaleOnly: true), at: .now)
         let item = s.localItem(for: op, after: 4)
         XCTAssertEqual(item?.name, "Milk")
         XCTAssertEqual(item?.position, 5)
+        XCTAssertEqual(item?.onSaleOnly, true)
         XCTAssertNil(s.localItem(for: PendingOp(listId: "l", itemId: "a", kind: .check(true), at: .now), after: 0))
     }
 }

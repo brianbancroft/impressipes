@@ -620,6 +620,78 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/recipes/{recipeId}/cooked": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** @description Increments the recipe's cooked counter by one. Independent of marking a planned meal complete. */
+        post: operations["cookRecipe"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meal-plan": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** @description Planned meals whose dates fall in the inclusive range. Clients own the Sunday–Saturday week. */
+        get: operations["listMealPlan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meal-plan/entries": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        /** @description Creates or replaces the meal in a date and slot. A meal may link a recipe or be free text (no recipeId), such as tacos made from memory. Replacing the meal does not change whether it was completed. */
+        put: operations["upsertMealPlanEntry"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/meal-plan/entries/{entryId}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["deleteMealPlanEntry"];
+        options?: never;
+        head?: never;
+        /** @description Changes the title, optional recipe link, notes, or completion. Completion does not increment timesCooked. */
+        patch: operations["updateMealPlanEntry"];
+        trace?: never;
+    };
     "/tags": {
         parameters: {
             query?: never;
@@ -887,6 +959,8 @@ export interface components {
             /** Format: date-time */
             updatedAt: string;
             deleted: boolean;
+            /** @description Buy this only when it is on sale. Shown on list rows; edited from item details. */
+            onSaleOnly: boolean;
         };
         ItemInput: {
             /** @description Client-generated UUID. */
@@ -895,6 +969,7 @@ export interface components {
             quantityText?: string;
             note?: string;
             categoryId?: string;
+            onSaleOnly?: boolean;
         };
         ItemPatch: {
             name?: string;
@@ -904,6 +979,7 @@ export interface components {
             categoryId?: string;
             checked?: boolean;
             position?: number;
+            onSaleOnly?: boolean;
         };
         Suggestion: {
             name: string;
@@ -979,6 +1055,10 @@ export interface components {
             updatedAt: string;
             /** @description Thumbnail of the first photo, relative to the API root */
             coverUrl?: string;
+            /** @description How many times someone pressed I cooked this. */
+            timesCooked: number;
+            /** Format: date-time */
+            lastCookedAt?: string;
         };
         Recipe: components["schemas"]["RecipeSummary"] & {
             images: components["schemas"]["Image"][];
@@ -1030,6 +1110,54 @@ export interface components {
             undoOf?: number;
         };
         ActivityFeed: components["schemas"]["Activity"][];
+        /** @enum {string} */
+        MealSlot: "breakfast" | "lunch" | "dinner" | "extra";
+        /** @description The live recipe a meal links to. Absent when the meal is free text or the recipe was deleted. */
+        MealPlanRecipe: {
+            id: string;
+            title: string;
+        };
+        MealPlanEntry: {
+            id: string;
+            /** Format: date */
+            planDate: string;
+            slot: components["schemas"]["MealSlot"];
+            title: string;
+            /** @description Set when the meal links a recipe that still exists. */
+            recipeId?: string;
+            recipe?: components["schemas"]["MealPlanRecipe"];
+            completed: boolean;
+            /** Format: date-time */
+            completedAt?: string;
+            completedBy?: string;
+            notes: string;
+            /** Format: date-time */
+            createdAt: string;
+            /** Format: date-time */
+            updatedAt: string;
+        };
+        MealPlanUpsert: {
+            /** Format: date */
+            planDate: string;
+            slot: components["schemas"]["MealSlot"];
+            title: string;
+            /** @description Omit or send an empty string for a free-text meal with no recipe. */
+            recipeId?: string;
+            notes?: string;
+        };
+        MealPlanPatch: {
+            title?: string;
+            /** @description Empty string clears the recipe link. Omit to leave it unchanged. */
+            recipeId?: string;
+            notes?: string;
+            /** @description Marks the planned meal done or not. Does not change the recipe's cooked counter. */
+            completed?: boolean;
+        };
+        CookedResult: {
+            timesCooked: number;
+            /** Format: date-time */
+            lastCookedAt: string;
+        };
         UndoInput: {
             /** @description Overwrite a later change to the same record */
             force?: boolean;
@@ -1053,6 +1181,7 @@ export interface components {
         CategoryId: string;
         ItemId: string;
         RecipeId: string;
+        EntryId: string;
         ActivityId: number;
     };
     requestBodies: never;
@@ -2283,6 +2412,137 @@ export interface operations {
                 };
                 content?: never;
             };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    cookRecipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                recipeId: components["parameters"]["RecipeId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description The new count and when it was cooked */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["CookedResult"];
+                };
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    listMealPlan: {
+        parameters: {
+            query: {
+                from: string;
+                to: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Meals in the range, Sunday-first when the client asks for a week */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealPlanEntry"][];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    upsertMealPlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealPlanUpsert"];
+            };
+        };
+        responses: {
+            /** @description The stored meal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealPlanEntry"];
+                };
+            };
+            400: components["responses"]["Error"];
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+        };
+    };
+    deleteMealPlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Deleted */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            401: components["responses"]["Error"];
+            403: components["responses"]["Error"];
+            404: components["responses"]["Error"];
+        };
+    };
+    updateMealPlanEntry: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                entryId: components["parameters"]["EntryId"];
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MealPlanPatch"];
+            };
+        };
+        responses: {
+            /** @description The updated meal */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MealPlanEntry"];
+                };
+            };
+            400: components["responses"]["Error"];
             401: components["responses"]["Error"];
             403: components["responses"]["Error"];
             404: components["responses"]["Error"];

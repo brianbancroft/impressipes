@@ -17,6 +17,7 @@ import { AppSetup } from './AppSetup';
 import { getMe, type Me, type RecipeMark } from './api';
 import { CookMode } from './CookMode';
 import { HomePage } from './HomePage';
+import { WeekPage } from './WeekPage';
 import { ListPage } from './ListPage';
 import { ListsPage } from './ListsPage';
 import { Onboarding } from './Onboarding';
@@ -96,7 +97,7 @@ function Layout() {
   const me = data as Extract<Me, { kind: 'member' }>;
   const path = useRouterState({ select: (st) => st.location.pathname });
   // Detail screens bring their own header and actions, so phones drop the tab bar there.
-  const top = ['/home', '/recipes', '/lists', '/admin', '/ai', '/app-setup', '/account'].includes(path);
+  const top = ['/home', '/recipes', '/lists', '/week', '/admin', '/ai', '/app-setup', '/account'].includes(path);
   return (
     <div className="relative isolate min-h-dvh overflow-x-clip md:pl-24 lg:pl-62">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 focus:z-50">Skip to content</a>
@@ -122,6 +123,7 @@ const indexRoute = createRoute({
 });
 
 const homeRoute = createRoute({ getParentRoute: () => shellRoute, path: '/home', component: HomePage });
+const weekRoute = createRoute({ getParentRoute: () => shellRoute, path: '/week', component: WeekPage });
 
 const recipesRoute = createRoute({
   getParentRoute: () => shellRoute,
@@ -174,7 +176,7 @@ const routeTree = rootRoute.addChildren([
   signInRoute,
   verifyRoute,
   authedRoute.addChildren([
-    shellRoute.addChildren([indexRoute, homeRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute, accountRoute]),
+    shellRoute.addChildren([indexRoute, homeRoute, weekRoute, recipesRoute, newRecipeRoute, recipeRoute, editRecipeRoute, listsRoute, listRoute, adminRoute, aiRoute, appSetupRoute, accountRoute]),
     cookRoute,
   ]),
 ]);

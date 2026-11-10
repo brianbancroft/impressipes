@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
-import { ArrowRight, ChevronRight, Plus, ShoppingCart, Soup } from 'lucide-react';
+import { ArrowRight, CalendarDays, ChevronRight, Plus, ShoppingCart, Soup } from 'lucide-react';
 import { listLists, listRecipes, setMark, type RecipeMark, type RecipeSummary } from './api';
 import { RecipeCard } from './RecipesPage';
 import { SetupChecklist, useSetupChecklist } from './SetupChecklist';
@@ -28,6 +28,12 @@ export function HomePage() {
         <h1 className="text-[34px] leading-[1.02] md:text-5xl">{setup.show ? 'Welcome to Impressipes' : 'What are we cooking tonight?'}</h1>
       </div>
 
+      <Link to="/week" className="relative mb-6 flex items-center gap-3 rounded-lg border-[2.5px] border-outline bg-surface px-4 py-3 font-bold text-ink no-underline shadow-pop-sm hover:text-ink">
+        <CalendarDays className="size-5 text-accent" />
+        <span className="flex-1">This week</span>
+        <span className="text-sm font-medium text-ink-muted">Sunday–Saturday</span>
+        <ArrowRight className="size-4" />
+      </Link>
       {setup.loading && <Loading />}
       <SetupChecklist state={setup} />
       {!setup.loading && !setup.show && (

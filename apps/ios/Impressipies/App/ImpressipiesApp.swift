@@ -62,11 +62,14 @@ struct RootView: View {
 }
 
 struct MainTabs: View {
-    enum Tab: Hashable { case lists, recipes, settings }
-    @State private var tab = Tab.lists
+    enum Tab: Hashable { case home, lists, recipes, settings }
+    @State private var tab = Tab.home
 
     var body: some View {
         TabView(selection: $tab) {
+            HomeView()
+                .tabItem { Label("Home", systemImage: "house") }
+                .tag(Tab.home)
             ListsView()
                 .tabItem { Label("Lists", systemImage: "checklist") }
                 .tag(Tab.lists)

@@ -120,6 +120,36 @@ export async function deleteRecipe(recipeId: string) {
   await client.DELETE('/recipes/{recipeId}', { params: { path: { recipeId } } });
 }
 
+export async function cookRecipe(recipeId: string) {
+  const { data, error } = await client.POST('/recipes/{recipeId}/cooked', { params: { path: { recipeId } } });
+  return must(data, error, 'Could not count this cook');
+}
+
+export type MealPlanEntry = components['schemas']['MealPlanEntry'];
+export type MealSlot = components['schemas']['MealSlot'];
+export type MealPlanUpsert = components['schemas']['MealPlanUpsert'];
+export type MealPlanPatch = components['schemas']['MealPlanPatch'];
+
+export async function listMealPlan(from: string, to: string) {
+  const { data, error } = await client.GET('/meal-plan', { params: { query: { from, to } } });
+  return must(data, error, 'Could not load the meal plan');
+}
+
+export async function upsertMeal(body: MealPlanUpsert) {
+  const { data, error } = await client.PUT('/meal-plan/entries', { body });
+  return must(data, error, 'Could not save the meal');
+}
+
+export async function updateMeal(entryId: string, body: MealPlanPatch) {
+  const { data, error } = await client.PATCH('/meal-plan/entries/{entryId}', { params: { path: { entryId } }, body });
+  return must(data, error, 'Could not update the meal');
+}
+
+export async function deleteMeal(entryId: string) {
+  const { error, response } = await client.DELETE('/meal-plan/entries/{entryId}', { params: { path: { entryId } } });
+  if (!response.ok) throw new Error(error?.error ?? 'Could not remove the meal');
+}
+
 export async function setMark(recipeId: string, mark: RecipeMark, on: boolean) {
   const params = { params: { path: { recipeId, mark } } };
   await (on ? client.PUT('/recipes/{recipeId}/marks/{mark}', params) : client.DELETE('/recipes/{recipeId}/marks/{mark}', params));

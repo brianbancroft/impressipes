@@ -135,31 +135,35 @@ final class ListStore {
     }
 
     @discardableResult
-    func add(name: String, quantityText: String, note: String? = nil, categoryId: String?) async throws -> Item {
+    func add(name: String, quantityText: String, note: String? = nil, categoryId: String?, onSaleOnly: Bool = false) async throws -> Item {
         let id = UUID().uuidString.lowercased()
         let note = note ?? ""
-        let op = PendingOp(listId: listId, itemId: id, kind: .add(name: name, quantityText: quantityText, note: note, categoryId: categoryId), at: .now)
+        let op = PendingOp(listId: listId, itemId: id, kind: .add(name: name, quantityText: quantityText, note: note, categoryId: categoryId, onSaleOnly: onSaleOnly), at: .now)
         try await send(op) {
             try await api().createItem(
                 listId: listId, id: id, name: name,
                 quantityText: quantityText.isEmpty ? nil : quantityText,
-                note: note.isEmpty ? nil : note, categoryId: categoryId
+                note: note.isEmpty ? nil : note, categoryId: categoryId,
+                onSaleOnly: onSaleOnly
             )
         }
         // Either the server's copy, or the local one waiting in the queue.
         return items.first { $0.id == id }!
     }
 
-    func update(_ item: Item, name: String, quantityText: String, note: String, categoryId: String?) async throws {
+    func update(_ item: Item, name: String, quantityText: String, note: String, categoryId: String?, onSaleOnly: Bool) async throws {
         var next = item
         next.name = name
         next.quantityText = quantityText
         next.note = note
         next.categoryId = categoryId
+        next.onSaleOnly = onSaleOnly
         replace(next)
         try await attempt(item) {
             // An empty categoryId clears the category on the server.
-            replace(try await api().updateItem(item.id, .init(name: name, quantityText: quantityText, note: note, categoryId: categoryId ?? "")))
+            replace(try await api().updateItem(item.id, .init(
+                name: name, quantityText: quantityText, note: note, categoryId: categoryId ?? "", onSaleOnly: onSaleOnly
+            )))
         }
     }
 
@@ -171,7 +175,7 @@ final class ListStore {
 
     /// Re-adds a deleted item as a new one with the same details.
     func restore(_ item: Item) async {
-        guard let back = try? await add(name: item.name, quantityText: item.quantityText, note: item.note, categoryId: item.categoryId) else { return }
+        guard let back = try? await add(name: item.name, quantityText: item.quantityText, note: item.note, categoryId: item.categoryId, onSaleOnly: item.onSaleOnly) else { return }
         if item.checked { await toggle(back) }
     }
 

@@ -18,6 +18,9 @@ typealias CategoryInput = Components.Schemas.CategoryInput
 typealias Passkey = Components.Schemas.Passkey
 typealias SignInMethods = Components.Schemas.SignInMethods
 typealias AuthConfig = Components.Schemas.AuthConfig
+typealias MealPlanEntry = Components.Schemas.MealPlanEntry
+typealias MealSlot = Components.Schemas.MealSlot
+typealias CookedResult = Components.Schemas.CookedResult
 
 /// A passkey ceremony the server started: its id, and the WebAuthn options as JSON.
 struct PasskeyChallenge: Sendable {
@@ -205,11 +208,11 @@ struct API: Sendable {
 
     // MARK: Items
 
-    func createItem(listId: String, id: String = UUID().uuidString.lowercased(), name: String, quantityText: String?, note: String? = nil, categoryId: String?) async throws -> Item {
+    func createItem(listId: String, id: String = UUID().uuidString.lowercased(), name: String, quantityText: String?, note: String? = nil, categoryId: String?, onSaleOnly: Bool = false) async throws -> Item {
         try await call {
             try await client.createItem(
                 path: .init(listId: listId),
-                body: .json(.init(id: id, name: name, quantityText: quantityText, note: note, categoryId: categoryId))
+                body: .json(.init(id: id, name: name, quantityText: quantityText, note: note, categoryId: categoryId, onSaleOnly: onSaleOnly))
             ).created.body.json
         }
     }
@@ -250,6 +253,37 @@ struct API: Sendable {
                 _ = try await client.unmarkRecipe(path: .init(recipeId: recipeId, mark: mark)).noContent
             }
         }
+    }
+
+    func cookRecipe(_ id: String) async throws -> CookedResult {
+        try await call { try await client.cookRecipe(path: .init(recipeId: id)).ok.body.json }
+    }
+
+    // MARK: Meal plan
+
+    func mealPlan(from: String, to: String) async throws -> [MealPlanEntry] {
+        try await call { try await client.listMealPlan(query: .init(from: from, to: to)).ok.body.json }
+    }
+
+    func upsertMeal(planDate: String, slot: MealSlot, title: String, recipeId: String?) async throws -> MealPlanEntry {
+        try await call {
+            try await client.upsertMealPlanEntry(body: .json(.init(
+                planDate: planDate, slot: slot, title: title, recipeId: recipeId ?? ""
+            ))).ok.body.json
+        }
+    }
+
+    func updateMeal(_ id: String, title: String? = nil, recipeId: String? = nil, completed: Bool? = nil) async throws -> MealPlanEntry {
+        try await call {
+            try await client.updateMealPlanEntry(
+                path: .init(entryId: id),
+                body: .json(.init(title: title, recipeId: recipeId, completed: completed))
+            ).ok.body.json
+        }
+    }
+
+    func deleteMeal(_ id: String) async throws {
+        try await call { _ = try await client.deleteMealPlanEntry(path: .init(entryId: id)).noContent }
     }
 
     func addRecipe(_ recipeId: String, to listId: String, servings: Double?) async throws -> AddRecipeResult {

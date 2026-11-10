@@ -3,7 +3,8 @@ import { Link, useNavigate, useParams } from '@tanstack/react-router';
 import { Bookmark, ChefHat, ChevronLeft, Clock, Flame, Heart, Minus, MoreHorizontal, Pencil, Plus, ShoppingCart, Timer, Trash2, UtensilsCrossed } from 'lucide-react';
 import { useState } from 'react';
 import { AddToListDialog } from './AddToListDialog';
-import { apiUrl, deleteRecipe, getRecipe, listMembers, setMark, type Recipe, type RecipeMark } from './api';
+import { apiUrl, cookRecipe, deleteRecipe, getRecipe, listMembers, setMark, type Recipe, type RecipeMark } from './api';
+import { cookedOn } from './week';
 import { formatMinutes, formatTimer, ingredientParts, sourceLine } from './recipes';
 import { ErrorState, Loading } from './states';
 import { Button } from './ui/button';
@@ -27,6 +28,13 @@ export function RecipePage() {
   const mark = useMutation({
     mutationFn: ({ m, on }: { m: RecipeMark; on: boolean }) => setMark(recipeId, m, on),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ['recipe', recipeId] }); qc.invalidateQueries({ queryKey: ['recipes'] }); },
+  });
+  const cook = useMutation({
+    mutationFn: () => cookRecipe(recipeId),
+    onSuccess: (cooked) => {
+      qc.setQueryData<Recipe>(['recipe', recipeId], (r) => r && { ...r, timesCooked: cooked.timesCooked, lastCookedAt: cooked.lastCookedAt });
+      qc.invalidateQueries({ queryKey: ['recipes'] });
+    },
   });
   const del = useMutation({
     mutationFn: () => deleteRecipe(recipeId),
@@ -112,6 +120,7 @@ export function RecipePage() {
             {r.tags.map((t, i) => <Sticker key={t} tilt={i % 2 ? 1.5 : -1} className={pick(STICKERS.slice(2), t)}>{t}</Sticker>)}
           </div>
           {r.summary && <p className="max-w-[65ch] text-[17px] leading-relaxed">{r.summary}</p>}
+          <CookedCard times={r.timesCooked} last={r.lastCookedAt} pending={cook.isPending} onCook={() => cook.mutate()} />
 
           {/* Phone: servings + Ingredients / Steps toggle */}
           <div className="flex flex-col gap-4 lg:hidden">
@@ -177,6 +186,19 @@ export function RecipePage() {
       )}
       {toast && <Toast>{toast}</Toast>}
     </article>
+  );
+}
+
+function CookedCard({ times, last, pending, onCook }: { times: number; last?: string; pending: boolean; onCook: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl border-[2.5px] border-outline bg-surface px-4 py-3 shadow-pop-sm">
+      <div>
+        <p className="eyebrow">Cooked</p>
+        <p className="font-display text-3xl leading-none text-warning">{times} {times === 1 ? 'time' : 'times'}</p>
+        <p className="mt-1 text-sm text-ink-muted">{last ? `Last ${cookedOn(last)} · tap again anytime` : 'Not counted yet'}</p>
+      </div>
+      <Button variant="primary" className="bg-accent-fill text-white" disabled={pending} onClick={onCook}>I cooked this</Button>
+    </div>
   );
 }
 
