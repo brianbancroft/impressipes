@@ -116,33 +116,30 @@ private struct HomeScreen: View {
     }
 
     private var weekPanel: some View {
+        ScrollView {
             VStack(spacing: 0) {
                 columnHeader
                 Rectangle().fill(Palette.line).frame(height: 1)
-                ScrollView {
-                VStack(spacing: 0) {
-                    ForEach(Array(dates.enumerated()), id: \.element) { index, date in
-                        DayLine(
-                            date: date,
-                            isToday: date == today,
-                            lunch: HomeMeals.entry(on: date, slot: .lunch, in: meals),
-                            dinner: HomeMeals.entry(on: date, slot: .dinner, in: meals)
-                        )
-                        if index < dates.count - 1 {
-                            Rectangle()
-                                .fill(Palette.line)
-                                .frame(height: 1)
-                                .padding(.leading, 76)
-                        }
+                ForEach(Array(dates.enumerated()), id: \.element) { index, date in
+                    DayLine(
+                        date: date,
+                        isToday: date == today,
+                        lunch: HomeMeals.entry(on: date, slot: .lunch, in: meals),
+                        dinner: HomeMeals.entry(on: date, slot: .dinner, in: meals)
+                    )
+                    if index < dates.count - 1 {
+                        Rectangle()
+                            .fill(Palette.line)
+                            .frame(height: 1)
+                            .padding(.leading, 76)
                     }
                 }
-                .padding(.bottom, 6)
             }
-            .refreshable { await reload() }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+            .sticker(radius: 18, shadow: 3)
         }
+        .scrollClipDisabled()
+        .refreshable { await reload() }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-        .sticker(radius: 18, shadow: 3)
     }
 
     private var columnHeader: some View {
