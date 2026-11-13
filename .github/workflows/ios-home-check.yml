@@ -9,8 +9,26 @@ jobs:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
-      - name: Versions
+      - name: Select Xcode
         run: |
+          set -euo pipefail
+          best=""
+          best_major=0
+          best_minor=0
+          for app in /Applications/Xcode*.app; do
+            ver="$("$app/Contents/Developer/usr/bin/xcodebuild" -version | awk 'NR==1 { print $2 }')"
+            major="${ver%%.*}"
+            minor="${ver#*.}"
+            minor="${minor%%.*}"
+            echo "$app is Xcode $ver"
+            if [ "$major" -gt "$best_major" ] || { [ "$major" -eq "$best_major" ] && [ "$minor" -gt "$best_minor" ]; }; then
+              best="$app"
+              best_major="$major"
+              best_minor="$minor"
+            fi
+          done
+          echo "Selecting $best"
+          sudo xcode-select -s "$best"
           xcodebuild -version
           xcrun simctl list devices available
       - name: Test Impressipies
@@ -18,7 +36,7 @@ jobs:
         working-directory: apps/ios
         run: |
           set -euo pipefail
-          LINE="$(xcrun simctl list devices available | grep -E 'iPhone 17 \(' | head -1 || true)"
+          LINE="$(xcrun simctl list devices available | grep -E 'iPhone 17 \(' | tail -1 || true)"
           if [ -z "$LINE" ]; then
             LINE="$(xcrun simctl list devices available | grep -E 'iPhone' | head -1)"
           fi
