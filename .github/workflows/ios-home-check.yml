@@ -1,0 +1,49 @@
+name: iOS Home check
+
+on:
+  push:
+    branches: [cursor/ios-home-lunch-dinner-ad5a]
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versions
+        run: |
+          xcodebuild -version
+          xcrun simctl list devices available
+      - name: Test Impressipies
+        id: test
+        working-directory: apps/ios
+        run: |
+          set -euo pipefail
+          LINE="$(xcrun simctl list devices available | grep -E 'iPhone 17 \(' | head -1 || true)"
+          if [ -z "$LINE" ]; then
+            LINE="$(xcrun simctl list devices available | grep -E 'iPhone' | head -1)"
+          fi
+          UDID="$(printf '%s\n' "$LINE" | grep -oE '[0-9A-Fa-f]{8}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{4}-[0-9A-Fa-f]{12}' | head -1)"
+          echo "Using $LINE"
+          echo "udid=$UDID" >> "$GITHUB_OUTPUT"
+          xcodebuild -project Impressipies.xcodeproj -scheme Impressipies \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath build CODE_SIGNING_ALLOWED=NO test
+      - name: Screenshot Home
+        working-directory: apps/ios
+        run: |
+          set -euo pipefail
+          UDID="${{ steps.test.outputs.udid }}"
+          xcrun simctl boot "$UDID" || true
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl ui "$UDID" appearance dark
+          xcrun simctl status_bar "$UDID" override --time "9:41" --batteryState charged --batteryLevel 100 --cellularBars 4
+          APP="build/Build/Products/Debug-iphonesimulator/Impressipies.app"
+          xcrun simctl install "$UDID" "$APP"
+          xcrun simctl terminate "$UDID" ca.brianbancroft.impressipies || true
+          xcrun simctl launch "$UDID" ca.brianbancroft.impressipies -previewHome
+          sleep 6
+          xcrun simctl io "$UDID" screenshot "$GITHUB_WORKSPACE/home-ios.png"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: home-screenshot
+          path: home-ios.png

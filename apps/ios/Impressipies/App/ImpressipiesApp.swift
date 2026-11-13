@@ -39,14 +39,15 @@ struct RootView: View {
 
     var body: some View {
         Group {
-            switch session.state {
-            case .loading:
-                ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).pageBackground()
-            case .signedOut:
-                SignInView()
-            case .signedIn:
-                MainTabs()
+            #if DEBUG
+            if ProcessInfo.processInfo.arguments.contains("-previewHome") {
+                MainTabs().preferredColorScheme(.dark)
+            } else {
+                sessionContent
             }
+            #else
+            sessionContent
+            #endif
         }
         .task { await session.restore() }
         .alert("Couldn't sign in", isPresented: Binding(get: { session.notice != nil }, set: { if !$0 { session.notice = nil } })) {
@@ -57,6 +58,18 @@ struct RootView: View {
         .onChange(of: scenePhase) { _, phase in
             // Hold the event stream only while the app is on screen.
             if phase == .active { session.startEvents() } else if phase == .background { session.stopEvents() }
+        }
+    }
+
+    @ViewBuilder
+    private var sessionContent: some View {
+        switch session.state {
+        case .loading:
+            ProgressView().frame(maxWidth: .infinity, maxHeight: .infinity).pageBackground()
+        case .signedOut:
+            SignInView()
+        case .signedIn:
+            MainTabs()
         }
     }
 }
